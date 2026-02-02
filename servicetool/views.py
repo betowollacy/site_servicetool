@@ -7,13 +7,33 @@ def index(request):
 def aluguel(request):
     return render(request, 'aluguel.html')
 
-def carrinho(request):
-    return render(request, 'carrinho.html')
+def amt(request):
+    return render(request, 'amt.html')
 
-# views.py
-from django.shortcuts import render, get_object_or_404
-from .models import Produto
+def unlock(request):
+    return render(request, 'unlock.html')
 
-def produto_selecionado(request, produto_id):
-    produto = get_object_or_404(Produto, id=produto_id)
-    return render(request, 'produto_selecionado.html', {'produto': produto})
+def tsm(request):
+    return render(request, 'tsm.html')
+
+def tfm(request):
+    return render(request, 'tfm.html')
+
+def cheetah(request):
+    return render(request, 'cheetah.html')
+
+def dft(request):
+    return render(request, 'dft.html')
+
+def oct(request):
+    return render(request, 'oct.html')
+
+def kgpro(request):
+    return render(request, 'kgpro.html')
+
+
+def mdm(request):
+    return render(request, 'mdm.html')
+
+def black(request):
+    return render(request, 'black.html')

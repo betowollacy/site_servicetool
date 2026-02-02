@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block 'titulo' %} Produto Selecionado {% endblock %}
+
+{% block 'conteudo' %}
+
+<div class="container my-5">
+  <div class="row align-items-center justify-content-center">
+    
+    <!-- Coluna da Imagem -->
+    <div class="col-md-6 text-center">
+      <img src="{% static 'img/black.png' %}" alt="Produto Selecionado" class="img-fluid rounded">
+    </div>
+    
+    <!-- Coluna do Texto e Botão -->
+    <div class="col-md-6">
+      <h2 class="text-primary mb-3">Produto Selecionado</h2>
+      <h6 class="text-primary mb-3">BLACKSOURCE PRIVACIDADE</h6>
+      <h4 class="text-dark mb-3">R$ 80,00</h4>
+      <a href="%" class="btn btn-success rounded-pill px-4">
+        <i class="bi bi-credit-card"></i> Pagar Agora
+      </a>
+    </div>
+
+  </div>
+</div>
+<p class="text-primary mb-1">
+
+O BlackSource é uma ferramenta desenvolvida especialmente para técnicos e profissionais de suporte remoto que valorizam discrição, segurança e profissionalismo durante o atendimento.
+✨ Como funciona:  
+Ao ser ativado, o BlackSource escurece completamente a tela do computador do cliente, exibindo apenas sua logo personalizada e uma mensagem profissional, garantindo total privacidade enquanto você trabalha em um ambiente virtual exclusivo.  
+
+🔧 Ideal para uso com:  
+✅ UltraViewer (recomendado)  
+✅ TeamViewer  
+✅ Anydesk  
+---
+
+⚙️ Principais Recursos:  
+🔹 Tela do cliente escurecida com logo e descrição personalizada  
+🔹 Ambiente de trabalho virtual, seguro e isolado  
+🔹 Compatível com UltraViewer - TeamViewer e Anydesk
+🔹 Design profissional, leve e moderno  
+🔹 Aumenta a credibilidade e a confiança nas operações remotas.</p>
+
+<style>
+  .btn-success {
+    background-color: #28a745;
+    border: none;
+    font-weight: bold;
+  }
+  .btn-success:hover {
+    background-color: #218838;
+  }
+</style>
+
+  
+</body>
+</html>
+
+
+{% endblock %}
