@@ -7,7 +7,7 @@ SECRET_KEY = 'django-insecure-jm2gmz8=+=6+e^e9035q$r4l-d!9h8&$*pt)62d#cgppoa4bxw
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']  # ajuste para seu domínio no PythonAnywhere betowollacy.pythonanywhere.com
+ALLOWED_HOSTS = ['betowollacy.pythonanywhere.com', 'localhost', '127.0.0.1']
 
 
 INSTALLED_APPS = [
