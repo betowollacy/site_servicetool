@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block 'titulo' %} Cadastro-se {% endblock %}
+
+{% block 'conteudo' %}
+
+<!-- Container principal -->
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+
+      <!-- Mensagens de status -->
+      {% if status == '1' %}
+        <div class="alert alert-danger shadow-sm text-center rounded-pill">
+          ⚠️ Preencha os campos corretamente!
+        </div>
+      {% endif %}
+      {% if status == '2' %}
+        <div class="alert alert-success shadow-sm text-center rounded-pill">
+          ✅ Cadastro realizado com sucesso!
+        </div>
+      {% endif %}
+
+      <!-- Card do formulário -->
+      <div class="card bg-dark text-light border-primary shadow-lg rounded-4">
+        <div class="card-body p-4">
+          <h2 class="fw-bold text-primary mb-4 text-center">Crie sua conta</h2>
+          <p class="text-muted mb-4 text-center">Preencha os dados abaixo para se cadastrar</p>
+
+          <form method="POST" action="{% url 'valida_cadastro' %}">
+            {% csrf_token %}
+            
+            <div class="form-floating mb-3">
+              <input type="text" class="form-control bg-dark text-light border-primary rounded-3" id="nome" name="nome" placeholder="Digite seu nome" required>
+              <label for="nome" class="text-primary">Nome Completo</label>
+            </div>
+
+            <div class="form-floating mb-3">
+              <input type="email" class="form-control bg-dark text-light border-primary rounded-3" id="email" name="email" placeholder="Digite seu Email" required>
+              <label for="email" class="text-primary">E-mail</label>
+            </div>
+
+            <div class="form-floating mb-3">
+              <input type="password" class="form-control bg-dark text-light border-primary rounded-3" id="senha" name="senha" placeholder="Senha" required>
+              <label for="senha" class="text-primary">Senha</label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 rounded-pill">Cadastrar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block 'titulo' %} Cadastro {% endblock %}
+{% block 'titulo' %} ᔕEᖇᐯIᑕE TOOᒪ {% endblock %}
 
 {% block 'conteudo' %}
 
@@ -22,7 +22,7 @@
       </a>
     </div>
     <div class="col">
-      <a href="%" class="card p-3 text-center service-btn d-block">
+      <a href="{% url 'login' %}" class="card p-3 text-center service-btn d-block">
         <img src="{% static 'img/mdm.png' %}" class="card-img-top mb-2" alt="Métodos Lançamentos">
         <h5>Métodos Lançamentos</h5>
       </a>
@@ -51,17 +51,17 @@
     <div class="col-md-6">
       <h4 class="text-primary">Novos Métodos</h4>
       <ul class="list-group list-group-flush">
-        <li class="list-group-item btn-effect"><a href="%" class="d-block text-white">OPPO A40</a></li>
-        <li class="list-group-item btn-effect"><a href="%" class="d-block text-white">REALME FRP 1 CLICK SEM ABRIR, SEM DOWNGRADE</a></li>
-        <li class="list-group-item btn-effect"><a href="%" class="d-block text-white">REALME PAYJOY PATCH DEZEMBRO</a></li>
+        <li class="list-group-item btn-effect"><a href="{% url 'login' %}" class="d-block text-white">OPPO A40</a></li>
+        <li class="list-group-item btn-effect"><a href="{% url 'login' %}" class="d-block text-white">REALME FRP 1 CLICK SEM ABRIR, SEM DOWNGRADE</a></li>
+        <li class="list-group-item btn-effect"><a href="{% url 'login' %}" class="d-block text-white">REALME PAYJOY PATCH DEZEMBRO</a></li>
       </ul>
     </div>
     <div class="col-md-6">
       <h4 class="text-primary">Arquivos Testados</h4>
       <ul class="list-group list-group-flush">
-        <li class="list-group-item btn-effect"><a href="%" class="d-block text-white">FIRMWARE REALME</a></li>
-        <li class="list-group-item btn-effect"><a href="%" class="d-block text-white">FIRMWARE PARA DEAD BOOT</a></li>
-        <li class="list-group-item btn-effect"><a href="%" class="d-block text-white">XIAOMI FRP</a></li>
+        <li class="list-group-item btn-effect"><a href="{% url 'login' %}" class="d-block text-white">FIRMWARE REALME</a></li>
+        <li class="list-group-item btn-effect"><a href="{% url 'login' %}" class="d-block text-white">FIRMWARE PARA DEAD BOOT</a></li>
+        <li class="list-group-item btn-effect"><a href="{% url 'login' %}" class="d-block text-white">XIAOMI FRP</a></li>
       </ul>
     </div>
   </div>
@@ -69,7 +69,7 @@
 
 <!-- Botão WhatsApp -->
 <div class="text-center my-4">
-  <a href="https://wa.me/5581994245548" class="btn btn-success rounded-pill" style="background-color:#25D366; border:none;">
+  <a href="https://chat.whatsapp.com/BoFOaO423rY4SZ6vTwCEqH" class="btn btn-success rounded-pill" style="background-color:#25D366; border:none;">
     <i class="bi bi-whatsapp"></i> WhatsApp
   </a>
 </div>
