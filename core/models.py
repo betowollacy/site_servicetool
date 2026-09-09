@@ -384,6 +384,9 @@ class PaymentGateway(models.Model):
     binance_api_key = models.CharField(max_length=255, blank=True, null=True)
     binance_secret_key = models.CharField(max_length=255, blank=True, null=True)
     binance_charge = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    binance_private_key = models.TextField(blank=True, null=True)
+    asaas_api_key = models.CharField(max_length=500, blank=True, null=True)
+    asaas_sandbox = models.BooleanField(default=True)
 
     class Meta:
         db_table = 'payment_gateways'
@@ -529,6 +532,9 @@ class PaymentDeposit(models.Model):
     gateway_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     gateway_note = models.CharField(max_length=100, blank=True, null=True)
     qrcode_url = models.CharField(max_length=1000, blank=True, null=True)
+    pix_code = models.TextField(blank=True, null=True)
+    gateway_payment_id = models.CharField(max_length=500, blank=True, null=True)
+    gateway_data = models.TextField(blank=True, null=True)
     cancel_url = models.CharField(max_length=1000, blank=True, null=True)
     checkout_url = models.CharField(max_length=255, blank=True, null=True)
     status = models.CharField(max_length=20, default='Pending')

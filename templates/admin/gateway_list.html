@@ -31,12 +31,29 @@
                                 <option value="Inactive" {% if g.status == 'Inactive' %}selected{% endif %}>Inativo</option>
                             </select>
                         </div>
-                        {% if not g.NAME == 'Bkash' %}
+                        {% if g.NAME == 'Asaas' %}
+                        <div class="col-12 mb-3"><label class="form-label">Asaas API Key</label><input type="text" name="asaas_api_key" class="form-control" value="{{ g.asaas_api_key|default:'' }}" placeholder="aact_..."></div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch mt-2">
+                                <input type="checkbox" class="form-check-input" name="asaas_sandbox" id="sandbox-{{ g.id }}" {% if g.asaas_sandbox %}checked{% endif %}>
+                                <label class="form-check-label" for="sandbox-{{ g.id }}">Usar ambiente Sandbox (teste)</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3 align-self-end">
+                            <p class="small text-muted mb-1">Webhook URL (configurar no Asaas):</p>
+                            <code>{{ webhook_asaas }}</code>
+                        </div>
+                        {% elif g.NAME == 'Binance' %}
+                        <div class="col-md-6 mb-3"><label class="form-label">Binance API Key (Certificate SN)</label><input type="text" name="binance_api_key" class="form-control" value="{{ g.binance_api_key|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Binance API Secret</label><input type="text" name="binance_secret_key" class="form-control" value="{{ g.binance_secret_key|default:'' }}"></div>
+                        <div class="col-12 mb-3"><label class="form-label">Chave Privada (PEM) - usada para assinar os pedidos</label><textarea name="binance_private_key" class="form-control" rows="5" placeholder="-----BEGIN PRIVATE KEY----- ...">{{ g.binance_private_key|default:'' }}</textarea></div>
+                        <div class="col-md-6 mb-3">
+                            <p class="small text-muted mb-1">Webhook URL (configurar na Binance Pay):</p>
+                            <code>{{ webhook_binance }}</code>
+                        </div>
+                        {% else %}
                         <div class="col-md-6 mb-3"><label class="form-label">Chave da API</label><input type="text" name="bkash_app_key" class="form-control" value="{{ g.bkash_app_key|default:'' }}"></div>
                         <div class="col-md-6 mb-3"><label class="form-label">Segredo da API</label><input type="text" name="bkash_app_secret" class="form-control" value="{{ g.bkash_app_secret|default:'' }}"></div>
-                        {% else %}
-                        <div class="col-md-6 mb-3"><label class="form-label">Binance API Key</label><input type="text" name="binance_api_key" class="form-control" value="{{ g.binance_api_key|default:'' }}"></div>
-                        <div class="col-md-6 mb-3"><label class="form-label">Binance Secret Key</label><input type="text" name="binance_secret_key" class="form-control" value="{{ g.binance_secret_key|default:'' }}"></div>
                         {% endif %}
                     </div>
                 </div>

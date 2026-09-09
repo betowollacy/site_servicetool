@@ -5,6 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import logout
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils.text import slugify
 
 from .models import (
@@ -233,6 +234,8 @@ def admin_gateway_list(request):
     return render(request, 'admin/gateway_list.html', {
         'gateways': PaymentGateway.objects.all(),
         'currencies': Currency.objects.all(),
+        'webhook_asaas': request.build_absolute_uri(reverse('asaas_webhook')),
+        'webhook_binance': request.build_absolute_uri(reverse('binance_webhook')),
     })
 
 
@@ -251,9 +254,12 @@ def admin_gateway_update(request, gateway_id):
         if request.POST.get('status') in ('Active', 'Inactive'):
             g.status = request.POST['status']
         for f in ['bkash_app_key', 'bkash_app_secret', 'bkash_username', 'bkash_password',
-                  'binance_api_key', 'binance_secret_key']:
+                  'binance_api_key', 'binance_secret_key', 'asaas_api_key']:
             if request.POST.get(f) is not None:
                 setattr(g, f, request.POST[f])
+        if request.POST.get('binance_private_key') is not None:
+            g.binance_private_key = request.POST['binance_private_key']
+        g.asaas_sandbox = request.POST.get('asaas_sandbox') == 'on'
         g.save()
         messages.success(request, 'Gateway atualizado com sucesso.')
     return redirect('admin_gateway_list')

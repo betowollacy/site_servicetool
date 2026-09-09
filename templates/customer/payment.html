@@ -1,0 +1,77 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+{% block seo %}
+<title>Pagamento - Fatura #{{ invoice.id }} - {{ siteTitle }}</title>
+{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="card mx-auto" style="max-width: 680px">
+        <div class="card-header"><h5 class="mb-0">Pagamento via {{ invoice.payment_gateway }}</h5></div>
+        <div class="card-body">
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+
+            <p>Fatura <b>#{{ invoice.id }}</b> - {{ invoice.invoice_title|default:invoice.invoice_for }}</p>
+            <h4 class="mb-4">{{ currency_icon }}{{ invoice.invoice_amount|floatformat:2 }} {{ invoice.customer_currency }}</h4>
+
+            {% if deposit %}
+                {% if deposit.status == 'Paid' %}
+                    <div class="alert alert-success">Pagamento confirmado! O saldo foi creditado na sua conta.</div>
+                    <a href="{% url 'customer_invoice_detail' invoice.id %}" class="btn btn-primary rounded">Ver Fatura</a>
+                {% else %}
+                    {% if deposit.qrcode_url %}
+                        <p>Pague o PIX abaixo para concluir. O valor não será cobrado da sua conta até a confirmação.</p>
+                        <div class="text-center mb-3">
+                            <img src="{{ deposit.qrcode_url }}" alt="PIX QR Code" class="img-fluid rounded" style="max-width: 260px">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">PIX Copia e Cola</label>
+                            <div class="input-group">
+                                <textarea class="form-control" id="pix-code" rows="3" readonly>{{ deposit.pix_code|default:deposit.gateway_note }}</textarea>
+                                <button type="button" class="btn btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('pix-code').value).then(function(){this.textContent='Copiado';}.bind(this))">Copiar</button>
+                            </div>
+                        </div>
+                    {% elif deposit.checkout_url %}
+                        <p>Clique no botão abaixo para pagar com USDT.</p>
+                        <a href="{{ deposit.checkout_url }}" target="_blank" rel="noopener" class="btn btn-warning rounded w-100 mb-3">
+                            <i class="fas fa-external-link-alt me-2"></i>Pagar agora na Binance</a>
+                        <p class="small text-muted">Se você não for direcionado automaticamente, clique acima. Após o pagamento, aguarde a confirmação nesta página.</p>
+                    {% endif %}
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">Status do pagamento:</span>
+                        <span id="pay-status" class="badge bg-warning">Aguardando pagamento...</span>
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-warning">Nenhum pagamento encontrado para esta fatura.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block footer_script %}
+<script>
+(function () {
+    var paid = {{ deposit.status|default:'Pending'|yesno:'false,false,false' }};
+    if (paid) return;
+    var url = '{% url "payment_status" invoice.id %}';
+    var el = document.getElementById('pay-status');
+    setInterval(function () {
+        fetch(url, { headers: {'X-Requested-With': 'XMLHttpRequest'} })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.paid) {
+                    el.textContent = 'Pagamento confirmado!';
+                    el.className = 'badge bg-success';
+                    setTimeout(function () { window.location.reload(); }, 1500);
+                }
+            })
+            .catch(function () {});
+    }, 5000);
+})();
+</script>
+{% endblock %}

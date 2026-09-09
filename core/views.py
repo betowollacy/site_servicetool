@@ -1,15 +1,19 @@
+import json
 from decimal import Decimal
 
 from django.contrib import messages
 from django.db.models import Q, Sum
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
+from . import asaas, binance
 from .models import (
     Api, ApiLog, Currency, Customer, CustomerOrder, GatewayLog, Invoice,
-    OrderInput, Page, PaymentGateway, ServiceGroup, ServiceInput, ServiceList,
-    Slider, Statement, SystemSetting,
+    OrderInput, Page, PaymentDeposit, PaymentGateway, ServiceGroup, ServiceInput,
+    ServiceList, Slider, Statement, SystemSetting,
 )
 
 CATEGORY_SLUGS = {
@@ -362,7 +366,11 @@ def checkout(request, customer, invoice_id):
 def gateway_pay(request, customer, invoice_id):
     invoice = get_object_or_404(Invoice, id=invoice_id, customer=customer)
     if request.method == 'POST':
-        gateway_name = request.POST.get('payment_methode', '')
+        gateway_name = request.POST.get('payment_methode', '').strip()
+        if gateway_name.lower() == 'asaas':
+            return _pay_with_asaas(request, customer, invoice)
+        if gateway_name.lower() == 'binance':
+            return _pay_with_binance(request, customer, invoice)
         invoice.payment_gateway = gateway_name
         invoice.invoice_status = 'Paid'
         invoice.total_paid = invoice.invoice_amount
@@ -378,3 +386,195 @@ def gateway_pay(request, customer, invoice_id):
         messages.success(request, 'Pagamento realizado com sucesso. Saldo adicionado.')
         return redirect('customer_invoice_detail', invoice_id=invoice.id)
     return redirect('checkout', invoice_id=invoice.id)
+
+
+def _pay_with_asaas(request, customer, invoice):
+    gateway = PaymentGateway.objects.filter(name__iexact='Asaas', status='Active').first()
+    if not gateway or not (gateway.asaas_api_key or '').strip():
+        messages.error(request, 'Gateway Asaas nao configurado. Adicione a chave de API no painel.')
+        return redirect('checkout', invoice_id=invoice.id)
+    try:
+        payment = asaas.create_pix_payment(invoice, gateway)
+    except Exception as exc:
+        GatewayLog.objects.create(
+            payment_gateway='Asaas', payment_for=f'Invoice #{invoice.id}',
+            payment_amount=invoice.invoice_amount, customer=customer,
+            customer_name=customer.name, invoice=invoice, invoice_status='Unpaid',
+            create_payment=str(exc)[:1000],
+        )
+        messages.error(request, 'Falha ao gerar pagamento no Asaas. Tente novamente.')
+        return redirect('checkout', invoice_id=invoice.id)
+    PaymentDeposit.objects.create(
+        name='Asaas - PIX',
+        gateway_amount=invoice.invoice_amount,
+        gateway_payment_id=payment.get('id') or '',
+        qrcode_url=payment.get('pixQrCode') or '',
+        pix_code=payment.get('pixCopyPaste') or '',
+        checkout_url=payment.get('invoiceUrl') or '',
+        gateway_note=(payment.get('pixCopyPaste') or '')[:100],
+        gateway_data=json.dumps(payment, ensure_ascii=False)[:4000],
+        status='Pending',
+        invoice=invoice,
+    )
+    invoice.payment_gateway = gateway.name
+    invoice.save(update_fields=['payment_gateway'])
+    return redirect('payment_page', invoice_id=invoice.id)
+
+
+def _pay_with_binance(request, customer, invoice):
+    gateway = PaymentGateway.objects.filter(name__iexact='Binance', status='Active').first()
+    if not gateway or not (gateway.binance_private_key or '').strip():
+        messages.error(request, 'Gateway Binance nao configurado. Adicione a chave da API no painel.')
+        return redirect('checkout', invoice_id=invoice.id)
+    try:
+        data = binance.create_order(invoice, gateway)
+    except Exception as exc:
+        GatewayLog.objects.create(
+            payment_gateway='Binance', payment_for=f'Invoice #{invoice.id}',
+            payment_amount=invoice.invoice_amount, customer=customer,
+            customer_name=customer.name, invoice=invoice, invoice_status='Unpaid',
+            create_payment=str(exc)[:1000],
+        )
+        messages.error(request, 'Falha ao gerar pagamento na Binance. Tente novamente.')
+        return redirect('checkout', invoice_id=invoice.id)
+    PaymentDeposit.objects.create(
+        name='Binance - USDT',
+        gateway_amount=invoice.invoice_amount,
+        gateway_payment_id=data.get('merchantTradeNo') or '',
+        checkout_url=data.get('checkoutUrl') or '',
+        gateway_note=data.get('prepayId') or '',
+        gateway_data=json.dumps(data, ensure_ascii=False)[:4000],
+        status='Pending',
+        invoice=invoice,
+    )
+    invoice.payment_gateway = gateway.name
+    invoice.save(update_fields=['payment_gateway'])
+    return redirect('payment_page', invoice_id=invoice.id)
+
+
+def _mark_paid(deposit, payload=None):
+    if deposit.status == 'Paid':
+        return
+    invoice = deposit.invoice
+    if not invoice:
+        deposit.status = 'Paid'
+        deposit.save(update_fields=['status'])
+        return
+    deposit.status = 'Paid'
+    deposit.save(update_fields=['status'])
+    if invoice.invoice_status != 'Paid':
+        invoice.invoice_status = 'Paid'
+        invoice.total_paid = invoice.invoice_amount
+        invoice.payment_currency = invoice.customer.currency if invoice.customer else invoice.customer_currency
+        invoice.save(update_fields=['invoice_status', 'total_paid', 'payment_currency'])
+    customer = invoice.customer
+    if customer:
+        customer.balance = customer.balance + invoice.invoice_amount
+        customer.save(update_fields=['balance'])
+        Statement.objects.create(
+            customer=customer,
+            description=f"Invoice #{invoice.id} - pago via {invoice.payment_gateway or deposit.name}",
+            type='Credit', amount=invoice.invoice_amount, balance=customer.balance,
+        )
+    GatewayLog.objects.create(
+        payment_gateway=invoice.payment_gateway or deposit.name,
+        payment_for=f'Invoice #{invoice.id}',
+        payment_amount=invoice.invoice_amount,
+        customer=customer,
+        customer_name=customer.name if customer else '',
+        invoice=invoice,
+        invoice_status='Paid',
+        create_payment=json.dumps(payload, ensure_ascii=False)[:4000] if payload else '',
+    )
+
+
+@_require_customer
+def payment_page(request, customer, invoice_id):
+    invoice = get_object_or_404(Invoice, id=invoice_id, customer=customer)
+    deposit = PaymentDeposit.objects.filter(invoice=invoice).order_by('-id').first()
+    ctx = {'invoice': invoice, 'deposit': deposit}
+    ctx.update(_base_ctx(request))
+    return render(request, 'customer/payment.html', ctx)
+
+
+@_require_customer
+def payment_status(request, customer, invoice_id):
+    invoice = get_object_or_404(Invoice, id=invoice_id, customer=customer)
+    deposit = PaymentDeposit.objects.filter(invoice=invoice).order_by('-id').first()
+    if deposit and deposit.status != 'Paid':
+        gateway_name = (invoice.payment_gateway or '').lower()
+        if gateway_name == 'asaas':
+            gateway = PaymentGateway.objects.filter(name__iexact='Asaas', status='Active').first()
+            if gateway and (gateway.asaas_api_key or '').strip() and deposit.gateway_payment_id:
+                try:
+                    payment = asaas.get_payment(gateway, deposit.gateway_payment_id)
+                    if payment.get('status') in ('CONFIRMED', 'RECEIVED'):
+                        _mark_paid(deposit, payment)
+                except Exception:
+                    pass
+        elif gateway_name == 'binance':
+            gateway = PaymentGateway.objects.filter(name__iexact='Binance', status='Active').first()
+            if gateway and (gateway.binance_private_key or '').strip() and deposit.gateway_payment_id:
+                try:
+                    row = binance.query_order(gateway, deposit.gateway_payment_id)
+                    if row and row.get('tradeStatus') == 'SUCCESS':
+                        _mark_paid(deposit, row)
+                except Exception:
+                    pass
+        deposit.refresh_from_db()
+    status = deposit.status if deposit else 'Pending'
+    return JsonResponse({'status': status, 'paid': status == 'Paid'})
+
+
+@csrf_exempt
+@require_POST
+def asaas_webhook(request):
+    gateway = PaymentGateway.objects.filter(name__iexact='Asaas', status='Active').first()
+    if not gateway:
+        return HttpResponse('ok')
+    token = request.headers.get('asaas_access_token', '')
+    expected = (gateway.asaas_api_key or '').strip()
+    if expected and token.strip() != expected:
+        return HttpResponse('invalid token', status=401)
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        payload = {}
+    payment = payload.get('payment') if isinstance(payload.get('payment'), dict) else {}
+    payment_id = payment.get('id') or ''
+    if payment_id and payment.get('status') in ('CONFIRMED', 'RECEIVED'):
+        deposit = PaymentDeposit.objects.filter(gateway_payment_id=payment_id).order_by('-id').first()
+        if deposit:
+            _mark_paid(deposit, payload)
+    return HttpResponse('ok')
+
+
+@csrf_exempt
+@require_POST
+def binance_webhook(request):
+    gateway = PaymentGateway.objects.filter(name__iexact='Binance', status='Active').first()
+    if not gateway:
+        return HttpResponse('ok')
+    signature = request.headers.get('BinancePay-Signature', '')
+    payload_str = request.body.decode('utf-8')
+    if not binance.verify_notification(gateway, signature, payload_str):
+        return HttpResponse('verify failed', status=403)
+    try:
+        payload = json.loads(payload_str)
+    except Exception:
+        payload = {}
+    biz = payload.get('data')
+    if isinstance(biz, str):
+        try:
+            biz = json.loads(biz)
+        except Exception:
+            biz = {}
+    if not isinstance(biz, dict):
+        return HttpResponse('ok')
+    merchant_trade_no = biz.get('merchantTradeNo') or ''
+    biz_status = biz.get('bizStatus') or biz.get('tradeStatus') or ''
+    if merchant_trade_no and biz_status == 'PAY_SUCCESS':
+        deposit = PaymentDeposit.objects.filter(gateway_payment_id=merchant_trade_no).order_by('-id').first()
+        if deposit:
+            _mark_paid(deposit, payload)
+    return HttpResponse('ok')

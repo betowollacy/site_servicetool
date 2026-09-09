@@ -36,6 +36,10 @@ urlpatterns = [
     path('customer/deposit/', views.customer_deposit, name='customer_deposit'),
     path('customer/checkout/<int:invoice_id>/', views.checkout, name='checkout'),
     path('customer/checkout/<int:invoice_id>/pay/', views.gateway_pay, name='gateway_pay'),
+    path('customer/pay/<int:invoice_id>/', views.payment_page, name='payment_page'),
+    path('customer/pay/<int:invoice_id>/status/', views.payment_status, name='payment_status'),
+    path('payment/asaas/webhook/', views.asaas_webhook, name='asaas_webhook'),
+    path('payment/binance/webhook/', views.binance_webhook, name='binance_webhook'),
     path('customer/submit-order/', views.submit_order, name='submit_order'),
 
     path('page/<slug:slug>/', views.page_view, name='page_view'),
