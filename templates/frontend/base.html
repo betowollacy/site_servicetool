@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="{% static 'frontend/css/custom-animation.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/nprogress.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/bootstrap-icons.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/theme-dark.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/owl.carousel.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/owl.theme.default.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/notyf.min.css' %}" />
@@ -73,6 +74,10 @@
                 </div>
                 <button class="nav-arrow nav-arrow-right" id="arrowRight" title="Scroll right"><i class="bi bi-chevron-right"></i></button>
             </div>
+
+            <button type="button" class="btn theme-toggle-btn rounded-2 d-none d-lg-flex align-items-center gap-1 me-2" id="themeToggleBtn" aria-label="Alternar modo escuro/claro" style="border:1px solid var(--border);background:var(--off);">
+                <i class="bi bi-moon-stars-fill theme-toggle-icon" id="themeToggleIcon"></i>
+            </button>
 
             <div class="dropdown d-none d-lg-block">
                 <button class="btn dropdown-toggle arrow-none me-0 currency-btn rounded-2" data-bs-toggle="dropdown" role="button" aria-haspopup="false" aria-expanded="false">
@@ -184,6 +189,9 @@
         <div class="offcanvas-header border-bottom bg-primary">
             <i class="bi bi-chevron-left me-3 fs-4 text-white pointer" data-bs-dismiss="offcanvas" aria-label="Close"></i>
             <a class="navbar-brand" href="{% url 'homepage' %}"><img src="{{ siteLogo }}" alt="logo" style="max-width: 150px; max-height:40px" /></a>
+            <button type="button" class="btn btn-sm btn-light ms-auto theme-toggle-btn rounded-2" id="themeToggleBtnMobile" aria-label="Alternar modo escuro/claro">
+                <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+            </button>
         </div>
         <div class="offcanvas-body">
             <h5 class="display-6 fs-5 border-bottom mb-2 pb-2">LISTA DE SERVIÇO</h5>
@@ -231,6 +239,28 @@
                 var target = $(this).data("switch-auth");
                 $("#gsmAuthModal .auth-view").removeClass("show").addClass("d-none");
                 $("#view-" + target).removeClass("d-none").addClass("show");
+            });
+            if (window.bootstrap && bootstrap.Modal) {
+                $("#gsmAuthModal").on("show.bs.modal", function () {
+                    $("#view-login").removeClass("d-none").addClass("show");
+                    $("#view-register").addClass("d-none").removeClass("show");
+                });
+            }
+            function applyTheme(theme, persist){
+                theme = (theme === "dark") ? "dark" : "light";
+                document.documentElement.setAttribute("data-bs-theme", theme);
+                $(".theme-toggle-icon").removeClass(theme === "dark" ? "bi-sun-fill" : "bi-moon-stars-fill")
+                                       .addClass(theme === "dark" ? "bi-moon-stars-fill" : "bi-sun-fill");
+                if (persist !== false) {
+                    try { localStorage.setItem("gsmTheme", theme); } catch(e) {}
+                }
+            }
+            var savedTheme = null;
+            try { savedTheme = localStorage.getItem("gsmTheme"); } catch(e) {}
+            applyTheme(savedTheme || "dark");
+            $(".theme-toggle-btn").on("click", function(){
+                var current = document.documentElement.getAttribute("data-bs-theme");
+                applyTheme(current === "dark" ? "light" : "dark");
             });
         });
     </script>

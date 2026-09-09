@@ -15,72 +15,70 @@
                                 <h1 class="h5 fw-semibold mb-4">Entrar</h1>
                                 <div id="loginErrorMount"></div>
                                 {% if login_error %}<div class="alert alert-danger py-2">{{ login_error }}</div>{% endif %}
-                                <div class="auth-view fade show" id="view-login">
-                                    <form method="post" action="{% url 'login' %}" novalidate autocomplete="off">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="next" value="{{ request.GET.next }}">
-                                        <div class="mb-3">
-                                            <label for="loginEmail" class="form-label fw-semibold mb-1">E-mail</label>
-                                            <input type="email" name="email" class="form-control email-input" id="loginEmail" placeholder="E-mail" autocomplete="off" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="loginPassword" class="form-label fw-semibold mb-1">Senha</label>
-                                            <div class="position-relative">
-                                                <input type="password" name="password" class="form-control pe-5" id="loginPassword" placeholder="••••••••" autocomplete="off" required>
-                                                <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y px-3 text-secondary toggle-password" data-target="#loginPassword" aria-label="Show password" style="background:none"><i class="bi bi-eye"></i></button>
-                                            </div>
-                                        </div>
-                                        <button type="submit" class="btn btn-primary w-100 rounded-1">Entrar</button>
-                                    </form>
-                                    <div class="position-relative text-center mt-4">
-                                        <hr class="mb-0">
-                                        <span class="position-absolute top-50 start-50 translate-middle px-2 bg-white text-body-secondary">ou</span>
+                                <form method="post" action="{% url 'login' %}" novalidate autocomplete="off">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.GET.next }}">
+                                    <div class="mb-3">
+                                        <label for="loginEmail" class="form-label fw-semibold mb-1">E-mail</label>
+                                        <input type="email" name="email" class="form-control email-input" id="loginEmail" placeholder="E-mail" autocomplete="off" required>
                                     </div>
-                                    <button type="button" class="btn btn-outline-primary w-100 mt-4 rounded-1" data-switch-auth="register">Criar Conta</button>
+                                    <div class="mb-3">
+                                        <label for="loginPassword" class="form-label fw-semibold mb-1">Senha</label>
+                                        <div class="position-relative">
+                                            <input type="password" name="password" class="form-control pe-5" id="loginPassword" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="off" required>
+                                            <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y px-3 text-secondary toggle-password" data-target="#loginPassword" aria-label="Show password" style="background:none"><i class="bi bi-eye"></i></button>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100 rounded-1">Entrar</button>
+                                </form>
+                                <div class="position-relative text-center mt-4">
+                                    <hr class="mb-0">
+                                    <span class="position-absolute top-50 start-50 translate-middle px-2 bg-body text-body-secondary" style="background:var(--off);">ou</span>
                                 </div>
-                                <div class="auth-view fade d-none" id="view-register">
-                                    <div class="d-flex justify-content-between align-items-center mb-4">
-                                        <h1 class="h5 fw-semibold mb-0">Criar Conta</h1>
-                                    </div>
-                                    {% if register_error %}<div class="alert alert-danger py-2">{{ register_error }}</div>{% endif %}
-                                    <form method="post" action="{% url 'register' %}" novalidate autocomplete="off">
-                                        {% csrf_token %}
-                                        <div class="mb-3">
-                                            <label for="regFullName" class="form-label fw-semibold mb-1">Nome</label>
-                                            <input type="text" name="name" class="form-control" id="regFullName" placeholder="Seu Nome" autocomplete="off" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="regEmail" class="form-label fw-semibold mb-1">E-mail</label>
-                                            <input type="email" name="email" class="form-control email-input" id="regEmail" placeholder="Seu E-mail" autocomplete="off" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="regMobile" class="form-label fw-semibold mb-1">Celular</label>
-                                            <input type="tel" name="mobile" class="form-control" id="regMobile" placeholder="Seu Celular" autocomplete="off" required>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="regCurrency2" class="form-label fw-semibold mb-1">Moeda</label>
-                                            <select class="form-select" name="currency" id="regCurrency2" required autocomplete="off">
-                                                <option value="">Escolha a moeda</option>
-                                                {% for currency in currencyList %}
-                                                <option value="{{ currency.code }}">{{ currency.code }} - {{ currency.name }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="mb-4">
-                                            <label for="regPassword" class="form-label fw-semibold mb-1">Senha</label>
-                                            <div class="position-relative">
-                                                <input type="password" name="password" class="form-control pe-5" id="regPassword" placeholder="Crie sua senha" autocomplete="off" required minlength="8">
-                                                <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y px-3 text-secondary toggle-password" data-target="#regPassword" aria-label="Show password" style="background:none"><i class="bi bi-eye"></i></button>
-                                            </div>
-                                        </div>
-                                        <button type="submit" class="btn btn-primary w-100 rounded-1">Cadastrar</button>
-                                    </form>
-                                    <div class="position-relative text-center mt-4">
-                                        <hr class="mb-0">
-                                        <span class="position-absolute top-50 start-50 translate-middle px-2 bg-white text-body-secondary">ou</span>
-                                    </div>
-                                    <button type="button" class="btn btn-outline-primary w-100 mt-4 rounded-1" data-switch-auth="login">Voltar ao Login</button>
+                                <button type="button" class="btn btn-outline-primary w-100 mt-4 rounded-1" data-switch-auth="register">Criar Conta</button>
+                            </div>
+                            <div class="auth-view fade d-none" id="view-register">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h1 class="h5 fw-semibold mb-0">Criar Conta</h1>
                                 </div>
+                                {% if register_error %}<div class="alert alert-danger py-2">{{ register_error }}</div>{% endif %}
+                                <form method="post" action="{% url 'register' %}" novalidate autocomplete="off">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="regFullName" class="form-label fw-semibold mb-1">Nome</label>
+                                        <input type="text" name="name" class="form-control" id="regFullName" placeholder="Seu Nome" autocomplete="off" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="regEmail" class="form-label fw-semibold mb-1">E-mail</label>
+                                        <input type="email" name="email" class="form-control email-input" id="regEmail" placeholder="Seu E-mail" autocomplete="off" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="regMobile" class="form-label fw-semibold mb-1">Celular</label>
+                                        <input type="tel" name="mobile" class="form-control" id="regMobile" placeholder="Seu Celular" autocomplete="off" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="regCurrency2" class="form-label fw-semibold mb-1">Moeda</label>
+                                        <select class="form-select" name="currency" id="regCurrency2" required autocomplete="off">
+                                            <option value="">Escolha a moeda</option>
+                                            {% for currency in currencyList %}
+                                            <option value="{{ currency.code }}">{{ currency.code }} - {{ currency.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label for="regPassword" class="form-label fw-semibold mb-1">Senha</label>
+                                        <div class="position-relative">
+                                            <input type="password" name="password" class="form-control pe-5" id="regPassword" placeholder="Crie sua senha" autocomplete="off" required minlength="8">
+                                            <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y px-3 text-secondary toggle-password" data-target="#regPassword" aria-label="Show password" style="background:none"><i class="bi bi-eye"></i></button>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100 rounded-1">Cadastrar</button>
+                                </form>
+                                <div class="position-relative text-center mt-4">
+                                    <hr class="mb-0">
+                                    <span class="position-absolute top-50 start-50 translate-middle px-2 bg-body text-body-secondary" style="background:var(--off);">ou</span>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary w-100 mt-4 rounded-1" data-switch-auth="login">Voltar ao Login</button>
                             </div>
                         </div>
                     </div>
