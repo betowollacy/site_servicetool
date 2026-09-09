@@ -1,0 +1,104 @@
+{% if not customer %}
+<div class="modal fade" id="login" tabindex="-1" aria-labelledby="login" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content login-content">
+            <div class="modal-header" style="align-items:flex-start; padding: 20px 20px 0 20px">
+                <h5 class="modal-title" id="loginLabel">
+                    <div>
+                        <ul class="nav nav-tabs analytics-tab" id="myTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login-tab-pane" type="button" role="tab" aria-controls="login-tab-pane" aria-selected="true">ENTRAR</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane" type="button" role="tab" aria-controls="register-tab-pane" aria-selected="true">CADASTRAR</button>
+                            </li>
+                        </ul>
+                    </div>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade show active" id="login-tab-pane" role="tabpanel" aria-labelledby="login-tab" tabindex="0">
+                    <form method="post" action="{% url 'login' %}" id="loginForm">
+                        {% csrf_token %}
+                        <div class="modal-body login-form px-4">
+                            {% if login_error %}<div class="alert alert-danger py-2">{{ login_error }}</div>{% endif %}
+                            <div class="mb-3">
+                                <label for="login_email" class="form-label">Seu E-mail</label>
+                                <div class="form-search">
+                                    <i class="fas fa-envelope text-muted fs-4"></i>
+                                    <input type="email" name="email" id="login_email" class="form-control" placeholder="E-mail" required />
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="login_password" class="form-label">Sua Senha</label>
+                                <div class="form-search">
+                                    <i class="fas fa-key text-muted fs-4"></i>
+                                    <input type="password" name="password" id="login_password" class="form-control" placeholder="Senha" required />
+                                </div>
+                            </div>
+                            <div class="mt-4 mb-2">
+                                <a href="#" class="forgot-btn">Esqueceu a senha?</a>
+                            </div>
+                        </div>
+                        <div class="modal-footer justify-content-center">
+                            <button class="btn btn-primary rounded w-100" type="submit">Entrar</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="tab-pane fade" id="register-tab-pane" role="tabpanel" aria-labelledby="register-tab" tabindex="0">
+                    <form method="post" action="{% url 'register' %}" id="registerForm">
+                        {% csrf_token %}
+                        <div class="modal-body login-form px-4">
+                            {% if register_error %}<div class="alert alert-danger py-2">{{ register_error }}</div>{% endif %}
+                            <div class="mb-3">
+                                <label for="register_name" class="form-label">Digite seu Nome</label>
+                                <div class="form-search">
+                                    <i class="fas fa-user text-muted fs-4"></i>
+                                    <input type="text" name="name" id="register_name" class="form-control" placeholder="Nome" required />
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="register_email" class="form-label">Digite seu E-mail</label>
+                                <div class="form-search">
+                                    <i class="fas fa-envelope text-muted fs-4"></i>
+                                    <input type="email" name="email" id="register_email" class="form-control" placeholder="E-mail" required />
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="register_mobile" class="form-label">Digite seu Celular</label>
+                                <div class="form-search">
+                                    <i class="fas fa-mobile-alt text-muted fs-4"></i>
+                                    <input type="text" name="mobile" id="register_mobile" class="form-control" placeholder="Celular" required />
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="register_password" class="form-label">Digite sua Senha</label>
+                                <div class="form-search">
+                                    <i class="fas fa-key text-muted fs-4"></i>
+                                    <input type="password" name="password" id="register_password" class="form-control" placeholder="Senha" required />
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="register_currency" class="form-label">Escolha sua Moeda</label>
+                                <div class="form-search">
+                                    <i class="fas fa-dollar-sign text-muted fs-4"></i>
+                                    <select id="register_currency" name="currency" class="form-control" required>
+                                        <option value="">Escolha a Moeda</option>
+                                        {% for currency in currencyList %}
+                                        <option value="{{ currency.code }}">{{ currency.code }} - {{ currency.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer justify-content-center">
+                            <button class="btn btn-primary rounded w-100" type="submit">Cadastrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,106 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12"><h4 class="mb-0">Painel</h4><small class="text-muted">Visão geral do seu painel SMM</small></div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+<div class="row">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <a href="{% url 'admin_customer_list' %}" class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h3 class="mb-0">{{ total_customers }}</h3>
+                        <span class="text-muted">Clientes</span>
+                    </div>
+                    <div class="wid-40 hp-40 rounded-circle bg-light-primary d-flex align-items-center justify-content-center"><i class="ti ti-users"></i></div>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <a href="{% url 'admin_service_list' 'server' %}" class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h3 class="mb-0">{{ total_services }}</h3>
+                        <span class="text-muted">Serviços</span>
+                    </div>
+                    <div class="wid-40 hp-40 rounded-circle bg-light-success d-flex align-items-center justify-content-center"><i class="ti ti-list-check"></i></div>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <a href="{% url 'admin_orders' 'waiting' %}" class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h3 class="mb-0">{{ waiting_orders }}</h3>
+                        <span class="text-muted">Pedidos Aguardando</span>
+                    </div>
+                    <div class="wid-40 hp-40 rounded-circle bg-light-warning d-flex align-items-center justify-content-center"><i class="ti ti-clock"></i></div>
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card">
+            <div class="card-body">
+                <a href="{% url 'admin_invoice_list' %}" class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h3 class="mb-0">{{ total_invoices }}</h3>
+                        <span class="text-muted">Faturas</span>
+                    </div>
+                    <div class="wid-40 hp-40 rounded-circle bg-light-danger d-flex align-items-center justify-content-center"><i class="ti ti-file-invoice"></i></div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Pedidos Recentes</h5>
+                <a href="{% url 'admin_orders' 'waiting' %}" class="btn btn-sm btn-light-primary">Ver todos</a>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-hover dataTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Serviço</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                            <th>Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        <tr>
+                            <td>#{{ order.id }}</td>
+                            <td>{{ order.customer.name }}</td>
+                            <td>{{ order.service_title }}</td>
+                            <td>{{ currency_icon }}{{ order.service_price|floatformat:2 }}</td>
+                            <td><span class="badge bg-light-primary">{{ order.service_status }}</span></td>
+                            <td>{{ order.created_at|date:"d M, Y H:i" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" class="text-center">Nenhum pedido.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

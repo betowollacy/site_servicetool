@@ -1,0 +1,107 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h4 class="mb-0">{% if service %}Editar Serviço{% else %}Adicionar Serviço{% endif %} - {{ type_label }}</h4>
+    </div>
+</div>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+<form method="post">
+    {% csrf_token %}
+    <div class="card">
+        <div class="card-body">
+            <div class="card-header p-0 pb-3">
+                <ul class="nav nav-tabs border-bottom" role="tablist">
+                    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab-geral">Geral</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-prec">Preços</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-camp">Campos</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-recur">Recursos</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab-seo">SEO</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-content pt-3">
+                <div class="tab-pane fade show active" id="tab-geral">
+                    <div class="row">
+                        <div class="col-md-6 mb-3"><label class="form-label">Título</label><input type="text" class="form-control" name="title" value="{{ service.title|default:'' }}" required></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Slug</label><input type="text" class="form-control" name="slug" value="{{ service.slug|default:'' }}" placeholder="Deixe vazio para gerar"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Subtítulo</label><input type="text" class="form-control" name="subtitle" value="{{ service.subtitle|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="Active" {% if service.status == 'Active' %}selected{% endif %}>Ativo</option>
+                                <option value="Inactive" {% if service.status == 'Inactive' %}selected{% endif %}>Inativo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Duração</label><input type="text" class="form-control" name="duration" value="{{ service.duration|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Tempo de Entrega</label><input type="text" class="form-control" name="delivery_time" value="{{ service.delivery_time|default:'' }}"></div>
+                        <div class="col-12 mb-3"><label class="form-label">Tipo de Processamento</label>
+                            <select class="form-select" name="process_type">
+                                <option value="Manual" {% if service.process_type == 'Manual' %}selected{% endif %}>Manual</option>
+                                <option value="Auto" {% if service.process_type == 'Auto' %}selected{% endif %}>Automático</option>
+                            </select>
+                        </div>
+                        <div class="col-12 mb-3"><label class="form-label">Artigo</label><textarea class="form-control" name="article" rows="6">{{ service.article|default:'' }}</textarea></div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-prec">
+                    <div class="row">
+                        <div class="col-md-6 mb-3"><label class="form-label">Tipo de Preço</label>
+                            <select class="form-select" name="price_type">
+                                <option value="fixed_price" {% if service.price_type == 'fixed_price' %}selected{% endif %}>Preço Fixo</option>
+                                <option value="fixed_profit" {% if service.price_type == 'fixed_profit' %}selected{% endif %}>Lucro Fixo</option>
+                                <option value="percentage_base" {% if service.price_type == 'percentage_base' %}selected{% endif %}>Percentual</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Preço Base (USD)</label><input type="text" class="form-control" name="original_price" value="{{ service.original_price|default:'0.00' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Lucro Cliente</label><input type="text" class="form-control" name="customer_profit_amount" value="{{ service.customer_profit_amount|default:'0.00' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Lucro Revendedor</label><input type="text" class="form-control" name="reseller_profit_amount" value="{{ service.reseller_profit_amount|default:'0.00' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Lucro Distribuidor</label><input type="text" class="form-control" name="distributor_profit_amount" value="{{ service.distributor_profit_amount|default:'0.00' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Lucro Proprietário</label><input type="text" class="form-control" name="webowner_profit_amount" value="{{ service.webowner_profit_amount|default:'0.00' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Qtd. Mínima</label><input type="text" class="form-control" name="min_qnt" value="{{ service.min_qnt|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Qtd. Máxima</label><input type="text" class="form-control" name="max_qnt" value="{{ service.max_qnt|default:'' }}"></div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-camp">
+                    <label class="form-label">Campos de Entrada (um por linha, ex.: Número IMEI)</label>
+                    <textarea class="form-control" name="fields" rows="4">{% for f in service_fields %}{{ f.name }}
+{% endfor %}</textarea>
+                    <small class="text-muted">Cada linha vira um campo que o cliente preenche ao comprar este serviço.</small>
+                </div>
+
+                <div class="tab-pane fade" id="tab-recur">
+                    <div class="row">
+                        <div class="col-md-6 mb-3"><label class="form-label">URL de Download da Ferramenta</label><input type="text" class="form-control" name="tool_download" value="{{ service.tool_download|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">URL de Login da Ferramenta</label><input type="text" class="form-control" name="login_url" value="{{ service.login_url|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">URL de Cadastro da Ferramenta</label><input type="text" class="form-control" name="register_url" value="{{ service.register_url|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">URL da Imagem (thumbnail)</label><input type="text" class="form-control" name="thumbnail" value="{{ service.thumbnail|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">URL do Screenshot</label><input type="text" class="form-control" name="screenshot" value="{{ service.screenshot|default:'' }}"></div>
+                        <div class="col-12 mb-3"><label class="form-label">Tags do Serviço (separadas por vírgula)</label><input type="text" class="form-control" name="service_tags" value="{{ service.service_tags|default:'' }}"></div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="tab-seo">
+                    <div class="row">
+                        <div class="col-md-6 mb-3"><label class="form-label">Meta Descrição</label><input type="text" class="form-control" name="meta_description" value="{{ service.meta_description|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Palavra-chave 1</label><input type="text" class="form-control" name="kw1" value="{{ service.kw1|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Palavra-chave 2</label><input type="text" class="form-control" name="kw2" value="{{ service.kw2|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Palavra-chave 3</label><input type="text" class="form-control" name="kw3" value="{{ service.kw3|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Palavra-chave 4</label><input type="text" class="form-control" name="kw4" value="{{ service.kw4|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Palavra-chave 5</label><input type="text" class="form-control" name="kw5" value="{{ service.kw5|default:'' }}"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-2"></i> {% if service %}Salvar Alterações{% else %}Adicionar Serviço{% endif %}</button>
+                <a href="{% url 'admin_service_list' svtype %}" class="btn btn-light-primary">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

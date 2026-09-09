@@ -1,0 +1,337 @@
+{% load static %}
+{% block seo %}{% endblock %}
+<!doctype html>
+<html lang="en" data-pc-theme="{{ themMode }}">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>{{ siteTitle }}</title>
+    <link rel="canonical" href="{{ request.build_absolute_uri }}" />
+    <meta name="author" content="SERVICETOOL" />
+    <link rel="icon" href="{{ siteFav }}" type="image/x-icon" />
+    <link rel="stylesheet" href="{% static 'frontend/css/style.css' %}" id="main-style-link" />
+    <link rel="stylesheet" href="{% static 'frontend/css/customstyle.css' %}" id="main-style-link" />
+    <link rel="stylesheet" href="{% static 'frontend/css/orion.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/loader.css' %}" id="main-style-link" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'frontend/css/plugins/style.css' %}" id="main-style-link" />
+    <link rel="stylesheet" href="{% static 'frontend/css/style-preset.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/landing.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/simple-notify.css' %}">
+    <link rel="stylesheet" href="{% static 'frontend/css/notifier.css' %}">
+    <link rel="stylesheet" href="{% static 'frontend/css/choices.min.css' %}">
+    <link rel="stylesheet" href="{% static 'frontend/css/jquery.dataTables.min.css' %}">
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    {% if headerCode %}{{ headerCode|safe }}{% endif %}
+</head>
+<body
+    data-pc-preset="{{ themeColor }}"
+    data-pc-sidebar-caption="true"
+    data-pc-direction="ltr"
+    data-pc-theme_contrast=""
+    data-pc-theme="{{ themMode }}"
+    class="landing-page"
+>
+    <canvas id="orion-space-canvas"></canvas>
+
+    <div class="orion-banner">
+        <div class="server-status" title="Status atual dos servidores">
+            <div class="status-dot online"></div>
+            <span>SERVER ON</span>
+        </div>
+        <div class="orion-marquee-wrapper">
+            <div class="orion-marquee">
+                🔓 {{ siteTitle }} - Servidor #1 do Brasil 🚀 Suporte Especializado 💎 Ferramentas Oficiais 🎉 PIX Automático 24/7
+            </div>
+        </div>
+    </div>
+
+    <div id="orion-back-to-top" title="Voltar ao topo"><i class="fas fa-arrow-up"></i></div>
+
+    <div class="orion-social-fab">
+        <div id="orion-faq-btn" title="Central de Ajuda">
+            <i class="fas fa-comments"></i> <span class="desktop-text">Dúvidas?</span>
+        </div>
+        {% if siteTeleUrl %}<a href="{{ siteTeleUrl }}" target="_blank" class="orion-fab bg-tlg" title="Canal Oficial Telegram"><i class="fab fa-telegram-plane"></i></a>{% endif %}
+        <a href="{% url 'customer_add_balance' %}" class="orion-fab bg-pix" title="Recarga Pix"><i class="fas fa-qrcode"></i></a>
+        {% if siteWaUrl %}<a href="{{ siteWaUrl }}" target="_blank" class="orion-fab bg-wpp" title="WhatsApp Suporte"><i class="fab fa-whatsapp"></i></a>{% endif %}
+    </div>
+
+    <div id="orion-faq-box">
+        <div class="faq-header">
+            <span>CENTRAL DE AJUDA</span>
+            <i class="fas fa-times" onclick="document.getElementById('orion-faq-box').style.display='none'"></i>
+        </div>
+        <div class="faq-search-wrapper"><input type="text" id="faq-search" placeholder="🔍 Buscar por palavra-chave..."></div>
+        <div class="faq-content">
+            <div class="faq-item">
+                <div class="faq-question">Como comprar no site? <i class="fas fa-chevron-down"></i></div>
+                <div class="faq-answer">Nosso site funciona <strong>24/7</strong>.<br><br>Acompanhe seus pedidos em <strong>Meus Pedidos</strong>.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">Como fazer um pedido? <i class="fas fa-chevron-down"></i></div>
+                <div class="faq-answer">Escolha um serviço na lista, preencha os dados, pague via PIX e acompanhe o status pelo painel.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">Quanto tempo demora? <i class="fas fa-chevron-down"></i></div>
+                <div class="faq-answer">O tempo de execução depende de cada serviço. Confira a descrição do serviço escolhido.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">Tenho outras dúvidas <i class="fas fa-chevron-down"></i></div>
+                <div class="faq-answer">Fale conosco pelo WhatsApp ou Telegram flutuante nesta página.</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="orion-terms-modal" class="orion-modal-overlay">
+        <div class="orion-modal-box">
+            <div class="modal-header-alert">⚠️ LEIA COM ATENÇÃO — TERMOS OBRIGATÓRIOS</div>
+            <div class="modal-body-content">
+                <div class="term-block bg-alert">
+                    <h4>🚨 AVISO CRÍTICO DE RESPONSABILIDADE</h4>
+                    Este site comercializa ferramentas de uso <strong>EXCLUSIVAMENTE TÉCNICO</strong> e <strong>PROFISSIONAL</strong>.
+                </div>
+                <div class="term-block">
+                    <h4>📌 Responsabilidade do Usuário</h4>
+                    <p>Ao realizar qualquer uma das ações abaixo:</p>
+                    <p><strong>QUALQUER PROBLEMA POSTERIOR NÃO É DE NOSSA RESPONSABILIDADE.</strong></p>
+                    <ul class="term-list">
+                        <li>❌ Erros ou falhas da ferramenta.</li>
+                        <li>❌ Uso incorreto ou operação inadequada.</li>
+                        <li>❌ Problemas no PC, sistema ou configurações.</li>
+                    </ul>
+                </div>
+                <div class="term-block bg-danger-light">
+                    <h4>⚠️ ATENÇÃO: NÃO EXISTE REEMBOLSO</h4>
+                    <p>Mesmo que você não consiga usar ou o procedimento não funcione, <strong>NÃO TEM VOLTA.</strong></p>
+                    <div style="text-align:center; margin-top:10px; font-weight:bold; color:var(--orion-danger)">🔒 USE POR SUA CONTA E RISCO</div>
+                </div>
+                <div class="term-block">
+                    <h4>⚖️ IMPLICAÇÕES LEGAIS</h4>
+                    <p style="margin-top:5px; font-size:12px;"><strong>A equipe {{ siteTitle }}</strong> se exime de qualquer responsabilidade civil ou criminal pelo uso indevido.</p>
+                </div>
+                <label>
+                    <input type="checkbox" id="terms-check">
+                    <span>Li, compreendi e <strong>ACEITO</strong> todos os termos acima.</span>
+                </label>
+                <button id="btn-agree" class="orion-btn" disabled>CONCORDAR E ACESSAR SISTEMA</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="orion-notif-area"></div>
+
+    <div class="loader-bg" style="background: {% if themMode == 'dark' %}#131920{% else %}#f8f9fa{% endif %};">
+        <div class="loader-track"><div class="top-loader"><div class="loader-bar"></div></div></div>
+    </div>
+    <div class="top-loader" style="display:none;"><div class="loader-bar"></div></div>
+    <header class="d-block custom-header-height">
+        <nav class="navbar navbar-expand-lg navbar-light default d-block py-0" style="z-index: 100">
+            <div class="top-navbar py-2 d-none d-lg-block text-light {% if themMode == 'dark' %}bg-light-primary{% else %}bg-primary{% endif %}">
+                <div class="container d-flex">
+                    <div class="nav-item px-1 dropdown">
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item dropdown">
+                                <div class="dropdown-toggle" data-bs-toggle="dropdown" style="cursor: pointer"><i class="fas fa-phone"></i> Fale Conosco</div>
+                                <div class="dropdown-menu drp-technology nav-drp-tech-scrollble">
+                                    {% if siteWaUrl %}<a class="dropdown-item gap-2" href="{{ siteWaUrl }}" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a>{% endif %}
+                                    {% if siteTeleUrl %}<a class="dropdown-item gap-2" href="{{ siteTeleUrl }}" target="_blank"><i class="fab fa-telegram-plane"></i> Telegram</a>{% endif %}
+                                    {% if siteFbUrl %}<a class="dropdown-item gap-2" href="{{ siteFbUrl }}" target="_blank"><i class="fab fa-facebook"></i> Facebook</a>{% endif %}
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="navbar-collapse">
+                        {% if customer %}
+                            <ul class="navbar-nav ms-auto">
+                                <li class="nav-itemn"><a href="{% url 'change_theme_mode' %}" class="text-reset"><i class="fas fa-moon fs-5"></i></a></li>
+                                <li class="nav-itemn border-start border-light-primary p-l-15 m-l-15"><a class="text-reset" href="{% url 'customer_add_balance' %}">Balance: {{ customer.balance|floatformat:2 }} {% if customer.currency_icon %}{{ customer.currency_icon }}{% endif %}</a></li>
+                                <li class="nav-item border-start border-light-primary p-l-15 m-l-15 dropdown">
+                                    <div class="dropdown-toggle" data-bs-toggle="dropdown" style="cursor: pointer"><i class="fas fa-user"></i> {{ customer.name }} ({{ customer.role }})</div>
+                                    <div class="dropdown-menu drp-technology nav-drp-tech-scrollble">
+                                        <a class="dropdown-item gap-2" href="{% url 'customer_order_history' %}"><i class="fas fa-shopping-cart"></i> Meu Histórico de Pedidos</a>
+                                        <a class="dropdown-item gap-2" href="{% url 'customer_statement' %}"><i class="fas fa-dollar-sign"></i> Meu Extrato</a>
+                                        <a class="dropdown-item gap-2" href="{% url 'customer_invoice' %}"><i class="fas fa-file-invoice"></i> Minhas Faturas</a>
+                                        <a class="dropdown-item gap-2" href="#" onclick="if(confirm('Tem certeza que deseja sair?'))window.location.href='{% url 'logout' %}'">
+                                            <i class="fas fa-sign-out-alt"></i> Sair
+                                        </a>
+                                    </div>
+                                </li>
+                            </ul>
+                        {% else %}
+                            <ul class="navbar-nav ms-auto">
+                                <li class="nav-item p-l-15 m-l-15 dropdown">
+                                    <div class="dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-dollar-sign"></i> {% if currency_code %}{{ currency_code }}{% else %}USD{% endif %}</div>
+                                    <div class="dropdown-menu drp-technology nav-drp-tech-scrollble" style="min-width: auto">
+                                        {% for currency in currencyList %}
+                                        <a class="dropdown-item gap-2" href="#">{{ currency.icon }} {{ currency.code }}</a>
+                                        {% endfor %}
+                                    </div>
+                                </li>
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="container py-3 position-static">
+                <a class="navbar-brand" href="{% url 'homepage' %}">
+                    <img src="{{ siteLogo }}" alt="logo" style="max-width: 250px; max-height:40px" />
+                </a>
+                <button class="navbar-toggler rounded"
+                    type="button" data-bs-toggle="offcanvas" data-bs-target="#menuOffcanvas"
+                    aria-controls="menuOffcanvas" aria-expanded="false" aria-label="Toggle navigation"
+                    style="outline: none; box-shadow: none;"><span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarTogglerDemo01">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                        <li class="nav-item px-1 dropdown">
+                            <button class="dropdown-toggle btn btn-light-primary border-primary rounded" data-bs-toggle="dropdown" href="#"><i class="fas fa-lock-open"></i> Lista de Serviços</button>
+                            <div class="dropdown-menu drp-technology nav-drp-tech-scrollble">
+                                <a class="dropdown-item gap-2" href="{% url 'category' 'server-service' %}"><i class="fas fa-server"></i> Ativação/Servidor</a>
+                                <a class="dropdown-item gap-2" href="{% url 'category' 'credit-service' %}"><i class="fas fa-money-check-alt"></i> Recarga de Crédito</a>
+                                <a class="dropdown-item gap-2" href="{% url 'category' 'imei-service' %}"><i class="fas fa-lock-open"></i> Serviço IMEI/SN</a>
+                            </div>
+                        </li>
+                        {% if customer %}
+                        <li class="nav-item px-1">
+                            <a href="{% url 'customer_dashboard' %}" class="btn btn-light-primary border-primary rounded"><i class="fas fa-tachometer-alt"></i> Meu Painel</a>
+                        </li>
+                        {% endif %}
+                        {% if not customer %}
+                        <button class="btn btn-light-primary border-primary rounded" data-bs-toggle="modal" data-bs-target="#login"><i class="fas fa-user"></i> <span style="padding-left: 5px">Entrar/Cadastrar</span></button>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    {% block content %}{% endblock %}
+    <div class="bg-white">
+        <footer class="footer pt-0">
+            <div class="border-top border-bottom footer-center">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-4 wow fadeInUp" data-wow-delay="0.2s">
+                            <a class="navbar-brand" href="{% url 'homepage' %}"><img src="{{ siteLogo }}" alt="logo" style="max-width: 250px; max-height:40px" /></a>
+                            <div class="d-flex flex-wrap gap-2 my-4">
+                                {% if siteFbUrl %}<a href="{{ siteFbUrl }}" target="_blank"><button type="button" class="btn btn-icon btn-primary"><i class="fab fa-facebook"></i></button></a>{% endif %}
+                                {% if siteXUrl %}<a href="{{ siteXUrl }}" target="_blank"><button type="button" class="btn btn-icon btn-primary"><i class="fab fa-twitter"></i></button></a>{% endif %}
+                                {% if siteWaUrl %}<a href="{{ siteWaUrl }}" target="_blank"><button type="button" class="btn btn-icon btn-primary"><i class="fab fa-whatsapp"></i></button></a>{% endif %}
+                                {% if siteTeleUrl %}<a href="{{ siteTeleUrl }}" target="_blank"><button type="button" class="btn btn-icon btn-primary"><i class="fab fa-telegram-plane"></i></button></a>{% endif %}
+                                {% if siteYtUrl %}<a href="{{ siteYtUrl }}" target="_blank"><button type="button" class="btn btn-icon btn-primary"><i class="fab fa-youtube"></i></button></a>{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-lg-8">
+                            <div class="row">
+                                <div class="col-lg-4 col-md-4 wow fadeInUp" data-wow-delay="0.6s">
+                                    <h5 class="mb-0 mb-lg-4 mt-4 mt-lg-0 text-uppercase fs-6">Links do Site</h5>
+                                    {% if customer %}
+                                    <ul class="list-unstyled footer-link">
+                                        <li><a href="{% url 'customer_order_history' %}">Histórico de Pedidos</a></li>
+                                        <li><a href="{% url 'customer_statement' %}">Meu Extrato</a></li>
+                                        <li><a href="{% url 'category' 'server-service' %}">Serviço Servidor</a></li>
+                                        <li><a href="{% url 'category' 'credit-service' %}">Serviço de Crédito</a></li>
+                                        <li><a href="{% url 'category' 'imei-service' %}">Serviço IMEI/SN</a></li>
+                                    </ul>
+                                    {% else %}
+                                    <ul class="list-unstyled footer-link">
+                                        <li><a href="#" data-bs-toggle="modal" data-bs-target="#login">Entrar/Cadastrar</a></li>
+                                        <li><a href="#">Esqueci minha senha</a></li>
+                                        <li><a href="{% url 'category' 'server-service' %}">Serviço Servidor</a></li>
+                                        <li><a href="{% url 'category' 'credit-service' %}">Serviço de Crédito</a></li>
+                                        <li><a href="{% url 'category' 'imei-service' %}">Serviço IMEI/SN</a></li>
+                                    </ul>
+                                    {% endif %}
+                                </div>
+                                <div class="col-lg-4 col-md-4 wow fadeInUp" data-wow-delay="0.8s">
+                                    <h5 class="mb-0 mb-lg-4 mt-4 mt-lg-0 text-uppercase fs-6">Links Importantes</h5>
+                                    <ul class="list-unstyled footer-link">
+                                        <li><a href="#">Termos e Condições</a></li>
+                                        <li><a href="#">Contato</a></li>
+                                        <li><a href="#">Política de Privacidade</a></li>
+                                        <li><a href="#">Política de Reembolso</a></li>
+                                        <li><a href="#">Política de Cancelamento</a></li>
+                                    </ul>
+                                </div>
+                                <div class="col-lg-4 col-md-4 wow fadeInUp" data-wow-delay="1s">
+                                    <h5 class="mb-0 mb-lg-4 mt-4 mt-lg-0 mb-4 text-uppercase fs-6">Baixar Aplicativo</h5>
+                                    <div class="d-flex my-0 gap-2">
+                                        <img src="{% static 'resource/android-app.webp' %}" alt="Android App" width="115" height="38" class="w-auto w-sm-50">
+                                        <img src="{% static 'resource/ios-app.webp' %}" alt="iOS App" width="115" height="38" class="w-auto w-sm-50">
+                                    </div>
+                                    <div class="mb-3 mt-5">
+                                        <h5 class="mb-0 mb-lg-4 mt-4 mt-lg-0 text-uppercase fs-6 mb-4">Informativo</h5>
+                                        <div class="input-group">
+                                            <input type="email" class="form-control" placeholder="Digite seu e-mail" />
+                                            <button class="btn btn-primary" style="border-top-right-radius:8px;border-bottom-right-radius:8px;" type="button">Assinar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-lg-6 my-2 text-center text-lg-start" data-wow-delay="0.4s">
+                        <p class="mb-0">&copy; {{ siteTitle }}. Desenvolvido por SERVICETOOL</p>
+                    </div>
+                    <div class="col-lg-6 my-2 text-center text-lg-end">
+                        <ul class="list-inline footer-sos-link mb-0">
+                            <li class="list-inline-item wow fadeInUp border-end pe-2" data-wow-delay="0.4s">Pague com</li>
+                            <li class="list-inline-item wow fadeInUp" data-wow-delay="0.4s"><img src="{% static 'resource/binance_logo.png' %}" alt="" width="60" height="40" class="rounded"></li>
+                            <li class="list-inline-item wow fadeInUp" data-wow-delay="0.4s"><img src="{% static 'resource/bkash_logo.png' %}" alt="" width="60" height="40" class="rounded"></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+    <div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="menuOffcanvas" aria-labelledby="menuOffcanvasLabel">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title text-uppercase">{{ siteTitle }}</h5>
+            <button type="button" class="btn-close text-reset text-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            {% if customer %}
+            <h5 class="display-6 fs-5 border-bottom mb-2 pb-2">{{ customer.name }} ({{ customer.role }})</h5>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_order_history' %}"><i class="fas fa-shopping-cart" style="width: 25px"></i> Meu Histórico de Pedidos <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_statement' %}"><i class="fas fa-dollar-sign" style="width: 25px"></i> Meu Extrato <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_invoice' %}"><i class="fas fa-file-invoice" style="width: 25px"></i> Minhas Faturas <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
+            <a class="text-reset border-bottom mb-4 pb-2 d-block" href="{% url 'customer_dashboard' %}"><i class="fas fa-tachometer-alt" style="width: 25px"></i> Meu Painel <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
+            {% endif %}
+            <h5 class="display-6 fs-5 border-bottom mb-2 pb-2">LINKS DO SITE</h5>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'server-service' %}"><i class="fas fa-server" style="width: 25px"></i> Ativação/Servidor <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'credit-service' %}"><i class="fas fa-money-check-alt" style="width: 25px"></i> Recarga de Crédito <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
+            <a class="text-reset border-bottom mb-4 pb-2 d-block" href="{% url 'category' 'imei-service' %}"><i class="fas fa-lock-open" style="width: 25px"></i> Serviço IMEI/SN <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
+            {% if customer %}
+            <a href="#" class="btn btn-light-danger border-danger rounded w-100" onclick="if(confirm('Tem certeza que deseja sair?'))window.location.href='{% url 'logout' %}'"><i class="fas fa-sign-out-alt"></i> <span style="padding-left: 5px">Sair</span></a>
+            {% else %}
+            <button class="btn btn-light-primary border-primary rounded w-100" data-bs-toggle="modal" data-bs-target="#login"><i class="fas fa-user"></i> <span style="padding-left: 5px">Entrar/Cadastrar</span></button>
+            {% endif %}
+        </div>
+    </div>
+
+    <style>body.modal-open {overflow: visible !important; padding-right: 0 !important}</style>
+    <!-- Required Js -->
+    <script src="{% static 'frontend/js/jquery-3.6.4.min.js' %}"></script>
+    <script src="{% static 'frontend/js/plugins/popper.min.js' %}"></script>
+    <script src="{% static 'frontend/js/plugins/simplebar.min.js' %}"></script>
+    <script src="{% static 'frontend/js/plugins/bootstrap.min.js' %}"></script>
+    <script src="{% static 'frontend/js/pcoded.js' %}"></script>
+    <script src="{% static 'frontend/js/simple-notify.min.js' %}"></script>
+    <script src="{% static 'frontend/js/notifier.js' %}"></script>
+    <script src="{% static 'frontend/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'frontend/js/orion.js' %}"></script>
+    {% block footer_script %}{% endblock %}
+    <script>layout_change('{{ themMode }}');</script>
+    <script>layout_theme_contrast_change('false');</script>
+    <script>change_box_container('false');</script>
+    <script>layout_caption_change('true');</script>
+    <script>layout_rtl_change('false');</script>
+    <script>preset_change('{{ themeColor }}');</script>
+    {% include 'frontend/include/login.html' %}
+</body>
+</html>

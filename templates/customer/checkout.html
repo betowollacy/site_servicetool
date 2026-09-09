@@ -1,0 +1,63 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+{% block seo %}
+<title>Finalizar Compra - {{ siteTitle }}</title>
+{% endblock %}
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'homepage' %}" class="breadcrumb-item active">Início</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Finalizar Compra</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header"><h5>Finalizar Compra - Fatura #{{ invoice.id }}</h5></div>
+        <div class="card-body">
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+
+            <form method="post" action="{% url 'gateway_pay' invoice.id %}">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Resumo da Fatura</h5>
+                        <table class="table">
+                            <tr>
+                                <td><b>{{ invoice.invoice_title|default:invoice.invoice_for }}</b></td>
+                                <td class="text-end">{{ currency_icon }}{{ invoice.invoice_amount|floatformat:2 }} {{ invoice.customer_currency }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Escolha o Gateway de Pagamento</h5>
+                        <div class="row">
+                            {% for gateway in activeGateway %}
+                            <div class="checkbox-wrapper-16 py-2" style="width: 140px">
+                                <label class="checkbox-wrapper">
+                                    <input type="radio" name="payment_methode" value="{{ gateway.NAME }}" class="checkbox-input" required {% if forloop.first %}checked{% endif %}>
+                                    <span class="checkbox-tile w-fit-content">
+                                        <span class="checkbox-icon">
+                                            <img src="{{ gateway.LOGO }}" alt="" height="40" width="60" class="rounded">
+                                        </span>
+                                        <span class="checkbox-label mt-1">{{ gateway.NAME }}</span>
+                                    </span>
+                                </label>
+                            </div>
+                            {% empty %}
+                            <p>Nenhum gateway de pagamento disponível.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <button type="submit" class="btn btn-primary rounded w-100">Confirmar Pagamento</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

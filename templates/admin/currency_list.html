@@ -1,0 +1,53 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12"><h4 class="mb-0">Moedas</h4></div>
+</div>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+<div class="card">
+    <div class="card-body table-responsive">
+        <table class="table table-hover dataTable">
+            <thead>
+                <tr>
+                    <th>País</th>
+                    <th>Código</th>
+                    <th>Nome</th>
+                    <th>Ícone</th>
+                    <th>Taxa (1 USD)</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cur in currencies %}
+                <tr>
+                    <td>{{ cur.country|default:"-" }}</td>
+                    <td>{{ cur.code }}</td>
+                    <td>{{ cur.name }}</td>
+                    <td>{{ cur.icon }}</td>
+                    <td>
+                        <form method="post" action="{% url 'admin_currency_update' cur.id %}" class="d-flex gap-2 align-items-center">
+                            {% csrf_token %}
+                            <input type="text" name="rate" value="{{ cur.rate }}" class="form-control form-control-sm" style="width:100px">
+                            <select name="status" class="form-select form-select-sm" style="width:130px">
+                                <option value="Active" {% if cur.status == 'Active' %}selected{% endif %}>Ativa</option>
+                                <option value="Inactive" {% if cur.status == 'Inactive' %}selected{% endif %}>Inativa</option>
+                            </select>
+                            <button class="btn btn-sm btn-primary">Salvar</button>
+                        </form>
+                    </td>
+                    <td><span class="badge {% if cur.status == 'Active' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ cur.status }}</span></td>
+                    <td><span class="badge bg-light-primary">{{ cur.type|default:"N/A" }}</span></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center">Nenhuma moeda.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

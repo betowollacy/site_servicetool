@@ -1,0 +1,84 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+{% block seo %}
+<title>Adicionar Fundos - {{ siteTitle }}</title>
+{% endblock %}
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'homepage' %}" class="breadcrumb-item active">Início</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'customer_dashboard' %}" class="breadcrumb-item active">Meu Painel</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Adicionar Saldo</li>
+        </ol>
+    </nav>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            <form action="{% url 'customer_deposit' %}" method="POST">
+                {% csrf_token %}
+                <div class="row justify-content-center">
+                    <div class="col-lg-7">
+                        <div class="row">
+                            <div class="col-md-6 pe-md-4">
+                                <h2 class="display-1 fs-4 fw-medium">Adicionar Saldo/Fundos</h2>
+                                <hr class="text-muted">
+                                <div class="mb-4 pb-1">
+                                    <label for="addAmountField" class="form-label">Informe o valor em <strong>{{ currency.code }}</strong></label>
+                                    <input type="text" name="Amount" class="form-control" id="addAmountField" value="{{ add_amount }}" placeholder="Informe o valor">
+                                </div>
+                                <div class="row mb-4 justify-content-center justify-content-md-start mx-auto">
+                                    {% for gateway in activeGateway %}
+                                    <div class="checkbox-wrapper-16 py-2" style="width: 130px">
+                                        <label class="checkbox-wrapper">
+                                            <input type="radio" name="payment_methode" value="{{ gateway.NAME }}" class="checkbox-input" required {% if gateway.CURRENCY_CODE == customer.currency %}checked{% elif forloop.first %}checked{% endif %}>
+                                            <span class="checkbox-tile w-fit-content">
+                                                <span class="checkbox-icon">
+                                                    <img src="{{ gateway.LOGO }}" alt="" height="40" width="60" class="rounded">
+                                                </span>
+                                                <span class="checkbox-label mt-1">{{ gateway.NAME }}</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 ps-md-4 custom-left-border">
+                                <h5 class="border-bottom py-2 pt-0">Informações de Saldo</h5>
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <tbody>
+                                            <tr>
+                                                <td class="border-top-0 border-bottom ps-0 pt-2">Saldo Atual</td>
+                                                <td class="border-top-0 border-bottom pt-2 text-end pe-0">{{ currency_icon }}{{ Customer.balance|floatformat:2 }} {{ currency.code }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 rounded createInvoice">Criar Fatura</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            <hr class="my-4 text-muted">
+            <div class="mt-lg-0 mt-4">
+                <h2 class="display-1 fs-4 fw-medium">Termos e Condições</h2>
+                <ol class="ps-3">
+                    <li class="py-1">Os depósitos não são reembolsáveis, portanto tenha cuidado antes de fazer um depósito em nosso site.</li>
+                    <li class="py-1">Não são permitidos pedidos de saque.</li>
+                    <li class="py-1">Os gateways de pagamento cobram taxas, então você deve pagar um valor adicional para cobrir essas cobranças.</li>
+                    <li class="py-1">Quando o pagamento for concluído, o valor do depósito será creditado sem as taxas do gateway.</li>
+                    <li class="py-1">Os preços de serviços ou produtos podem mudar a qualquer momento.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

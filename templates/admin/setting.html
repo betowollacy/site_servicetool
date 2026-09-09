@@ -1,0 +1,64 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12"><h4 class="mb-0">Configurações do Sistema</h4></div>
+</div>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+<form method="post">
+    {% csrf_token %}
+    <div class="card">
+        <div class="card-header"><h5>Informações do Site</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Título do Site</label>
+                    <input type="text" class="form-control" name="siteTitle" value="{{ settings.siteTitle }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Título Meta</label>
+                    <input type="text" class="form-control" name="siteMetaTitle" value="{{ settings.siteMetaTitle }}">
+                </div>
+                <div class="col-12 mb-3">
+                    <label class="form-label">Descrição Meta</label>
+                    <textarea class="form-control" name="siteMetaDes" rows="2">{{ settings.siteMetaDes }}</textarea>
+                </div>
+                <div class="col-12 mb-3">
+                    <label class="form-label">Palavras-chave</label>
+                    <input type="text" class="form-control" name="siteKeyword" value="{{ settings.siteKeyword }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">URL do Logotipo</label>
+                    <input type="text" class="form-control" name="siteLogo" value="{{ settings.siteLogo }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">URL do Favicon</label>
+                    <input type="text" class="form-control" name="siteFav" value="{{ settings.siteFav }}">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h5>Contato</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3"><label class="form-label">E-mail</label><input type="text" class="form-control" name="siteEmailAddress" value="{{ settings.siteEmailAddress }}"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Telefone</label><input type="text" class="form-control" name="sitePhoneNumber" value="{{ settings.sitePhoneNumber }}"></div>
+                <div class="col-12 mb-3"><label class="form-label">Endereço</label><input type="text" class="form-control" name="siteAddress" value="{{ settings.siteAddress }}"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">WhatsApp</label><input type="text" class="form-control" name="siteWhatsappUrl" value="{{ settings.siteWhatsappUrl }}"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Telegram</label><input type="text" class="form-control" name="siteTelegramUrl" value="{{ settings.siteTelegramUrl }}"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Facebook</label><input type="text" class="form-control" name="siteFacebookUrl" value="{{ settings.siteFacebookUrl }}"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Twitter</label><input type="text" class="form-control" name="siteTwitterUrl" value="{{ settings.siteTwitterUrl }}"></div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-2"></i> Salvar Configurações</button>
+        </div>
+    </div>
+</form>
+{% endblock %}

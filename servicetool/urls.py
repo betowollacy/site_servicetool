@@ -1,20 +1,13 @@
-from django.urls import path
-from . import views
+"""servicetool URL Configuration"""
+from django.conf import settings
+from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import include, path
 
 urlpatterns = [
-    path('', views.index, name='index'),
-    path('aluguel/', views.aluguel, name='aluguel'),
-    path('amt/', views.amt, name='amt'),
-    path('tsm/', views.tsm, name='tsm'),
-    path('tfm/', views.tfm, name='tfm'),
-    path('mdm/', views.mdm, name='mdm'),
-    path('oct/', views.oct, name='oct'),
-    path('unlock/', views.unlock, name='unlock'),
-    path('dft/', views.dft, name='dft'),
-    path('cheetah/', views.cheetah, name='cheetah'),
-    path('kgpro/', views.kgpro, name='kgpro'),
-    path('black/', views.black, name='black'),
-    #path('produto/<int:produto_id>/', views.produto_selecionado, name='produto_selecionado'),
-
-
+    path('admin/', admin.site.urls),
+    path('', include('core.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

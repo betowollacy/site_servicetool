@@ -1,0 +1,51 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12"><h4 class="mb-0">Gateways de Pagamento</h4></div>
+</div>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+<div class="card">
+    <div class="card-body">
+        {% for g in gateways %}
+        <div class="card mb-3">
+            <div class="card-header"><h6 class="mb-0"><img src="{{ g.LOGO }}" alt="" height="28" width="42" class="rounded me-2"> {{ g.NAME }}</h6></div>
+            <form method="post" action="{% url 'admin_gateway_update' g.id %}">
+                {% csrf_token %}
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3"><label class="form-label">Moeda</label>
+                            <select name="currency_code" class="form-select">
+                                {% for cur in currencies %}
+                                <option value="{{ cur.code }}" {% if g.currency_code == cur.code %}selected{% endif %}>{{ cur.code }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3"><label class="form-label">Taxa (%)</label><input type="text" name="charge" class="form-control" value="{{ g.charge }}"></div>
+                        <div class="col-md-4 mb-3"><label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="Active" {% if g.status == 'Active' %}selected{% endif %}>Ativo</option>
+                                <option value="Inactive" {% if g.status == 'Inactive' %}selected{% endif %}>Inativo</option>
+                            </select>
+                        </div>
+                        {% if not g.NAME == 'Bkash' %}
+                        <div class="col-md-6 mb-3"><label class="form-label">Chave da API</label><input type="text" name="bkash_app_key" class="form-control" value="{{ g.bkash_app_key|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Segredo da API</label><input type="text" name="bkash_app_secret" class="form-control" value="{{ g.bkash_app_secret|default:'' }}"></div>
+                        {% else %}
+                        <div class="col-md-6 mb-3"><label class="form-label">Binance API Key</label><input type="text" name="binance_api_key" class="form-control" value="{{ g.binance_api_key|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Binance Secret Key</label><input type="text" name="binance_secret_key" class="form-control" value="{{ g.binance_secret_key|default:'' }}"></div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-footer"><button class="btn btn-primary"><i class="ti ti-device-floppy me-2"></i> Salvar</button></div>
+            </form>
+        </div>
+        {% empty %}
+        <p class="text-center">Nenhum gateway configurado.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

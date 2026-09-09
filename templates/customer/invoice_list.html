@@ -1,0 +1,58 @@
+{% extends 'frontend/base.html' %}
+{% block seo %}
+<title>Minhas Faturas - {{ siteTitle }}</title>
+{% endblock %}
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'homepage' %}" class="breadcrumb-item active">Início</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Minhas Faturas</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header"><h5>Minhas Faturas</h5></div>
+        <div class="card-body table-responsive">
+            <table class="table table-striped" id="invTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Data</th>
+                        <th>Título</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inv in invoices %}
+                    <tr>
+                        <td>#{{ inv.id }}</td>
+                        <td>{{ inv.created_at|date:"d M, Y" }}</td>
+                        <td>{{ inv.invoice_title|default:inv.invoice_for }}</td>
+                        <td>{{ currency_icon }}{{ inv.invoice_amount|floatformat:2 }}</td>
+                        <td><span class="badge {% if inv.invoice_status == 'Paid' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ inv.invoice_status }}</span></td>
+                        <td>
+                            {% if inv.invoice_status == 'Unpaid' %}
+                            <a href="{% url 'checkout' inv.id %}" class="btn btn-sm btn-primary">Pagar</a>
+                            {% endif %}
+                            <a href="{% url 'customer_invoice_detail' inv.id %}" class="btn btn-sm btn-light-primary">Ver</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center">Nenhuma fatura.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block footer_script %}
+<script>
+    $(document).ready(function() {
+        if ($.fn.DataTable) { $('#invTable').DataTable(); }
+    });
+</script>
+{% endblock %}

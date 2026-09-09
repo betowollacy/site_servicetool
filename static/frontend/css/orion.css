@@ -1,0 +1,536 @@
+/* ============================================= */
+/* Orion / GSM Store — tema escuro customizado   */
+/* Adaptado do modelo ao vivo expertserver.com.br */
+/* ============================================= */
+
+:root {
+    --orion-primary: #2563eb;
+    --orion-secondary: #1d4ed8;
+    --orion-accent: #bfdbfe;
+    --orion-danger: #d32f2f;
+    --orion-glow: #3b82f6;
+    --orion-bg-top: #03070f;
+    --orion-bg-mid: #061229;
+    --orion-bg-bottom: #0a1a38;
+    --orion-card: rgba(13, 25, 48, 0.88);
+    --orion-border: rgba(96, 165, 250, 0.28);
+    --orion-text: #e6e7ef;
+    --orion-muted: #a6adc7;
+}
+
+/* ---------- 1. Corpo / fundo constelação ---------- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--orion-text);
+    background: radial-gradient(circle at 12% 10%, #0f2342 0%, transparent 45%),
+                radial-gradient(circle at 88% 12%, #0a2a55 0%, transparent 42%),
+                linear-gradient(165deg, var(--orion-bg-top) 0%, #061229 45%, var(--orion-bg-bottom) 100%);
+    min-height: 100vh;
+    position: relative;
+}
+
+#orion-space-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0 !important;
+    pointer-events: none !important;
+    opacity: 0.6;
+}
+
+body > .container,
+body > .offcanvas,
+header {
+    position: relative;
+    z-index: 1;
+}
+
+/* ---------- 2. Banner (status do servidor + marquee) ---------- */
+.orion-banner {
+    width: 100%;
+    overflow: hidden;
+    background: linear-gradient(90deg, #0b1e3f, #0f2a55, #123a73);
+    color: #fff;
+    padding: 8px 0;
+    font-size: 13px;
+    font-weight: bold;
+    position: relative;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    z-index: 2;
+}
+.server-status {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 11px;
+    background: linear-gradient(90deg, var(--orion-primary), var(--orion-secondary));
+    z-index: 5;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
+.status-dot.online { background: #00e676; box-shadow: 0 0 5px #00e676; animation: orion-pulse 1.6s infinite; }
+@keyframes orion-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.orion-marquee-wrapper {
+    flex-grow: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    margin-left: 130px;
+    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+.orion-marquee {
+    display: inline-block;
+    white-space: nowrap;
+    width: max-content;
+    animation: orion-scroll 30s linear infinite;
+    padding-left: 100%;
+    box-sizing: border-box;
+}
+@keyframes orion-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+/* ---------- 3. Legenda/footer do topo (rede social) ---------- */
+.orion-social-fab {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 10000;
+}
+.orion-fab {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transition: 0.3s;
+    text-decoration: none;
+    font-size: 22px;
+}
+.orion-fab:hover { transform: scale(1.1); color: #fff !important; }
+.bg-tlg { background: #0088cc; }
+.bg-wpp { background: #25D366; }
+.bg-pix { background: linear-gradient(45deg, #32bcad, #26a69a); }
+
+/* ---------- 4. Botão FAQ lateral ---------- */
+#orion-faq-btn {
+    position: fixed;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    background: var(--orion-primary);
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 20px rgba(37, 99, 235, 0.55);
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    z-index: 10000;
+}
+#orion-faq-btn:hover { transform: translateY(-50%) scale(1.1); background: var(--orion-secondary); color: #fff; }
+.desktop-text { display: inline-block; }
+
+#orion-faq-box {
+    display: none;
+    position: fixed;
+    top: 50%;
+    right: 90px;
+    transform: translateY(-50%);
+    width: 360px;
+    background: linear-gradient(180deg, #0f1c35 0%, #0a1527 100%);
+    border: 1px solid rgba(96, 165, 250, 0.35);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: -10px 10px 40px rgba(0, 0, 0, 0.3);
+    flex-direction: column;
+    z-index: 10001;
+}
+.faq-header {
+    background: linear-gradient(90deg, var(--orion-primary), var(--orion-secondary));
+    color: #fff;
+    padding: 15px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.faq-header i { cursor: pointer; }
+.faq-search-wrapper { padding: 10px; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+#faq-search {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 20px;
+    outline: none;
+    font-size: 13px;
+    box-sizing: border-box;
+    background: #0f172a;
+    color: #f4f7ff;
+}
+#faq-search:focus { border-color: var(--orion-primary); }
+.faq-content { max-height: 50vh; overflow-y: auto; padding: 0; }
+.faq-item { border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.faq-item.hidden { display: none; }
+.faq-question {
+    padding: 15px;
+    cursor: pointer;
+    color: #e8ebf9;
+    font-weight: 600;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.02);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: 0.2s;
+}
+.faq-question:hover { background: rgba(37, 99, 235, 0.2); color: #fff; }
+.faq-answer { display: none; padding: 15px; background: rgba(0, 0, 0, 0.16); color: #a6adc7; font-size: 13px; line-height: 1.5; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.faq-item.active .faq-answer { display: block; }
+
+/* ---------- 5. Modal de termos ---------- */
+.orion-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.92);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s;
+    z-index: 99999;
+}
+.orion-modal-overlay.show { opacity: 1; visibility: visible; }
+.orion-modal-box {
+    background: linear-gradient(180deg, #0f1c35 0%, #0a162b 100%);
+    border-radius: 8px;
+    width: 95%;
+    max-width: 650px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(20px);
+    transition: 0.3s;
+    border: 1px solid rgba(96, 165, 250, 0.35);
+    display: flex;
+    flex-direction: column;
+}
+.orion-modal-overlay.show .orion-modal-box { transform: translateY(0); }
+.modal-header-alert {
+    background: var(--orion-danger);
+    color: #fff;
+    padding: 15px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.modal-body-content { padding: 25px; color: #e8ecfc; font-size: 14px; line-height: 1.6; }
+.term-block { border: 1px solid rgba(255, 255, 255, 0.12); padding: 15px; margin-bottom: 15px; border-radius: 6px; background: rgba(255, 255, 255, 0.03); }
+.term-block h4 { margin: 0 0 10px 0; color: #7fb4ff; font-size: 15px; border-bottom: 2px solid rgba(255, 255, 255, 0.1); padding-bottom: 5px; }
+.term-list { padding-left: 20px; margin: 0; }
+.bg-alert { background-color: rgba(255, 193, 7, 0.12); border-left: 5px solid #ffc107; }
+.bg-danger-light { background-color: rgba(211, 47, 47, 0.15); border-left: 5px solid var(--orion-danger); }
+.bg-danger-light h4 { color: #ff8a8a !important; }
+.bg-alert h4 { color: #ffd66b !important; }
+.orion-btn {
+    background: var(--orion-primary);
+    color: #fff;
+    border: none;
+    padding: 15px;
+    border-radius: 6px;
+    width: 100%;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 15px;
+    text-transform: uppercase;
+    margin-top: 10px;
+    transition: 0.2s;
+}
+.orion-btn:hover { background: var(--orion-secondary); color: #fff; }
+.orion-btn:disabled { background: #ccc; cursor: not-allowed; opacity: 0.7; }
+#orion-terms-modal label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(96, 165, 250, 0.25);
+    border-radius: 5px;
+    color: #e8ecfc;
+}
+#orion-terms-modal input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: var(--orion-primary); flex-shrink: 0; }
+
+/* ---------- 6. Notificações PIX ---------- */
+#orion-notif-area { position: fixed; bottom: 20px; left: 20px; z-index: 10000; pointer-events: none; }
+.orion-toast {
+    background: #0f1c35;
+    border-left: 5px solid var(--orion-primary);
+    color: #e5e9ff;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+    width: 300px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    opacity: 0;
+    transform: translateX(-50px);
+    transition: 0.5s;
+    font-size: 13px;
+    cursor: pointer;
+    position: relative;
+    pointer-events: auto;
+}
+.orion-toast.visible { opacity: 1; transform: translateX(0); }
+.toast-icon {
+    width: 35px;
+    height: 35px;
+    background: var(--orion-primary);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.toast-close-hint { position: absolute; top: 2px; right: 5px; font-size: 10px; color: #97a1c4; }
+
+/* ---------- 7. Voltar ao topo ---------- */
+#orion-back-to-top {
+    position: fixed;
+    bottom: 90px;
+    left: 20px;
+    width: 45px;
+    height: 45px;
+    background: var(--orion-primary);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s;
+    z-index: 10000;
+}
+#orion-back-to-top.show { opacity: 1; visibility: visible; }
+#orion-back-to-top:hover { background: var(--orion-secondary); transform: translateY(-3px); }
+
+/* ---------- 8. Header escuro ---------- */
+nav.navbar.default {
+    background: linear-gradient(90deg, var(--orion-bg-top) 0%, #061229 50%, var(--orion-bg-bottom) 100%) !important;
+    border-bottom: 1px solid var(--orion-border);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+}
+nav.navbar.default .top-navbar { background: rgba(37, 99, 235, 0.18) !important; }
+
+/* ---------- 9. Cards / painéis dark ---------- */
+.card, .panel {
+    background-color: var(--orion-card);
+    color: var(--orion-text);
+    border: 1px solid var(--orion-border) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.4), 0 12px 30px rgba(37, 99, 235, 0.4), 0 0 22px rgba(37, 99, 235, 0.2); }
+.card-header { background: linear-gradient(90deg, rgba(37, 99, 235, 0.38), rgba(29, 78, 216, 0.28)) !important; color: #fff !important; border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important; }
+.list-group-item { background: rgba(255, 255, 255, 0.02); color: var(--orion-text) !important; border-color: rgba(255, 255, 255, 0.08) !important; }
+.list-group-item:hover { background: rgba(37, 99, 235, 0.15); }
+
+/* ---------- 10. Texto/links ---------- */
+a { color: #93c5fd; }
+a:hover { color: #60a5fa; }
+.text-muted { color: var(--orion-muted) !important; }
+.badge {
+    color: #60a5fa !important;
+    background-color: rgba(37, 99, 235, 0.12) !important;
+    border: 1px solid rgba(96, 165, 250, 0.5) !important;
+    text-shadow: 0 0 4px #60a5fa;
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.3) !important;
+    font-weight: 700 !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+}
+.btn-light-primary { background: rgba(37, 99, 235, 0.15) !important; color: #bfdbfe !important; border: 1px solid rgba(96, 165, 250, 0.3) !important; }
+.btn-light-primary:hover { background: rgba(37, 99, 235, 0.35) !important; color: #fff !important; }
+
+/* ---------- 11. Carousel ---------- */
+.carousel .carousel-item { border-radius: 12px; overflow: hidden; }
+.carousel .carousel-item img { object-fit: cover; min-height: 260px; }
+.orion-slider { border: 1px solid var(--orion-border); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
+.carousel-indicators li { width: 12px; height: 12px; border-radius: 50%; }
+.carousel-indicators .active { background-color: var(--orion-primary); }
+
+/* Painel lateral de destaques */
+.orion-side-panel .card-body { padding: 1.25rem; }
+.orion-stat-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: rgba(37, 99, 235, 0.2);
+    border: 1px solid rgba(96, 165, 250, 0.5);
+    color: #60a5fa;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Cards de serviço (home) */
+.orion-service-card { cursor: pointer; }
+.orion-service-card .card-body { background: transparent !important; }
+.orion-service-card a { text-decoration: none; }
+.orion-service-card .badge { margin-right: 4px; }
+.orion-service-thumb img { border: 1px solid var(--orion-border); box-shadow: 0 0 10px rgba(37, 99, 235, 0.25); }
+.orion-service-card .btn.btn-light-primary { width: 40px; height: 40px; flex-shrink: 0; }
+
+/* Abas de serviços */
+.card-header .nav-tabs { border-bottom: none; }
+.card-header .nav-link {
+    color: var(--orion-muted) !important;
+    border-color: transparent !important;
+    font-weight: 600;
+}
+.card-header .nav-link:hover { color: #60a5fa !important; }
+.card-header .nav-link.active {
+    background: rgba(37, 99, 235, 0.32) !important;
+    color: #fff !important;
+    border-color: rgba(96, 165, 250, 0.35) !important;
+    box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
+}
+
+/* Painel de pedido (página do serviço) */
+.orion-order-panel {
+    background: var(--orion-card);
+    color: var(--orion-text);
+    border: 1px solid var(--orion-border) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.orion-order-panel .table td { border-color: rgba(255, 255, 255, 0.08); }
+.orion-price {
+    color: #60a5fa;
+    text-shadow: 0 0 8px rgba(59, 130, 246, 0.7);
+    font-size: 1.4rem;
+}
+.orion-order-panel label { color: var(--orion-text) !important; }
+.orion-order-panel .badge { color: #60a5fa !important; }
+
+/* ---------- 14. Breadcrumb / base ---------- */
+.breadcrumb { --bs-breadcrumb-divider-color: rgba(255,255,255,0.4); }
+.breadcrumb-item a, .breadcrumb-item.active { color: var(--orion-muted) !important; }
+.breadcrumb-item a:hover { color: #60a5fa !important; }
+.breadcrumb-item+.breadcrumb-item::before { color: rgba(255,255,255,0.4) !important; }
+
+/* Conteúdo de artigos (páginas) */
+.card-body img { max-width: 100%; }
+article p, .card-body p { color: var(--orion-text); }
+
+/* ---------- 15. Tabelas dark ---------- */
+.table { --bs-table-bg: transparent; color: var(--orion-text) !important; }
+.table thead th {
+    background: rgba(37, 99, 235, 0.28) !important;
+    color: #fff !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.4px;
+}
+.table td { border-color: rgba(255, 255, 255, 0.06) !important; color: #dbe0f4 !important; }
+.table-striped > tbody > tr:nth-of-type(odd) > * { background: rgba(255, 255, 255, 0.02) !important; color: #dbe0f4 !important; }
+.table-hover > tbody > tr:hover > * { background: rgba(37, 99, 235, 0.15) !important; color: #fff !important; }
+.table tbody tr:hover td a { color: #60a5fa; }
+
+/* Badges de status coloridas legíveis no dark */
+.badge.bg-light-success, .badge[class*="bg-light-success"] { color: #6ee7a0 !important; border-color: rgba(110, 231, 160, 0.5) !important; background-color: rgba(46, 125, 50, 0.18) !important; }
+.badge.bg-light-danger, .badge[class*="bg-light-danger"] { color: #ffa3a3 !important; border-color: rgba(255, 120, 120, 0.5) !important; background-color: rgba(211, 47, 47, 0.18) !important; }
+.badge.bg-light-warning, .badge[class*="bg-light-warning"] { color: #ffd66b !important; border-color: rgba(255, 214, 107, 0.5) !important; background-color: rgba(255, 193, 7, 0.15) !important; }
+.badge.bg-light-secondary { color: #bfdbfe !important; background-color: rgba(37, 99, 235, 0.12) !important; }
+.badge.bg-light-primary { color: #60a5fa !important; }
+
+/* Botões primários / de ação */
+.btn.btn-primary {
+    background: linear-gradient(135deg, var(--orion-primary), var(--orion-secondary)) !important;
+    border: none !important;
+    color: #fff !important;
+    box-shadow: 0 2px 12px rgba(37, 99, 235, 0.45);
+}
+.btn.btn-primary:hover { background: linear-gradient(135deg, var(--orion-secondary), #1e40af) !important; color: #fff !important; box-shadow: 0 4px 18px rgba(37, 99, 235, 0.6); }
+.btn.btn-sm { border-radius: 6px; }
+
+/* Paginação (DataTables) */
+.pagination .page-link { background: rgba(13, 25, 48, 0.85) !important; color: #dde3fb !important; border-color: rgba(255, 255, 255, 0.08) !important; }
+.pagination .page-item.active .page-link { background: var(--orion-primary) !important; color: #fff !important; border-color: var(--orion-primary) !important; }
+.dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info { color: var(--orion-muted) !important; }
+.dataTables_wrapper .dataTables_filter input { background-color: rgba(10, 14, 29, 0.75) !important; color: #f2f4ff !important; border: 1px solid rgba(96, 165, 250, 0.3) !important; }
+
+/* ---------- 12. Formulários ---------- */
+.form-control, .form-select, input[type="text"], input[type="email"],
+input[type="password"], input[type="number"], input[type="search"], select, textarea {
+    background-color: rgba(10, 14, 29, 0.75) !important;
+    color: #f2f4ff !important;
+    border: 1px solid rgba(96, 165, 250, 0.3) !important;
+}
+.form-control:focus, .form-select:focus, input:focus, select:focus, textarea:focus {
+    border-color: var(--orion-primary) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.28) !important;
+}
+::placeholder { color: #8892b5 !important; }
+
+/* ---------- 13. Rodapé dark ---------- */
+.bg-white { background-color: rgba(13, 25, 48, 0.9) !important; }
+footer.footer { background-color: transparent; }
+footer.footer a { color: #93c5fd; }
+footer.footer h5, footer.footer p { color: var(--orion-text); }
+
+/* ---------- Responsividade ---------- */
+@media (max-width: 768px) {
+    .server-status { width: 85px; font-size: 9px; }
+    .orion-banner { padding: 5px 0; }
+    .orion-marquee-wrapper { margin-left: 85px; }
+    .orion-marquee { font-size: 11px; animation-duration: 20s; }
+    .orion-social-fab { right: 10px; bottom: 10px; gap: 8px; }
+    #orion-faq-btn { position: static; width: 50px; height: 50px; border-radius: 50%; padding: 0; justify-content: center; border: none; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4); }
+    #orion-faq-btn:hover { transform: scale(1.1); }
+    .desktop-text { display: none; }
+    #orion-faq-btn i { font-size: 20px; margin: 0; }
+    #orion-faq-box { right: 10px; left: 10px; width: auto; top: auto; bottom: 240px; transform: none; }
+    .orion-fab { width: 45px; height: 45px; }
+    .orion-toast { width: 90%; max-width: 320px; left: 5%; }
+    #orion-back-to-top { bottom: 90px; left: 10px; }
+}

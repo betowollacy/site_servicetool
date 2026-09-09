@@ -1,0 +1,95 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+{% block seo %}
+<title>Meu Painel - {{ siteTitle }}</title>
+{% endblock %}
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'homepage' %}" class="breadcrumb-item active">Início</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Meu Painel</li>
+        </ol>
+    </nav>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="card">
+        <div class="card-header">
+            <h4>Bem-vindo, {{ customer.name }} ({{ customer.role }})</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 col-6">
+                    <div class="card text-center border-primary">
+                        <div class="card-body">
+                            <h5>Saldo Disponível</h5>
+                            <h3>{{ currency_icon }}{{ balance|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card text-center border-warning">
+                        <div class="card-body">
+                            <h5>Aguardando Ação</h5>
+                            <h3>{{ waitingAction }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card text-center border-success">
+                        <div class="card-body">
+                            <h5>Total de Pedidos</h5>
+                            <h3>{{ total_orders }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="card text-center border-danger">
+                        <div class="card-body">
+                            <h5>Total Gasto</h5>
+                            <h3>{{ currency_icon }}{{ total_spent|floatformat:2 }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5>Pedidos Recentes</h5>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Data</th>
+                        <th>Serviço</th>
+                        <th>Preço</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in latest_orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.created_at|date:"d M, Y" }}</td>
+                        <td>{{ order.service_title }}</td>
+                        <td>{{ currency_icon }}{{ order.service_price|floatformat:2 }}</td>
+                        <td><span class="badge bg-light-primary">{{ order.service_status }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center">Nenhum pedido ainda.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

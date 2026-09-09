@@ -1,0 +1,71 @@
+{% load static %}<nav class="pc-sidebar border-0" style="background: white">
+    <div class="navbar-wrapper">
+        <div class="m-header" style="background:rgb(245 246 247); padding:0">
+            <a href="{% url 'admin_dashboard' %}" class="b-brand text-primary w-100 text-center fw-bold text-uppercase" style="font-size: 20px; color: #5b6b79!important">
+                <img src="{{ siteLogo }}" alt="" style="max-width: 230px; max-height:45px" id="main-logo">
+            </a>
+        </div>
+        <div class="navbar-content">
+            <ul class="pc-navbar">
+
+                <li class="pc-item pc-hasmenu">
+                    <a href="{% url 'admin_dashboard' %}" class="pc-link">
+                        <span class="pc-micon"><i class="fas fa-tachometer-alt"></i></span>
+                        <span class="pc-mtext">Painel</span>
+                    </a>
+                </li>
+
+                <li class="pc-item pc-hasmenu">
+                    <div class="pc-link" style="cursor: pointer">
+                        <span class="pc-micon"><i class="ti ti-list-check"></i></span>
+                        <span class="pc-mtext">Lista de Serviços</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
+                    </div>
+                    <ul class="pc-submenu">
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_service_list' 'server' %}">Server <span class="float-end">{{ serverServiceCount }}</span></a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_service_list' 'credit' %}">Crédito <span class="float-end">{{ creditServiceCount }}</span></a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_service_list' 'imei' %}">IMEI <span class="float-end">{{ imeiServiceCount }}</span></a></li>
+                    </ul>
+                </li>
+
+                <li class="pc-item pc-hasmenu">
+                    <div class="pc-link" style="cursor: pointer">
+                        <span class="pc-micon"><i class="ti ti-bag"></i></span>
+                        <span class="pc-mtext">Histórico de Pedidos</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
+                    </div>
+                    <ul class="pc-submenu">
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'waiting' %}">Aguardando Ação <span class="float-end">{{ waitingActionCount }}</span></a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'in_process' %}">Em Processo <span class="float-end">{{ inProcessCount }}</span></a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'success' %}">Sucesso <span class="float-end">{{ successCount }}</span></a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'rejected' %}">Rejeitados <span class="float-end">{{ rejectedCount }}</span></a></li>
+                    </ul>
+                </li>
+
+                <li class="pc-item pc-hasmenu">
+                    <a href="{% url 'admin_invoice_list' %}" class="pc-link">
+                        <span class="pc-micon"><i class="fas fa-file-invoice"></i></span>
+                        <span class="pc-mtext">Faturas</span>
+                    </a>
+                </li>
+
+                <li class="pc-item pc-hasmenu">
+                    <a href="{% url 'admin_customer_list' %}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-users"></i></span>
+                        <span class="pc-mtext">Clientes <span class="float-end">{{ coustomerCount }}</span></span>
+                    </a>
+                </li>
+
+                <li class="pc-item pc-hasmenu">
+                    <div class="pc-link" style="cursor: pointer">
+                        <span class="pc-micon"><i class="ti ti-settings"></i></span>
+                        <span class="pc-mtext">Configurações</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
+                    </div>
+                    <ul class="pc-submenu">
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_setting' %}">Configurações do Site</a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_currency_list' %}">Moedas</a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_gateway_list' %}">Gateways de Pagamento</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

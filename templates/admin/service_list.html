@@ -1,0 +1,48 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h4 class="mb-0">Lista de Serviços - {{ type_label }}</h4>
+        <ul class="nav nav-pills mt-3">
+            <li class="nav-item"><a class="nav-link {% if service_type == 'Server Service' %}active{% endif %}" href="{% url 'admin_service_list' 'server' %}">Server</a></li>
+            <li class="nav-item"><a class="nav-link {% if service_type == 'Credit Service' %}active{% endif %}" href="{% url 'admin_service_list' 'credit' %}">Crédito</a></li>
+            <li class="nav-item"><a class="nav-link {% if service_type == 'IMEI Service' %}active{% endif %}" href="{% url 'admin_service_list' 'imei' %}">IMEI</a></li>
+        </ul>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header d-flex justify-content-end">
+        <a href="{% url 'admin_service_new' svtype %}" class="btn btn-primary"><i class="fas fa-plus me-2"></i> Adicionar Serviço</a>
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-hover dataTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Título</th>
+                    <th>Preço</th>
+                    <th>Entrega</th>
+                    <th>Vendas</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in services %}
+                <tr>
+                    <td>#{{ s.id }}</td>
+                    <td>{{ s.title }}</td>
+                    <td>{{ currency_icon }}{{ s.price_for|floatformat:2 }}</td>
+                    <td>{{ s.delivery_time|default:"-" }}</td>
+                    <td>{{ s.sells }}</td>
+                    <td><span class="badge {% if s.status == 'Active' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ s.status }}</span></td>
+                    <td><a href="{% url 'admin_service_edit' svtype s.id %}" class="btn btn-sm btn-light-primary"><i class="ti ti-edit"></i> Editar</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center">Nenhum serviço.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

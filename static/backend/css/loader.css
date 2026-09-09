@@ -1,0 +1,115 @@
+.toploader {
+    width: 100%;
+    margin: 0 auto;
+    border-radius: 10px;
+    position: fixed;
+    top: 0;
+    padding: 2px;
+    right: 0;
+    z-index: 1500;
+    background: white;
+  }
+  .toploader:before {
+    content:'';
+    border-radius:10px;
+    position:absolute;
+    top:-4px;
+    right:0;
+    bottom:-4px;
+    left:0;
+  }
+  .toploader .loaderBar {
+    position:absolute;
+    border-radius:10px;
+    top:0;
+    right:100%;
+    bottom:0;
+    left:0;
+    background:#04AA6D;
+    width:0;
+    animation:borealisBar 2s linear infinite;
+  }
+
+  @keyframes borealisBar {
+    0% {
+      left:0%;
+      right:100%;
+      width:0%;
+    }
+    10% {
+      left:0%;
+      right:75%;
+      width:25%;
+    }
+    90% {
+      right:0%;
+      left:75%;
+      width:25%;
+    }
+    100% {
+      left:100%;
+      right:0%;
+      width:0%;
+    }
+}
+#loading-indicator {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color:  rgba(255, 255, 255, 0.8);
+    text-align: center;
+    line-height: 100vh;
+    z-index: 9999;
+}
+
+/* Top Loader Styles */
+.top-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #f8f9fa;
+    z-index: 9999;
+}
+.loader-bar {
+    width: 0;
+    height: 100%;
+    background: #2ca87f;
+    background-size: 200% 100%;
+    animation: loadingAnimation 3s ease-in-out infinite;
+}
+@keyframes loadingAnimation {
+    0% {
+        width: 0;
+        background-position: 200% 0;
+    }
+    50% {
+        width: 50%;
+        background-position: 0 0;
+    }
+    100% {
+        width: 100%;
+        background-position: 200% 0;
+    }
+}
+body.loaded .top-loader {
+    display: none;
+}
+body.loaded .content {
+    opacity: 1;
+}
+body.loaded .loader-bar {
+    animation: fadeOut 1s ease-out forwards;
+}
+@keyframes fadeOut {
+    0% {
+        width: 100%;
+    }
+    100% {
+        width: 0;
+    }
+}

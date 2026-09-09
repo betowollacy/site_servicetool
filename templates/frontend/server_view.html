@@ -1,0 +1,170 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+{% block seo %}
+<title>{{ serviceData.title }} - {{ siteTitle }}</title>
+<meta name="description" content="{{ serviceData.meta_description }}">
+<meta name="keywords" content="{{ keyWord }}">
+{% endblock %}
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'homepage' %}" class="breadcrumb-item active">Início</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'category' item_catslug %}" class="breadcrumb-item active">{{ serviceData.service_type }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Fazer um Pedido</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <h1 class="card-header display-1 fs-3">{{ serviceData.title }}</h1>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6 col-12 pe-md-3">
+                    {% if serviceData.thumbnail %}
+                    <img src="{{ serviceData.thumbnail }}" alt="{{ serviceData.title }}" class="img-fluid rounded" style="max-width:100%">
+                    {% else %}
+                    <lottie-player src="{% static 'resource/shoping-cart3.json' %}" background="transparent" speed="0.2" loop autoplay></lottie-player>
+                    {% endif %}
+                </div>
+                <div class="col-md-6 col-12">
+                    <div class="orion-order-panel ps-4 pt-4 pe-4 pb-4 border rounded" style="height: min-content">
+                        <div class="table-responsive">
+                            <table class="table mb-4">
+                                <tbody{% if serviceInputs %} class="border-bottom"{% endif %}>
+                                    {% if Price %}
+                                    <tr>
+                                        <td class="border-top-0 ps-0 pt-0"><b>Preço</b></td>
+                                        <td class="border-top-0 pt-0 text-end pe-0"><b class="orion-price">{{ currency_icon }}{{ Price }}</b></td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if serviceData.duration %}
+                                    <tr>
+                                        <td class="ps-0"><b>Duração</b></td>
+                                        <td class="text-end pe-0"><b>{{ serviceData.duration }}</b></td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if serviceData.delivery_time %}
+                                    <tr>
+                                        <td class="ps-0"><b>Entrega</b></td>
+                                        <td class="text-end pe-0"><b>{{ serviceData.delivery_time }}</b></td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {% if customer %}
+                        <form method="post" action="{% url 'submit_order' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="serviceID" value="{{ serviceData.id }}">
+                            {% if serviceInputs %}
+                            <div class="mb-4">
+                                {% for serviceInput in serviceInputs %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="fields.{{ forloop.counter0 }}">Informe {{ serviceInput.name }}</label>
+                                    <input type="text" class="form-control" name="{{ serviceInput.name }}" id="fields.{{ forloop.counter0 }}" placeholder="{{ serviceInput.name }}">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            {% if serviceTags %}
+                            <div class="mb-4 pb-3 pt-2 border-top border-bottom table-responsive">
+                                {% for tag in serviceTags %}
+                                {% if tag == 'Process by' %}
+                                <span class="badge bg-light-secondary pt-2 mt-2 border">Processado por {% if serviceData.process_type == 'Auto' %}API{% else %}Administrador{% endif %}</span>
+                                {% else %}
+                                <span class="badge bg-light-secondary pt-2 mt-2 border">{{ tag }}</span>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" id="form-check-input" type="checkbox" value="" required />
+                                    <label class="form-check-label" for="form-check-input">Eu concordo com os <a href="#">termos e condições</a></label>
+                                    <div class="invalid-feedback">Você deve concordar antes de enviar.</div>
+                                </div>
+                            </div>
+                            <div class="mb-1">
+                                <button class="btn btn-primary rounded w-100 place-order"><i class="fas fa-cart-plus"></i> Fazer Pedido</button>
+                            </div>
+                        </form>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <p class="mb-3">Por favor, faça login para fazer um pedido.</p>
+                            <button class="btn btn-primary rounded" data-bs-toggle="modal" data-bs-target="#login" style="padding-left: 10px"><i class="fas fa-user"></i> Entrar/Cadastrar</button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-6 pe-md-3">
+                    <h2 class="display-1 fs-3">Como Faço um Pedido?</h2>
+                    <ol class="mt-4">
+                        <li class="pb-3">Primeiro, faça login no nosso site usando seu e-mail.</li>
+                        {% if serviceInputs %}
+                        <li class="pb-3">Em seguida, preencha os campos de entrada obrigatórios do serviço, como {% for serviceInput in serviceInputs %}{% if not forloop.first %}, {% endif %}<strong>{{ serviceInput.name }}</strong>{% endfor %}.</li>
+                        {% endif %}
+                        <li class="pb-3">Depois, aceite nossos termos e condições marcando a caixa <strong>Aceito os termos e condições</strong>.</li>
+                        <li class="pb-3">Clique no botão <strong>Fazer Pedido</strong> para continuar. Se sua conta tiver saldo suficiente, o pedido será feito. Caso contrário, os métodos de pagamento disponíveis e um resumo breve serão exibidos.</li>
+                        <li class="pb-3">Selecione um gateway de pagamento para concluir seu pedido.</li>
+                        <li class="pb-3">Quando o pagamento for concluído com sucesso, seu pedido será efetuado.</li>
+                    </ol>
+                    {% if serviceData.tool_download or serviceData.login_url or serviceData.register_url %}
+                    <h2 class="display-1 fs-3 mt-4">Recursos</h2>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                {% if serviceData.tool_download %}
+                                <tr>
+                                    <td class="ps-0">Baixar Ferramenta</td>
+                                    <td class="text-end pe-0"><a class="badge bg-light-success" style="font-size: 13px; width:100px" href="{{ serviceData.tool_download }}" target="_blank"><i class="fas fa-cloud-download-alt"></i> Baixar</a></td>
+                                </tr>
+                                {% endif %}
+                                {% if serviceData.login_url %}
+                                <tr>
+                                    <td class="ps-0">Link de Login da Ferramenta</td>
+                                    <td class="text-end pe-0"><a class="badge bg-light-success" style="font-size: 13px; width:100px" href="{{ serviceData.login_url }}" target="_blank"><i class="fas fa-external-link-alt"></i> Entrar</a></td>
+                                </tr>
+                                {% endif %}
+                                {% if serviceData.register_url %}
+                                <tr>
+                                    <td class="ps-0 pb-0">Link de Cadastro da Ferramenta</td>
+                                    <td class="text-end pe-0 pb-0"><a class="badge bg-light-success" style="font-size: 13px; width:100px" href="{{ serviceData.register_url }}" target="_blank"><i class="fas fa-external-link-alt"></i> Cadastrar</a></td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-lg-6">
+                    {% if serviceData.screenshot %}
+                    <img src="{{ serviceData.screenshot }}" alt="" style="max-width: 100%" class="rounded border mb-4">
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% if serviceData.article %}
+    <div class="card">
+        <div class="card-body">{{ serviceData.article|safe }}</div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block footer_script %}
+<script>
+    $(document).ready(function() {
+        $('input[type="text"]').first().focus();
+    });
+</script>
+{% endblock %}

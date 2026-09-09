@@ -1,0 +1,111 @@
+{% load static %}<!DOCTYPE html>
+<html lang="pt" data-pc-theme="light">
+    <head>
+        <title>Painel Admin - {{ siteTitle }}</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <link rel="icon" href="{{ siteFav }}" type="image/x-icon" />
+        <link rel="stylesheet" href="{% static 'backend/fonts/inter/inter.css' %}" id="main-font-link" />
+        <link rel="stylesheet" href="{% static 'backend/fonts/phosphor/duotone/style.css' %}" />
+        <link rel="stylesheet" href="{% static 'backend/fonts/tabler-icons.min.css' %}" />
+        <link rel="stylesheet" href="{% static 'backend/fonts/fontawesome.css' %}" />
+        <link rel="stylesheet" href="{% static 'backend/css/style.css' %}" id="main-style-link" />
+        <link rel="stylesheet" href="{% static 'backend/css/customstyle.css' %}" id="main-style-link" />
+        <link rel="stylesheet" href="{% static 'backend/css/loader.css' %}" id="main-style-link" />
+        <link rel="stylesheet" href="{% static 'backend/css/plugins/style.css' %}" id="main-style-link" />
+        <link rel="stylesheet" href="{% static 'backend/css/style-preset.css' %}" />
+        <link rel="stylesheet" href="{% static 'backend/css/jquery.dataTables.min.css' %}" />
+        <link rel="stylesheet" href="{% static 'backend/css/simple-notify.css' %}" />
+    </head>
+    <body
+        data-pc-preset="preset-8"
+        data-pc-sidebar-caption="true"
+        data-pc-layout="vertical"
+        data-pc-direction="ltr"
+        data-pc-theme_contrast="">
+        <div class="loader-bg" style="background: #f8f9fa;">
+            <div class="loader-track"><div class="top-loader"><div class="loader-bar"></div></div></div>
+        </div>
+        <div class="top-loader" style="display:none;"><div class="loader-bar"></div></div>
+
+        {% include 'admin/include/sidebar.html' %}
+
+        <header class="pc-header" style="background: rgb(192 192 192 / 13%)">
+            <div class="header-wrapper">
+                <div class="me-auto pc-mob-drp">
+                    <ul class="list-unstyled gap-2">
+                        <li class="pc-h-item pc-sidebar-collapse">
+                            <a href="#" class="pc-head-link ms-0 form-control border-grey-100" id="sidebar-hide">
+                                <i class="ti ti-menu-2"></i>
+                            </a>
+                        </li>
+                        <li class="pc-h-item pc-sidebar-popup">
+                            <a href="#" class="pc-head-link ms-0 form-control border-grey-100" id="mobile-collapse">
+                                <i class="ti ti-menu-2"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="ms-auto">
+                    <ul class="list-unstyled">
+                        <li class="dropdown pc-h-item">
+                            <a href="{% url 'homepage' %}" target="_blank" class="pc-head-link dropdown-toggle arrow-none me-0" role="button">
+                                <i class="ti ti-home"></i>
+                            </a>
+                        </li>
+                        <li class="dropdown pc-h-item header-user-profile">
+                            <a class="pc-head-link dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+                                <i class="ti ti-user"></i>
+                            </a>
+                            <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown">
+                                <div class="dropdown-body">
+                                    <div class="profile-notification-scroll position-relative">
+                                        <div class="d-flex mb-1">
+                                            <div class="flex-shrink-0">
+                                                <i class="ti ti-user wid-35"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="mb-1">{{ request.user.get_full_name|default:request.user.username }}</h6>
+                                                <span>{{ request.user.email }}</span>
+                                            </div>
+                                        </div>
+                                        <hr class="border-secondary border-opacity-50" />
+                                        <div class="d-grid mb-3">
+                                            <a href="{% url 'admin_logout' %}" class="btn btn-primary">
+                                                <i class="ti ti-logout me-2"></i> Sair
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <div class="pc-container">
+            <div class="pc-content">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+
+        <script src="{% static 'backend/js/jquery-3.6.0.min.js' %}"></script>
+        <script src="{% static 'backend/js/plugins/popper.min.js' %}"></script>
+        <script src="{% static 'backend/js/plugins/bootstrap.min.js' %}"></script>
+        <script src="{% static 'backend/js/plugins/feather.min.js' %}"></script>
+        <script src="{% static 'backend/js/choices.min.js' %}"></script>
+        <script src="{% static 'backend/js/fonts/custom-font.js' %}"></script>
+        <script src="{% static 'backend/js/pcoded.js' %}"></script>
+        <script src="{% static 'backend/js/jquery.dataTables.min.js' %}"></script>
+        <script src="{% static 'backend/js/select2.min.js' %}"></script>
+        <script>
+            feather.replace();
+            if ($.fn.dataTable) {
+                $('table.dataTable').DataTable({ language: { search: 'Buscar', lengthMenu: 'Mostrar _MENU_ por página', info: 'Mostrando _START_ a _END_ de _TOTAL_', paginate: { next: 'Próximo', previous: 'Anterior' } } });
+            }
+        </script>
+        {% block footer_script %}{% endblock %}
+    </body>
+</html>

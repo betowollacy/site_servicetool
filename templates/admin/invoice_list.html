@@ -1,0 +1,38 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12"><h4 class="mb-0">Faturas</h4></div>
+</div>
+<div class="card">
+    <div class="card-body table-responsive">
+        <table class="table table-hover dataTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Título</th>
+                    <th>Valor</th>
+                    <th>Gateway</th>
+                    <th>Status</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inv in invoices %}
+                <tr>
+                    <td>#{{ inv.id }}</td>
+                    <td>{{ inv.customer_name|default:inv.customer.email }}</td>
+                    <td>{{ inv.invoice_title|default:inv.invoice_for }}</td>
+                    <td>{{ currency_icon }}{{ inv.invoice_amount|floatformat:2 }} {{ inv.customer_currency }}</td>
+                    <td>{{ inv.payment_gateway|default:"-" }}</td>
+                    <td><span class="badge {% if inv.invoice_status == 'Paid' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ inv.invoice_status }}</span></td>
+                    <td>{{ inv.created_at|date:"d M, Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center">Nenhuma fatura.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

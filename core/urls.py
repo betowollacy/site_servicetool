@@ -1,9 +1,42 @@
-from django.contrib import admin
-from django.urls import path, include   
+from django.urls import path
+
+from . import views
+from . import views_admin
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('servicetool.urls')),
-    path('cadastro/', include('usuarios.urls')),
-    path('login/', include('usuarios.urls')),
+    path('admin-panel/', views_admin.admin_dashboard, name='admin_dashboard'),
+    path('admin-panel/orders/<str:status>/', views_admin.admin_orders, name='admin_orders'),
+    path('admin-panel/orders/<int:order_id>/update/', views_admin.admin_order_update, name='admin_order_update'),
+    path('admin-panel/invoices/', views_admin.admin_invoice_list, name='admin_invoice_list'),
+    path('admin-panel/customers/', views_admin.admin_customer_list, name='admin_customer_list'),
+    path('admin-panel/services/<str:svtype>/', views_admin.admin_service_list, name='admin_service_list'),
+    path('admin-panel/services/<str:svtype>/new/', views_admin.admin_service_new, name='admin_service_new'),
+    path('admin-panel/services/<str:svtype>/<int:service_id>/edit/', views_admin.admin_service_edit, name='admin_service_edit'),
+    path('admin-panel/currencies/', views_admin.admin_currency_list, name='admin_currency_list'),
+    path('admin-panel/currencies/<int:currency_id>/update/', views_admin.admin_currency_update, name='admin_currency_update'),
+    path('admin-panel/gateways/', views_admin.admin_gateway_list, name='admin_gateway_list'),
+    path('admin-panel/gateways/<int:gateway_id>/update/', views_admin.admin_gateway_update, name='admin_gateway_update'),
+    path('admin-panel/setting/', views_admin.admin_setting, name='admin_setting'),
+    path('admin-panel/logout/', views_admin.admin_logout, name='admin_logout'),
+
+    path('', views.homepage, name='homepage'),
+    path('category/<slug:slug>/', views.category, name='category'),
+    path('change-theme-mode/', views.change_theme_mode, name='change_theme_mode'),
+    path('service/<slug:slug>/', views.server_view, name='service_view'),
+    path('login/', views.login_view, name='login'),
+    path('register/', views.register_view, name='register'),
+    path('logout/', views.logout_view, name='logout'),
+
+    path('customer/dashboard/', views.customer_dashboard, name='customer_dashboard'),
+    path('customer/order-history/', views.customer_order_history, name='customer_order_history'),
+    path('customer/statement/', views.customer_statement, name='customer_statement'),
+    path('customer/invoice/', views.customer_invoice_list, name='customer_invoice'),
+    path('customer/invoice/<int:invoice_id>/', views.customer_invoice_detail, name='customer_invoice_detail'),
+    path('customer/add-balance/', views.customer_add_balance, name='customer_add_balance'),
+    path('customer/deposit/', views.customer_deposit, name='customer_deposit'),
+    path('customer/checkout/<int:invoice_id>/', views.checkout, name='checkout'),
+    path('customer/checkout/<int:invoice_id>/pay/', views.gateway_pay, name='gateway_pay'),
+    path('customer/submit-order/', views.submit_order, name='submit_order'),
+
+    path('page/<slug:slug>/', views.page_view, name='page_view'),
 ]
