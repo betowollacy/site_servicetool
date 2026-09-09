@@ -161,64 +161,6 @@
         </div>
     </div>
 
-    <footer class="footer">
-        <div class="footer-main">
-            <div class="foot-grid">
-                <div class="first-footer">
-                    <div class="col-title">Contato</div>
-                    <div class="ct">
-                        <div class="ct-item"><i class="bi bi-envelope"></i><span>{{ siteEmail }}</span></div>
-                        <div class="ct-item"><i class="bi bi-telephone"></i><span>{{ sitePhone }}</span></div>
-                        <div class="ct-item"><i class="bi bi-whatsapp"></i>{% if siteWaUrl %}<a href="{{ siteWaUrl }}" target="_blank">{{ sitePhone }}</a>{% endif %}</div>
-                        <div class="ct-item"><i class="bi bi-geo-alt"></i><span>{{ siteAddress }}</span></div>
-                        <div class="socs mt-3">
-                            {% if siteFbUrl %}<a href="{{ siteFbUrl }}" target="_blank" class="sc"><i class="bi bi-facebook"></i></a>{% endif %}
-                            {% if siteXUrl %}<a href="{{ siteXUrl }}" target="_blank" class="sc"><i class="bi bi-twitter-x"></i></a>{% endif %}
-                            {% if siteWaUrl %}<a href="{{ siteWaUrl }}" target="_blank" class="sc"><i class="bi bi-whatsapp"></i></a>{% endif %}
-                            {% if siteTeleUrl %}<a href="{{ siteTeleUrl }}" target="_blank" class="sc"><i class="bi bi-telegram"></i></a>{% endif %}
-                            {% if siteYtUrl %}<a href="{{ siteYtUrl }}" target="_blank" class="sc"><i class="bi bi-youtube"></i></a>{% endif %}
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <div class="col-title">Empresa</div>
-                    <nav class="col-links">
-                        <a href="{% url 'homepage' %}" class="col-link">Home</a>
-                        <a href="#" class="col-link">Contato</a>
-                        <a href="{% url 'page_view' 'about-us' %}" class="col-link">Sobre Nós</a>
-                    </nav>
-                </div>
-                <div>
-                    <div class="col-title">Acesso Rápido</div>
-                    <nav class="col-links">
-                        <a href="{% url 'category' 'imei-service' %}" class="col-link">Serviço IMEI</a>
-                        <a href="{% url 'category' 'server-service' %}" class="col-link">Servidor</a>
-                        <a href="{% url 'category' 'credit-service' %}" class="col-link">Recarga de Crédito</a>
-                    </nav>
-                </div>
-                <div>
-                    <div class="col-title">Legal</div>
-                    <nav class="col-links">
-                        <a href="{% url 'page_view' 'terms-of-service' %}" class="col-link">Termos de Serviço</a>
-                        <a href="{% url 'page_view' 'privacy-policy' %}" class="col-link">Privacidade</a>
-                        <a href="{% url 'page_view' 'refund-and-return-policy' %}" class="col-link">Reembolso</a>
-                    </nav>
-                </div>
-                <div class="app-col">
-                    <div class="col-title">Baixe o App</div>
-                    <p class="app-col-desc">Faça pedidos e acompanhe pelo celular.</p>
-                    <div class="app-btns">
-                        <a href="#" class="abt"><i class="bi bi-apple"></i><div class="abt-text"><small>Download on the</small><strong>App Store</strong></div></a>
-                        <a href="#" class="abt"><i class="bi bi-google-play"></i><div class="abt-text"><small>Get it on</small><strong>Google Play</strong></div></a>
-                    </div>
-                </div>
-            </div>
-            <div class="foot-bar">
-                <p class="foot-copy pt-2">© 2026 {{ siteTitle }}. Powered by SERVICETOOL</p>
-            </div>
-        </div>
-    </footer>
-
     <div class="modal fade modal-animate" id="successModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
