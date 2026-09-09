@@ -4,18 +4,28 @@
 <meta name="description" content="{{ page.page_meta_description }}">
 {% endblock %}
 {% block content %}
-<div class="container">
-    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'homepage' %}" class="breadcrumb-item active">Início</a></li>
-            <li class="breadcrumb-item active" aria-current="page">{{ page.page_title }}</li>
-        </ol>
-    </nav>
-    <div class="card">
-        <h1 class="card-header display-1 fs-3">{{ page.page_title }}</h1>
-        <div class="card-body">
-            {% if page.page_thumbnail %}<img src="{{ page.page_thumbnail }}" alt="" class="mb-4" style="max-width:100%">{% endif %}
-            {{ page.page_article|safe }}
+<div class="my-4">
+    <div class="container">
+        <div class="card rounded-0 page-top-info">
+            <div class="card-header service-card-header py-3 border-bottom-0">
+                <div>
+                    <h5 class="mb-sm-0 text-uppercase">{{ page.page_title }}</h5>
+                    <small>
+                        <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
+                            <ol class="breadcrumb mt-2 mb-0 pb-0">
+                                <li class="breadcrumb-item"><a href="{% url 'homepage' %}" class="breadcrumb-item active">Home</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">{{ page.page_title }}</li>
+                            </ol>
+                        </nav>
+                    </small>
+                </div>
+            </div>
+        </div>
+        <div class="card rounded-0">
+            <div class="card-body">
+                {% if page.page_thumbnail %}<img src="{{ page.page_thumbnail }}" alt="" class="mb-4" style="max-width:100%">{% endif %}
+                {{ page.page_article|safe }}
+            </div>
         </div>
     </div>
 </div>

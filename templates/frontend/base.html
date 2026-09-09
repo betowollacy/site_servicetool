@@ -1,337 +1,298 @@
 {% load static %}
 {% block seo %}{% endblock %}
 <!doctype html>
-<html lang="en" data-pc-theme="{{ themMode }}">
+<html lang="en" data-bs-theme="{% if themMode == 'dark' %}dark{% else %}light{% endif %}" translate="no">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>{{ siteTitle }}</title>
-    <link rel="canonical" href="{{ request.build_absolute_uri }}" />
     <meta name="author" content="SERVICETOOL" />
+    <title>{{ site_meta_title|default:siteTitle }}</title>
+    <meta name="description" content="{{ site_meta_des }}" />
+    <meta name="keywords" content="{{ site_keyword }}" />
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ request.build_absolute_uri }}" />
     <link rel="icon" href="{{ siteFav }}" type="image/x-icon" />
-    <link rel="stylesheet" href="{% static 'frontend/css/style.css' %}" id="main-style-link" />
-    <link rel="stylesheet" href="{% static 'frontend/css/customstyle.css' %}" id="main-style-link" />
-    <link rel="stylesheet" href="{% static 'frontend/css/orion.css' %}" />
-    <link rel="stylesheet" href="{% static 'frontend/css/loader.css' %}" id="main-style-link" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'frontend/css/plugins/style.css' %}" id="main-style-link" />
-    <link rel="stylesheet" href="{% static 'frontend/css/style-preset.css' %}" />
-    <link rel="stylesheet" href="{% static 'frontend/css/landing.css' %}" />
-    <link rel="stylesheet" href="{% static 'frontend/css/simple-notify.css' %}">
-    <link rel="stylesheet" href="{% static 'frontend/css/notifier.css' %}">
-    <link rel="stylesheet" href="{% static 'frontend/css/choices.min.css' %}">
-    <link rel="stylesheet" href="{% static 'frontend/css/jquery.dataTables.min.css' %}">
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <link rel="stylesheet" href="{% static 'frontend/css/stylesheet.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/gsmthemstyle.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/modernstyle.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/jquery.dataTables.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/custom-animation.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/nprogress.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/bootstrap-icons.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/owl.carousel.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/owl.theme.default.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/notyf.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/select2.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/select2-bootstrap-5-theme.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/tabler-icons.min.css' %}" />
+    <style>
+        img { -webkit-user-drag: none; user-drag: none; -webkit-user-select: none; user-select: none; }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll("img").forEach(function(img) {
+                img.setAttribute("draggable", "false");
+                img.addEventListener("contextmenu", function(e) { e.preventDefault(); });
+                img.addEventListener("dragstart", function(e) { e.preventDefault(); });
+            });
+        });
+    </script>
     {% if headerCode %}{{ headerCode|safe }}{% endif %}
 </head>
-<body
-    data-pc-preset="{{ themeColor }}"
-    data-pc-sidebar-caption="true"
-    data-pc-direction="ltr"
-    data-pc-theme_contrast=""
-    data-pc-theme="{{ themMode }}"
-    class="landing-page"
->
-    <canvas id="orion-space-canvas"></canvas>
+<body data-pc-direction="ltr">
 
-    <div class="orion-banner">
-        <div class="server-status" title="Status atual dos servidores">
-            <div class="status-dot online"></div>
-            <span>SERVER ON</span>
-        </div>
-        <div class="orion-marquee-wrapper">
-            <div class="orion-marquee">
-                🔓 {{ siteTitle }} - Servidor #1 do Brasil 🚀 Suporte Especializado 💎 Ferramentas Oficiais 🎉 PIX Automático 24/7
-            </div>
-        </div>
+    <div id="gsmtheme-loader" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+        <div class="spinner-border text-primary" role="status" style="width:3.5rem;height:3.5rem;"></div>
     </div>
 
-    <div id="orion-back-to-top" title="Voltar ao topo"><i class="fas fa-arrow-up"></i></div>
+    <div id="gsmtheme-content" class="d-none">
 
-    <div class="orion-social-fab">
-        <div id="orion-faq-btn" title="Central de Ajuda">
-            <i class="fas fa-comments"></i> <span class="desktop-text">Dúvidas?</span>
-        </div>
-        {% if siteTeleUrl %}<a href="{{ siteTeleUrl }}" target="_blank" class="orion-fab bg-tlg" title="Canal Oficial Telegram"><i class="fab fa-telegram-plane"></i></a>{% endif %}
-        <a href="{% url 'customer_add_balance' %}" class="orion-fab bg-pix" title="Recarga Pix"><i class="fas fa-qrcode"></i></a>
-        {% if siteWaUrl %}<a href="{{ siteWaUrl }}" target="_blank" class="orion-fab bg-wpp" title="WhatsApp Suporte"><i class="fab fa-whatsapp"></i></a>{% endif %}
-    </div>
+    <header class="gsm-header">
+        <div class="gsm-theme-header">
+            <a href="{% url 'homepage' %}" class="nav-logo">
+                <img src="{{ siteLogo }}" alt="logo" class="logo" />
+            </a>
 
-    <div id="orion-faq-box">
-        <div class="faq-header">
-            <span>CENTRAL DE AJUDA</span>
-            <i class="fas fa-times" onclick="document.getElementById('orion-faq-box').style.display='none'"></i>
-        </div>
-        <div class="faq-search-wrapper"><input type="text" id="faq-search" placeholder="🔍 Buscar por palavra-chave..."></div>
-        <div class="faq-content">
-            <div class="faq-item">
-                <div class="faq-question">Como comprar no site? <i class="fas fa-chevron-down"></i></div>
-                <div class="faq-answer">Nosso site funciona <strong>24/7</strong>.<br><br>Acompanhe seus pedidos em <strong>Meus Pedidos</strong>.</div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-question">Como fazer um pedido? <i class="fas fa-chevron-down"></i></div>
-                <div class="faq-answer">Escolha um serviço na lista, preencha os dados, pague via PIX e acompanhe o status pelo painel.</div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-question">Quanto tempo demora? <i class="fas fa-chevron-down"></i></div>
-                <div class="faq-answer">O tempo de execução depende de cada serviço. Confira a descrição do serviço escolhido.</div>
-            </div>
-            <div class="faq-item">
-                <div class="faq-question">Tenho outras dúvidas <i class="fas fa-chevron-down"></i></div>
-                <div class="faq-answer">Fale conosco pelo WhatsApp ou Telegram flutuante nesta página.</div>
-            </div>
-        </div>
-    </div>
-
-    <div id="orion-terms-modal" class="orion-modal-overlay">
-        <div class="orion-modal-box">
-            <div class="modal-header-alert">⚠️ LEIA COM ATENÇÃO — TERMOS OBRIGATÓRIOS</div>
-            <div class="modal-body-content">
-                <div class="term-block bg-alert">
-                    <h4>🚨 AVISO CRÍTICO DE RESPONSABILIDADE</h4>
-                    Este site comercializa ferramentas de uso <strong>EXCLUSIVAMENTE TÉCNICO</strong> e <strong>PROFISSIONAL</strong>.
-                </div>
-                <div class="term-block">
-                    <h4>📌 Responsabilidade do Usuário</h4>
-                    <p>Ao realizar qualquer uma das ações abaixo:</p>
-                    <p><strong>QUALQUER PROBLEMA POSTERIOR NÃO É DE NOSSA RESPONSABILIDADE.</strong></p>
-                    <ul class="term-list">
-                        <li>❌ Erros ou falhas da ferramenta.</li>
-                        <li>❌ Uso incorreto ou operação inadequada.</li>
-                        <li>❌ Problemas no PC, sistema ou configurações.</li>
-                    </ul>
-                </div>
-                <div class="term-block bg-danger-light">
-                    <h4>⚠️ ATENÇÃO: NÃO EXISTE REEMBOLSO</h4>
-                    <p>Mesmo que você não consiga usar ou o procedimento não funcione, <strong>NÃO TEM VOLTA.</strong></p>
-                    <div style="text-align:center; margin-top:10px; font-weight:bold; color:var(--orion-danger)">🔒 USE POR SUA CONTA E RISCO</div>
-                </div>
-                <div class="term-block">
-                    <h4>⚖️ IMPLICAÇÕES LEGAIS</h4>
-                    <p style="margin-top:5px; font-size:12px;"><strong>A equipe {{ siteTitle }}</strong> se exime de qualquer responsabilidade civil ou criminal pelo uso indevido.</p>
-                </div>
-                <label>
-                    <input type="checkbox" id="terms-check">
-                    <span>Li, compreendi e <strong>ACEITO</strong> todos os termos acima.</span>
-                </label>
-                <button id="btn-agree" class="orion-btn" disabled>CONCORDAR E ACESSAR SISTEMA</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="orion-notif-area"></div>
-
-    <div class="loader-bg" style="background: {% if themMode == 'dark' %}#131920{% else %}#f8f9fa{% endif %};">
-        <div class="loader-track"><div class="top-loader"><div class="loader-bar"></div></div></div>
-    </div>
-    <div class="top-loader" style="display:none;"><div class="loader-bar"></div></div>
-    <header class="d-block custom-header-height">
-        <nav class="navbar navbar-expand-lg navbar-light default d-block py-0" style="z-index: 100">
-            <div class="top-navbar py-2 d-none d-lg-block text-light {% if themMode == 'dark' %}bg-light-primary{% else %}bg-primary{% endif %}">
-                <div class="container d-flex">
-                    <div class="nav-item px-1 dropdown">
-                        <ul class="navbar-nav ms-auto">
-                            <li class="nav-item dropdown">
-                                <div class="dropdown-toggle" data-bs-toggle="dropdown" style="cursor: pointer"><i class="fas fa-phone"></i> Fale Conosco</div>
-                                <div class="dropdown-menu drp-technology nav-drp-tech-scrollble">
-                                    {% if siteWaUrl %}<a class="dropdown-item gap-2" href="{{ siteWaUrl }}" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a>{% endif %}
-                                    {% if siteTeleUrl %}<a class="dropdown-item gap-2" href="{{ siteTeleUrl }}" target="_blank"><i class="fab fa-telegram-plane"></i> Telegram</a>{% endif %}
-                                    {% if siteFbUrl %}<a class="dropdown-item gap-2" href="{{ siteFbUrl }}" target="_blank"><i class="fab fa-facebook"></i> Facebook</a>{% endif %}
-                                </div>
+            <div class="nav-container">
+                <button class="nav-arrow nav-arrow-left" id="arrowLeft" title="Scroll left"><i class="bi bi-chevron-left"></i></button>
+                <div class="nav-scroll-wrap" id="navWrap">
+                    <div class="nav-track" id="navTrack">
+                        <ul class="nav-links">
+                            <li><a href="{% url 'homepage' %}">🏡 Home</a></li>
+                            <li class="has-drop" data-drop="drop-down-2">
+                                <a href="#">📋 Lista de Serviço
+                                    <svg class="chevron" fill="none" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </a>
                             </li>
+                            {% for group in groups %}
+                            <li><a href="{% url 'category' group.slug|default:'server-service' %}">🔧 {{ group.name }}</a></li>
+                            {% endfor %}
                         </ul>
                     </div>
-                    <div class="navbar-collapse">
-                        {% if customer %}
-                            <ul class="navbar-nav ms-auto">
-                                <li class="nav-itemn"><a href="{% url 'change_theme_mode' %}" class="text-reset"><i class="fas fa-moon fs-5"></i></a></li>
-                                <li class="nav-itemn border-start border-light-primary p-l-15 m-l-15"><a class="text-reset" href="{% url 'customer_add_balance' %}">Balance: {{ customer.balance|floatformat:2 }} {% if customer.currency_icon %}{{ customer.currency_icon }}{% endif %}</a></li>
-                                <li class="nav-item border-start border-light-primary p-l-15 m-l-15 dropdown">
-                                    <div class="dropdown-toggle" data-bs-toggle="dropdown" style="cursor: pointer"><i class="fas fa-user"></i> {{ customer.name }} ({{ customer.role }})</div>
-                                    <div class="dropdown-menu drp-technology nav-drp-tech-scrollble">
-                                        <a class="dropdown-item gap-2" href="{% url 'customer_order_history' %}"><i class="fas fa-shopping-cart"></i> Meu Histórico de Pedidos</a>
-                                        <a class="dropdown-item gap-2" href="{% url 'customer_statement' %}"><i class="fas fa-dollar-sign"></i> Meu Extrato</a>
-                                        <a class="dropdown-item gap-2" href="{% url 'customer_invoice' %}"><i class="fas fa-file-invoice"></i> Minhas Faturas</a>
-                                        <a class="dropdown-item gap-2" href="#" onclick="if(confirm('Tem certeza que deseja sair?'))window.location.href='{% url 'logout' %}'">
-                                            <i class="fas fa-sign-out-alt"></i> Sair
-                                        </a>
-                                    </div>
-                                </li>
-                            </ul>
-                        {% else %}
-                            <ul class="navbar-nav ms-auto">
-                                <li class="nav-item p-l-15 m-l-15 dropdown">
-                                    <div class="dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-dollar-sign"></i> {% if currency_code %}{{ currency_code }}{% else %}USD{% endif %}</div>
-                                    <div class="dropdown-menu drp-technology nav-drp-tech-scrollble" style="min-width: auto">
-                                        {% for currency in currencyList %}
-                                        <a class="dropdown-item gap-2" href="#">{{ currency.icon }} {{ currency.code }}</a>
-                                        {% endfor %}
-                                    </div>
-                                </li>
-                            </ul>
-                        {% endif %}
-                    </div>
                 </div>
+                <button class="nav-arrow nav-arrow-right" id="arrowRight" title="Scroll right"><i class="bi bi-chevron-right"></i></button>
             </div>
-            <div class="container py-3 position-static">
-                <a class="navbar-brand" href="{% url 'homepage' %}">
-                    <img src="{{ siteLogo }}" alt="logo" style="max-width: 250px; max-height:40px" />
-                </a>
-                <button class="navbar-toggler rounded"
-                    type="button" data-bs-toggle="offcanvas" data-bs-target="#menuOffcanvas"
-                    aria-controls="menuOffcanvas" aria-expanded="false" aria-label="Toggle navigation"
-                    style="outline: none; box-shadow: none;"><span class="navbar-toggler-icon"></span>
+
+            <div class="dropdown d-none d-lg-block">
+                <button class="btn dropdown-toggle arrow-none me-0 currency-btn rounded-2" data-bs-toggle="dropdown" role="button" aria-haspopup="false" aria-expanded="false">
+                    {% if currency_code %}{{ currency_code }}{% else %}USD{% endif %}
+                    <i class="bi bi-chevron-down ms-auto"></i>
                 </button>
-                <div class="collapse navbar-collapse" id="navbarTogglerDemo01">
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
-                        <li class="nav-item px-1 dropdown">
-                            <button class="dropdown-toggle btn btn-light-primary border-primary rounded" data-bs-toggle="dropdown" href="#"><i class="fas fa-lock-open"></i> Lista de Serviços</button>
-                            <div class="dropdown-menu drp-technology nav-drp-tech-scrollble">
-                                <a class="dropdown-item gap-2" href="{% url 'category' 'server-service' %}"><i class="fas fa-server"></i> Ativação/Servidor</a>
-                                <a class="dropdown-item gap-2" href="{% url 'category' 'credit-service' %}"><i class="fas fa-money-check-alt"></i> Recarga de Crédito</a>
-                                <a class="dropdown-item gap-2" href="{% url 'category' 'imei-service' %}"><i class="fas fa-lock-open"></i> Serviço IMEI/SN</a>
-                            </div>
-                        </li>
-                        {% if customer %}
-                        <li class="nav-item px-1">
-                            <a href="{% url 'customer_dashboard' %}" class="btn btn-light-primary border-primary rounded"><i class="fas fa-tachometer-alt"></i> Meu Painel</a>
-                        </li>
-                        {% endif %}
-                        {% if not customer %}
-                        <button class="btn btn-light-primary border-primary rounded" data-bs-toggle="modal" data-bs-target="#login"><i class="fas fa-user"></i> <span style="padding-left: 5px">Entrar/Cadastrar</span></button>
-                        {% endif %}
-                    </ul>
+                <div class="dropdown-menu dropdown-menu-end currency-dropdown">
+                    {% for currency in currencyList %}
+                    <a href="#" class="dropdown-item">{{ currency.icon }} {{ currency.code }}</a>
+                    {% endfor %}
                 </div>
             </div>
-        </nav>
+
+            <div class="nav-auth">
+                {% if customer %}
+                <a href="{% url 'customer_dashboard' %}" class="btn btn-primary rounded-2 d-none d-lg-flex align-items-center gap-1">
+                    <i class="bi bi-person-fill"></i> {{ customer.name }}
+                </a>
+                {% else %}
+                <button class="btn btn-primary rounded-2 d-none d-lg-flex align-items-center gap-1 login-btn" data-bs-toggle="modal" data-bs-target="#gsmAuthModal" data-auth-view="login">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+                        <circle cx="12" cy="7" r="4" stroke="white" stroke-width="1.8"/>
+                    </svg>
+                    Login <span class="customer-auth-btn"></span>
+                </button>
+                {% endif %}
+            </div>
+
+            <button class="navbar-toggler rounded fs-2 ms-auto d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuOffcanvas" aria-controls="menuOffcanvas" aria-expanded="false" aria-label="Toggle navigation" style="outline: none; box-shadow: none;">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
     </header>
-    {% block content %}{% endblock %}
-    <div class="bg-white">
-        <footer class="footer pt-0">
-            <div class="border-top border-bottom footer-center">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-lg-4 wow fadeInUp" data-wow-delay="0.2s">
-                            <a class="navbar-brand" href="{% url 'homepage' %}"><img src="{{ siteLogo }}" alt="logo" style="max-width: 250px; max-height:40px" /></a>
-                            <div class="d-flex flex-wrap gap-2 my-4">
-                                {% if siteFbUrl %}<a href="{{ siteFbUrl }}" target="_blank"><button type="button" class="btn btn-icon btn-primary"><i class="fab fa-facebook"></i></button></a>{% endif %}
-                                {% if siteXUrl %}<a href="{{ siteXUrl }}" target="_blank"><button type="button" class="btn btn-icon btn-primary"><i class="fab fa-twitter"></i></button></a>{% endif %}
-                                {% if siteWaUrl %}<a href="{{ siteWaUrl }}" target="_blank"><button type="button" class="btn btn-icon btn-primary"><i class="fab fa-whatsapp"></i></button></a>{% endif %}
-                                {% if siteTeleUrl %}<a href="{{ siteTeleUrl }}" target="_blank"><button type="button" class="btn btn-icon btn-primary"><i class="fab fa-telegram-plane"></i></button></a>{% endif %}
-                                {% if siteYtUrl %}<a href="{{ siteYtUrl }}" target="_blank"><button type="button" class="btn btn-icon btn-primary"><i class="fab fa-youtube"></i></button></a>{% endif %}
-                            </div>
-                        </div>
-                        <div class="col-lg-8">
-                            <div class="row">
-                                <div class="col-lg-4 col-md-4 wow fadeInUp" data-wow-delay="0.6s">
-                                    <h5 class="mb-0 mb-lg-4 mt-4 mt-lg-0 text-uppercase fs-6">Links do Site</h5>
-                                    {% if customer %}
-                                    <ul class="list-unstyled footer-link">
-                                        <li><a href="{% url 'customer_order_history' %}">Histórico de Pedidos</a></li>
-                                        <li><a href="{% url 'customer_statement' %}">Meu Extrato</a></li>
-                                        <li><a href="{% url 'category' 'server-service' %}">Serviço Servidor</a></li>
-                                        <li><a href="{% url 'category' 'credit-service' %}">Serviço de Crédito</a></li>
-                                        <li><a href="{% url 'category' 'imei-service' %}">Serviço IMEI/SN</a></li>
-                                    </ul>
-                                    {% else %}
-                                    <ul class="list-unstyled footer-link">
-                                        <li><a href="#" data-bs-toggle="modal" data-bs-target="#login">Entrar/Cadastrar</a></li>
-                                        <li><a href="#">Esqueci minha senha</a></li>
-                                        <li><a href="{% url 'category' 'server-service' %}">Serviço Servidor</a></li>
-                                        <li><a href="{% url 'category' 'credit-service' %}">Serviço de Crédito</a></li>
-                                        <li><a href="{% url 'category' 'imei-service' %}">Serviço IMEI/SN</a></li>
-                                    </ul>
-                                    {% endif %}
-                                </div>
-                                <div class="col-lg-4 col-md-4 wow fadeInUp" data-wow-delay="0.8s">
-                                    <h5 class="mb-0 mb-lg-4 mt-4 mt-lg-0 text-uppercase fs-6">Links Importantes</h5>
-                                    <ul class="list-unstyled footer-link">
-                                        <li><a href="#">Termos e Condições</a></li>
-                                        <li><a href="#">Contato</a></li>
-                                        <li><a href="#">Política de Privacidade</a></li>
-                                        <li><a href="#">Política de Reembolso</a></li>
-                                        <li><a href="#">Política de Cancelamento</a></li>
-                                    </ul>
-                                </div>
-                                <div class="col-lg-4 col-md-4 wow fadeInUp" data-wow-delay="1s">
-                                    <h5 class="mb-0 mb-lg-4 mt-4 mt-lg-0 mb-4 text-uppercase fs-6">Baixar Aplicativo</h5>
-                                    <div class="d-flex my-0 gap-2">
-                                        <img src="{% static 'resource/android-app.webp' %}" alt="Android App" width="115" height="38" class="w-auto w-sm-50">
-                                        <img src="{% static 'resource/ios-app.webp' %}" alt="iOS App" width="115" height="38" class="w-auto w-sm-50">
-                                    </div>
-                                    <div class="mb-3 mt-5">
-                                        <h5 class="mb-0 mb-lg-4 mt-4 mt-lg-0 text-uppercase fs-6 mb-4">Informativo</h5>
-                                        <div class="input-group">
-                                            <input type="email" class="form-control" placeholder="Digite seu e-mail" />
-                                            <button class="btn btn-primary" style="border-top-right-radius:8px;border-bottom-right-radius:8px;" type="button">Assinar</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="container">
-                <div class="row align-items-center">
-                    <div class="col-lg-6 my-2 text-center text-lg-start" data-wow-delay="0.4s">
-                        <p class="mb-0">&copy; {{ siteTitle }}. Desenvolvido por SERVICETOOL</p>
-                    </div>
-                    <div class="col-lg-6 my-2 text-center text-lg-end">
-                        <ul class="list-inline footer-sos-link mb-0">
-                            <li class="list-inline-item wow fadeInUp border-end pe-2" data-wow-delay="0.4s">Pague com</li>
-                            <li class="list-inline-item wow fadeInUp" data-wow-delay="0.4s"><img src="{% static 'resource/binance_logo.png' %}" alt="" width="60" height="40" class="rounded"></li>
-                            <li class="list-inline-item wow fadeInUp" data-wow-delay="0.4s"><img src="{% static 'resource/bkash_logo.png' %}" alt="" width="60" height="40" class="rounded"></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </footer>
+
+    <div class="gsm-dropdown" id="drop-down-2">
+        <a href="{% url 'category' 'imei-service' %}">📶 Serviço de Imei e Consultas</a>
+        <a href="{% url 'category' 'server-service' %}">📲 Ativação de Ferramentas e Créditos</a>
+        <a href="{% url 'category' 'credit-service' %}">💰 Recarga de Crédito</a>
     </div>
-    <div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="menuOffcanvas" aria-labelledby="menuOffcanvasLabel">
-        <div class="offcanvas-header border-bottom">
-            <h5 class="offcanvas-title text-uppercase">{{ siteTitle }}</h5>
-            <button type="button" class="btn-close text-reset text-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+
+    <div id="homePageFlashMessage"></div>
+
+    {% block content %}{% endblock %}
+
+    <div class="top-footer">
+        <div class="top-footer-content text-white">
+            <div class="row g-3">
+                <div class="col-6 col-md d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0" style="width:38px;height:38px;background:rgba(255,255,255,.12);">
+                        <i class="bi bi-lightning-charge-fill" style="font-size:18px;color:#e0ffff;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold top-footer-title">Entrega Rápida</div>
+                        <div style="font-size:11px;opacity:.65;">Resultados em minutos</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md d-flex align-items-center gap-2 justify-content-md-center">
+                    <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0" style="width:38px;height:38px;background:rgba(255,255,255,.12);">
+                        <i class="bi bi-shield-fill-check" style="font-size:18px;color:#e0ffff;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold top-footer-title">100% Seguro</div>
+                        <div style="font-size:11px;opacity:.65;">Plataforma com SSL</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md d-flex align-items-center gap-2 justify-content-md-center">
+                    <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0" style="width:38px;height:38px;background:rgba(255,255,255,.12);">
+                        <i class="bi bi-headset" style="font-size:18px;color:#e0ffff;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold top-footer-title">Suporte 24/7</div>
+                        <div style="font-size:11px;opacity:.65;">Sempre aqui para você</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md d-flex align-items-center gap-2 justify-content-md-end">
+                    <div class="d-flex align-items-center justify-content-center rounded-2 flex-shrink-0" style="width:38px;height:38px;background:rgba(255,255,255,.12);">
+                        <i class="bi bi-credit-card-2-front-fill" style="font-size:18px;color:#e0ffff;"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold top-footer-title">Recarga Fácil</div>
+                        <div style="font-size:11px;opacity:.65;">PIX, USDT e mais</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-main">
+            <div class="foot-grid">
+                <div class="first-footer">
+                    <div class="col-title">Contato</div>
+                    <div class="ct">
+                        <div class="ct-item"><i class="bi bi-envelope"></i><span>{{ siteEmail }}</span></div>
+                        <div class="ct-item"><i class="bi bi-telephone"></i><span>{{ sitePhone }}</span></div>
+                        <div class="ct-item"><i class="bi bi-whatsapp"></i>{% if siteWaUrl %}<a href="{{ siteWaUrl }}" target="_blank">{{ sitePhone }}</a>{% endif %}</div>
+                        <div class="ct-item"><i class="bi bi-geo-alt"></i><span>{{ siteAddress }}</span></div>
+                        <div class="socs mt-3">
+                            {% if siteFbUrl %}<a href="{{ siteFbUrl }}" target="_blank" class="sc"><i class="bi bi-facebook"></i></a>{% endif %}
+                            {% if siteXUrl %}<a href="{{ siteXUrl }}" target="_blank" class="sc"><i class="bi bi-twitter-x"></i></a>{% endif %}
+                            {% if siteWaUrl %}<a href="{{ siteWaUrl }}" target="_blank" class="sc"><i class="bi bi-whatsapp"></i></a>{% endif %}
+                            {% if siteTeleUrl %}<a href="{{ siteTeleUrl }}" target="_blank" class="sc"><i class="bi bi-telegram"></i></a>{% endif %}
+                            {% if siteYtUrl %}<a href="{{ siteYtUrl }}" target="_blank" class="sc"><i class="bi bi-youtube"></i></a>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="col-title">Empresa</div>
+                    <nav class="col-links">
+                        <a href="{% url 'homepage' %}" class="col-link">Home</a>
+                        <a href="#" class="col-link">Contato</a>
+                        <a href="{% url 'page_view' 'about-us' %}" class="col-link">Sobre Nós</a>
+                    </nav>
+                </div>
+                <div>
+                    <div class="col-title">Acesso Rápido</div>
+                    <nav class="col-links">
+                        <a href="{% url 'category' 'imei-service' %}" class="col-link">Serviço IMEI</a>
+                        <a href="{% url 'category' 'server-service' %}" class="col-link">Servidor</a>
+                        <a href="{% url 'category' 'credit-service' %}" class="col-link">Recarga de Crédito</a>
+                    </nav>
+                </div>
+                <div>
+                    <div class="col-title">Legal</div>
+                    <nav class="col-links">
+                        <a href="{% url 'page_view' 'terms-of-service' %}" class="col-link">Termos de Serviço</a>
+                        <a href="{% url 'page_view' 'privacy-policy' %}" class="col-link">Privacidade</a>
+                        <a href="{% url 'page_view' 'refund-and-return-policy' %}" class="col-link">Reembolso</a>
+                    </nav>
+                </div>
+                <div class="app-col">
+                    <div class="col-title">Baixe o App</div>
+                    <p class="app-col-desc">Faça pedidos e acompanhe pelo celular.</p>
+                    <div class="app-btns">
+                        <a href="#" class="abt"><i class="bi bi-apple"></i><div class="abt-text"><small>Download on the</small><strong>App Store</strong></div></a>
+                        <a href="#" class="abt"><i class="bi bi-google-play"></i><div class="abt-text"><small>Get it on</small><strong>Google Play</strong></div></a>
+                    </div>
+                </div>
+            </div>
+            <div class="foot-bar">
+                <p class="foot-copy pt-2">© 2026 {{ siteTitle }}. Powered by SERVICETOOL</p>
+            </div>
+        </div>
+    </footer>
+
+    <div class="modal fade modal-animate" id="successModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <div class="modal-body text-center pt-2">
+                        <svg class="success-circle" viewBox="0 0 70 70" style="width:200px; height:200px; margin:auto">
+                            <circle class="circle-bg" cx="35" cy="35" r="30" fill="none" stroke="#2ca87f" stroke-width="4"/>
+                            <path class="check" fill="none" stroke="#2ca87f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M20 35 L30 45 L50 25"/>
+                        </svg>
+                    </div>
+                    <h5 class="text-muted" id="successModalText"></h5>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light-success w-100 rounded" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-start" data-bs-scroll="true" tabindex="-1" id="menuOffcanvas" aria-labelledby="menuOffcanvasLabel">
+        <div class="offcanvas-header border-bottom bg-primary">
+            <i class="bi bi-chevron-left me-3 fs-4 text-white pointer" data-bs-dismiss="offcanvas" aria-label="Close"></i>
+            <a class="navbar-brand" href="{% url 'homepage' %}"><img src="{{ siteLogo }}" alt="logo" style="max-width: 150px; max-height:40px" /></a>
         </div>
         <div class="offcanvas-body">
+            <h5 class="display-6 fs-5 border-bottom mb-2 pb-2">LISTA DE SERVIÇO</h5>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'imei-service' %}">📶 Serviço de Imei e Consultas <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'server-service' %}">📲 Ativação de Ferramentas e Créditos <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'credit-service' %}">💰 Recarga de Crédito <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             {% if customer %}
-            <h5 class="display-6 fs-5 border-bottom mb-2 pb-2">{{ customer.name }} ({{ customer.role }})</h5>
-            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_order_history' %}"><i class="fas fa-shopping-cart" style="width: 25px"></i> Meu Histórico de Pedidos <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
-            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_statement' %}"><i class="fas fa-dollar-sign" style="width: 25px"></i> Meu Extrato <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
-            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_invoice' %}"><i class="fas fa-file-invoice" style="width: 25px"></i> Minhas Faturas <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
-            <a class="text-reset border-bottom mb-4 pb-2 d-block" href="{% url 'customer_dashboard' %}"><i class="fas fa-tachometer-alt" style="width: 25px"></i> Meu Painel <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_dashboard' %}" style="margin-top: 12px;"><i class="bi bi-tachometer"></i> Meu Painel <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_order_history' %}"><i class="bi bi-bag"></i> Meus Pedidos <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_add_balance' %}"><i class="bi bi-wallet2"></i> Recarga <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             {% endif %}
-            <h5 class="display-6 fs-5 border-bottom mb-2 pb-2">LINKS DO SITE</h5>
-            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'server-service' %}"><i class="fas fa-server" style="width: 25px"></i> Ativação/Servidor <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
-            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'credit-service' %}"><i class="fas fa-money-check-alt" style="width: 25px"></i> Recarga de Crédito <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
-            <a class="text-reset border-bottom mb-4 pb-2 d-block" href="{% url 'category' 'imei-service' %}"><i class="fas fa-lock-open" style="width: 25px"></i> Serviço IMEI/SN <span class="float-end text-muted"><i class="fas fa-arrow-right"></i></span></a>
             {% if customer %}
-            <a href="#" class="btn btn-light-danger border-danger rounded w-100" onclick="if(confirm('Tem certeza que deseja sair?'))window.location.href='{% url 'logout' %}'"><i class="fas fa-sign-out-alt"></i> <span style="padding-left: 5px">Sair</span></a>
+            <a href="{% url 'logout' %}" class="btn btn-light-danger border-danger rounded w-100 mt-3 d-flex align-items-center justify-content-center gap-1"><i class="bi bi-box-arrow-right"></i> Sair</a>
             {% else %}
-            <button class="btn btn-light-primary border-primary rounded w-100" data-bs-toggle="modal" data-bs-target="#login"><i class="fas fa-user"></i> <span style="padding-left: 5px">Entrar/Cadastrar</span></button>
+            <button class="btn btn-primary rounded w-100 mt-3 menu-login-btn d-flex align-items-center justify-content-center gap-1" data-bs-toggle="modal" data-bs-target="#gsmAuthModal" data-auth-view="login">
+                <i class="bi bi-person"></i> Login <span class="customer-auth-btn"></span>
+            </button>
             {% endif %}
         </div>
     </div>
 
-    <style>body.modal-open {overflow: visible !important; padding-right: 0 !important}</style>
-    <!-- Required Js -->
-    <script src="{% static 'frontend/js/jquery-3.6.4.min.js' %}"></script>
-    <script src="{% static 'frontend/js/plugins/popper.min.js' %}"></script>
-    <script src="{% static 'frontend/js/plugins/simplebar.min.js' %}"></script>
-    <script src="{% static 'frontend/js/plugins/bootstrap.min.js' %}"></script>
-    <script src="{% static 'frontend/js/pcoded.js' %}"></script>
-    <script src="{% static 'frontend/js/simple-notify.min.js' %}"></script>
-    <script src="{% static 'frontend/js/notifier.js' %}"></script>
-    <script src="{% static 'frontend/js/jquery.dataTables.min.js' %}"></script>
-    <script src="{% static 'frontend/js/orion.js' %}"></script>
-    {% block footer_script %}{% endblock %}
-    <script>layout_change('{{ themMode }}');</script>
-    <script>layout_theme_contrast_change('false');</script>
-    <script>change_box_container('false');</script>
-    <script>layout_caption_change('true');</script>
-    <script>layout_rtl_change('false');</script>
-    <script>preset_change('{{ themeColor }}');</script>
     {% include 'frontend/include/login.html' %}
+
+    <script src="{% static 'frontend/js/jquery.min.js' %}"></script>
+    <script src="{% static 'frontend/js/select2.min.js' %}"></script>
+    <script src="{% static 'frontend/js/html2pdf.bundle.min.js' %}"></script>
+    <script src="{% static 'frontend/js/popper.min.js' %}"></script>
+    <script src="{% static 'frontend/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'frontend/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'frontend/js/nprogress.min.js' %}"></script>
+    <script src="{% static 'frontend/js/lottie-player.js' %}"></script>
+    <script src="{% static 'frontend/js/owl.carousel.min.js' %}"></script>
+    <script src="{% static 'frontend/js/notyf.min.js' %}"></script>
+    <script src="{% static 'frontend/js/auth.js' %}"></script>
+    <script src="{% static 'frontend/js/gsmtheme.js' %}"></script>
+    {% block footer_script %}{% endblock %}
+    <script>
+        $(document).ready(function(){
+            $(".owl-carousel").owlCarousel({
+                loop:true, margin:20, dots:false, slideBy:1, autoplay:true,
+                autoplayTimeout:3000,
+                responsive:{ 0:{items:2}, 600:{items:4}, 1000:{items:6} },
+            });
+            $("[data-switch-auth]").on("click", function(){
+                var target = $(this).data("switch-auth");
+                $("#gsmAuthModal .auth-view").removeClass("show").addClass("d-none");
+                $("#view-" + target).removeClass("d-none").addClass("show");
+            });
+        });
+    </script>
+
+    </div>
 </body>
 </html>

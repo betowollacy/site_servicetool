@@ -1,101 +1,89 @@
+{% load static %}
 {% if not customer %}
-<div class="modal fade" id="login" tabindex="-1" aria-labelledby="login" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content login-content">
-            <div class="modal-header" style="align-items:flex-start; padding: 20px 20px 0 20px">
-                <h5 class="modal-title" id="loginLabel">
-                    <div>
-                        <ul class="nav nav-tabs analytics-tab" id="myTab" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="login-tab" data-bs-toggle="tab" data-bs-target="#login-tab-pane" type="button" role="tab" aria-controls="login-tab-pane" aria-selected="true">ENTRAR</button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane" type="button" role="tab" aria-controls="register-tab-pane" aria-selected="true">CADASTRAR</button>
-                            </li>
-                        </ul>
-                    </div>
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="tab-content" id="myTabContent">
-                <div class="tab-pane fade show active" id="login-tab-pane" role="tabpanel" aria-labelledby="login-tab" tabindex="0">
-                    <form method="post" action="{% url 'login' %}" id="loginForm">
-                        {% csrf_token %}
-                        <div class="modal-body login-form px-4">
-                            {% if login_error %}<div class="alert alert-danger py-2">{{ login_error }}</div>{% endif %}
-                            <div class="mb-3">
-                                <label for="login_email" class="form-label">Seu E-mail</label>
-                                <div class="form-search">
-                                    <i class="fas fa-envelope text-muted fs-4"></i>
-                                    <input type="email" name="email" id="login_email" class="form-control" placeholder="E-mail" required />
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="login_password" class="form-label">Sua Senha</label>
-                                <div class="form-search">
-                                    <i class="fas fa-key text-muted fs-4"></i>
-                                    <input type="password" name="password" id="login_password" class="form-control" placeholder="Senha" required />
-                                </div>
-                            </div>
-                            <div class="mt-4 mb-2">
-                                <a href="#" class="forgot-btn">Esqueceu a senha?</a>
-                            </div>
-                        </div>
-                        <div class="modal-footer justify-content-center">
-                            <button class="btn btn-primary rounded w-100" type="submit">Entrar</button>
-                        </div>
-                    </form>
+<div class="modal fade" id="gsmAuthModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg" style="max-width:920px">
+        <div class="modal-content border shadow-sm overflow-hidden rounded-3 d-flex flex-column" style="height:615px;max-height:calc(100vh - 2rem);">
+            <div class="row g-0 flex-grow-1 overflow-hidden" style="min-height:0">
+                <div class="col-md-6 d-none d-md-flex align-self-stretch align-items-center justify-content-center overflow-hidden p-4 p-md-5 border-end auth-illus-panel">
+                    <img src="{% static 'resource/auth-login-illustration.svg' %}" class="img-fluid" width="300" alt="">
                 </div>
-                <div class="tab-pane fade" id="register-tab-pane" role="tabpanel" aria-labelledby="register-tab" tabindex="0">
-                    <form method="post" action="{% url 'register' %}" id="registerForm">
-                        {% csrf_token %}
-                        <div class="modal-body login-form px-4">
-                            {% if register_error %}<div class="alert alert-danger py-2">{{ register_error }}</div>{% endif %}
-                            <div class="mb-3">
-                                <label for="register_name" class="form-label">Digite seu Nome</label>
-                                <div class="form-search">
-                                    <i class="fas fa-user text-muted fs-4"></i>
-                                    <input type="text" name="name" id="register_name" class="form-control" placeholder="Nome" required />
+                <div class="col-12 col-md-6 position-relative d-flex flex-column h-100 overflow-hidden">
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 z-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="flex-grow-1 overflow-auto p-4 p-md-5 pt-5" id="authFormScroll">
+                        <div class="mx-auto w-100" id="authFormPanel">
+                            <div class="auth-view fade show" id="view-login">
+                                <h1 class="h5 fw-semibold mb-4">Entrar</h1>
+                                <div id="loginErrorMount"></div>
+                                {% if login_error %}<div class="alert alert-danger py-2">{{ login_error }}</div>{% endif %}
+                                <div class="auth-view fade show" id="view-login">
+                                    <form method="post" action="{% url 'login' %}" novalidate autocomplete="off">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.GET.next }}">
+                                        <div class="mb-3">
+                                            <label for="loginEmail" class="form-label fw-semibold mb-1">E-mail</label>
+                                            <input type="email" name="email" class="form-control email-input" id="loginEmail" placeholder="E-mail" autocomplete="off" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="loginPassword" class="form-label fw-semibold mb-1">Senha</label>
+                                            <div class="position-relative">
+                                                <input type="password" name="password" class="form-control pe-5" id="loginPassword" placeholder="••••••••" autocomplete="off" required>
+                                                <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y px-3 text-secondary toggle-password" data-target="#loginPassword" aria-label="Show password" style="background:none"><i class="bi bi-eye"></i></button>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100 rounded-1">Entrar</button>
+                                    </form>
+                                    <div class="position-relative text-center mt-4">
+                                        <hr class="mb-0">
+                                        <span class="position-absolute top-50 start-50 translate-middle px-2 bg-white text-body-secondary">ou</span>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary w-100 mt-4 rounded-1" data-switch-auth="register">Criar Conta</button>
                                 </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="register_email" class="form-label">Digite seu E-mail</label>
-                                <div class="form-search">
-                                    <i class="fas fa-envelope text-muted fs-4"></i>
-                                    <input type="email" name="email" id="register_email" class="form-control" placeholder="E-mail" required />
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="register_mobile" class="form-label">Digite seu Celular</label>
-                                <div class="form-search">
-                                    <i class="fas fa-mobile-alt text-muted fs-4"></i>
-                                    <input type="text" name="mobile" id="register_mobile" class="form-control" placeholder="Celular" required />
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="register_password" class="form-label">Digite sua Senha</label>
-                                <div class="form-search">
-                                    <i class="fas fa-key text-muted fs-4"></i>
-                                    <input type="password" name="password" id="register_password" class="form-control" placeholder="Senha" required />
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="register_currency" class="form-label">Escolha sua Moeda</label>
-                                <div class="form-search">
-                                    <i class="fas fa-dollar-sign text-muted fs-4"></i>
-                                    <select id="register_currency" name="currency" class="form-control" required>
-                                        <option value="">Escolha a Moeda</option>
-                                        {% for currency in currencyList %}
-                                        <option value="{{ currency.code }}">{{ currency.code }} - {{ currency.name }}</option>
-                                        {% endfor %}
-                                    </select>
+                                <div class="auth-view fade d-none" id="view-register">
+                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <h1 class="h5 fw-semibold mb-0">Criar Conta</h1>
+                                    </div>
+                                    {% if register_error %}<div class="alert alert-danger py-2">{{ register_error }}</div>{% endif %}
+                                    <form method="post" action="{% url 'register' %}" novalidate autocomplete="off">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label for="regFullName" class="form-label fw-semibold mb-1">Nome</label>
+                                            <input type="text" name="name" class="form-control" id="regFullName" placeholder="Seu Nome" autocomplete="off" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="regEmail" class="form-label fw-semibold mb-1">E-mail</label>
+                                            <input type="email" name="email" class="form-control email-input" id="regEmail" placeholder="Seu E-mail" autocomplete="off" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="regMobile" class="form-label fw-semibold mb-1">Celular</label>
+                                            <input type="tel" name="mobile" class="form-control" id="regMobile" placeholder="Seu Celular" autocomplete="off" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="regCurrency2" class="form-label fw-semibold mb-1">Moeda</label>
+                                            <select class="form-select" name="currency" id="regCurrency2" required autocomplete="off">
+                                                <option value="">Escolha a moeda</option>
+                                                {% for currency in currencyList %}
+                                                <option value="{{ currency.code }}">{{ currency.code }} - {{ currency.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="regPassword" class="form-label fw-semibold mb-1">Senha</label>
+                                            <div class="position-relative">
+                                                <input type="password" name="password" class="form-control pe-5" id="regPassword" placeholder="Crie sua senha" autocomplete="off" required minlength="8">
+                                                <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y px-3 text-secondary toggle-password" data-target="#regPassword" aria-label="Show password" style="background:none"><i class="bi bi-eye"></i></button>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100 rounded-1">Cadastrar</button>
+                                    </form>
+                                    <div class="position-relative text-center mt-4">
+                                        <hr class="mb-0">
+                                        <span class="position-absolute top-50 start-50 translate-middle px-2 bg-white text-body-secondary">ou</span>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary w-100 mt-4 rounded-1" data-switch-auth="login">Voltar ao Login</button>
                                 </div>
                             </div>
                         </div>
-                        <div class="modal-footer justify-content-center">
-                            <button class="btn btn-primary rounded w-100" type="submit">Cadastrar</button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
