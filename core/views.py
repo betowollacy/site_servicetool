@@ -77,7 +77,7 @@ def _base_ctx(request):
         'currency_icon': 'R$',
         'sliders': Slider.objects.filter(status='Active').order_by('id'),
         'groups': ServiceGroup.objects.filter(status='Active'),
-        'activeGateway': PaymentGateway.objects.filter(status='Active'),
+        'activeGateway': PaymentGateway.objects.filter(name__iexact='Asaas', status='Active'),
     }
 
 
@@ -357,7 +357,7 @@ def checkout(request, customer, invoice_id):
     ctx = {
         'invoice': invoice,
         'currency': currency,
-        'activeGateway': PaymentGateway.objects.filter(status='Active'),
+        'activeGateway': PaymentGateway.objects.filter(name__iexact='Asaas', status='Active'),
     }
     ctx.update(_base_ctx(request))
     return render(request, 'customer/checkout.html', ctx)
@@ -370,22 +370,8 @@ def gateway_pay(request, customer, invoice_id):
         gateway_name = request.POST.get('payment_methode', '').strip()
         if gateway_name.lower() == 'asaas':
             return _pay_with_asaas(request, customer, invoice)
-        if gateway_name.lower() == 'binance':
-            return _pay_with_binance(request, customer, invoice)
-        invoice.payment_gateway = gateway_name
-        invoice.invoice_status = 'Paid'
-        invoice.total_paid = invoice.invoice_amount
-        invoice.payment_currency = customer.currency
-        invoice.save()
-        customer.balance = customer.balance + invoice.invoice_amount
-        customer.save(update_fields=['balance'])
-        Statement.objects.create(
-            customer=customer,
-            description=f"Invoice #{invoice.id} deposit - {gateway_name}",
-            type='Credit', amount=invoice.invoice_amount, balance=customer.balance,
-        )
-        messages.success(request, 'Pagamento realizado com sucesso. Saldo adicionado.')
-        return redirect('customer_invoice_detail', invoice_id=invoice.id)
+        messages.error(request, 'Selecione o pagamento via PIX com Asaas.')
+        return redirect('checkout', invoice_id=invoice.id)
     return redirect('checkout', invoice_id=invoice.id)
 
 

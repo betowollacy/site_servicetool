@@ -225,7 +225,7 @@ def admin_currency_update(request, currency_id):
 @_staff
 def admin_gateway_list(request):
     return render(request, 'admin/gateway_list.html', {
-        'gateways': PaymentGateway.objects.all(),
+        'gateways': PaymentGateway.objects.filter(name__iexact='Asaas'),
         'currencies': Currency.objects.filter(status='Active'),
         'webhook_asaas': request.build_absolute_uri(reverse('asaas_webhook')),
         'webhook_binance': request.build_absolute_uri(reverse('binance_webhook')),
