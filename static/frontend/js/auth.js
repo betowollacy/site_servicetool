@@ -513,122 +513,25 @@
   
 
   function onAuthSubmit(e) {
-    e.preventDefault();
-   
     var $form = $(this);
     var $submitBtn = $(e.originalEvent.submitter);
     var $submitBtnText = $.trim($submitBtn.text());
     var $submitBtnLoader = '<span class="spinner-border spinner-border-sm spinner-xs me-1" role="status" aria-hidden="true"></span>';
 
-    var payload = {};
-
     if ($form.attr('id') === 'loginForm') {
-      payload['action'] = 'customer_login_request';
-      payload['fingerprint'] = getDeviceFingerprint();
-      var errorAction = 'login';
-      
-    }
-    else if($form.attr('id') === 'loginOtpForm'){
-      payload['action'] = 'otp_verify_request';
-      payload['fingerprint'] = getDeviceFingerprint();
-      var errorAction = 'otp';
-    }
-    else if($form.attr('id') === 'registerForm'){
-      payload['action'] = 'customer_register_request';
-      payload['fingerprint'] = getDeviceFingerprint();
-      var errorAction = 'register';
-    }
-    else if($form.attr('id') === 'forgotForm'){
-      payload['action'] = 'customer_foget_request';
-      payload['fingerprint'] = getDeviceFingerprint();
-      var errorAction = 'forgot';
-    }
-    else if($form.attr('id') === 'passwordUpdateForm'){
-      payload['action'] = 'customer_passupdate_request';
-      payload['fingerprint'] = getDeviceFingerprint();
-      var errorAction = 'passupdate';
-    }
-    else{
-      return;
-    }
-
-    hideError(errorAction);
-
-    $.each($form.serializeArray(), function(_, field) {
-        payload[field.name] = field.value;
-    });
-
-    $form.find('input[type="checkbox"]').each(function() {
-      payload[this.name] = this.checked ? 1 : 0;
-    });
-  
-    $.ajax({
-      url: '/customer/auth',
-      method: 'POST',
-      data: payload,
-      beforeSend: function() {
-        $submitBtn.html($submitBtnLoader + ' ' + $submitBtnText).prop('disabled', true);
-      },
-      complete: function() {
-        setTimeout(function() {
-          $submitBtn.html($submitBtnText).prop('disabled', false);
-        }, 200);
-      },
-      success: function(response) {
-
-        if (response.success) {
-
-          if(response.next === 'login-success'){
-            loadPhpView(PHP_MOUNT.loginOk, response.html, function () {
-              var sec = CONFIG.successReloadSeconds;
-              var $view = $('#view-login-success');
-              var $count = $view.find('.success-reload-count');
-              function reloadNow() {
-                if (state.reloadTimer) {
-                  clearInterval(state.reloadTimer);
-                  state.reloadTimer = null;
-                }
-                location.reload();
-              }
-              $count.text(sec);
-              state.reloadTimer = setInterval(function () {
-                $count.text(sec);
-                if (sec-- <= 0) {
-                  reloadNow();
-                }
-              }, 1000);
-              $view.find('.success-continue-btn').one('click', reloadNow);
-            });
-
-          }
-          else if(response.next === 'login-otp'){
-            loadPhpView(PHP_MOUNT.otp, response.html, function () {
-              $('#loginOtp1').trigger('focus');
-            });
-          }
-          else if(response.next === 'registration-success'){
-            loadPhpView(PHP_MOUNT.registerOk, response.html);
-          }
-          else if(response.next === 'pass-updated'){
-            $('#password-update-html').html(response.html)
-          }
-          
-        }
-        else{
-          showError(errorAction, response.message);
-        }
-      },
-      error: function(xhr, status, error) {
-        let message = 'Error occurred while fetching..';
-        if (xhr.responseJSON && xhr.responseJSON.message) {
-            message = xhr.responseJSON.message;
-        } else if (xhr.responseText) {
-            message = xhr.responseText;
-        }
-        showError(errorAction, message);
+      if (!validEmail($('#loginEmail').val()) || !$.trim($('#loginPassword').val())) {
+        e.preventDefault();
+        return;
       }
-    });
+    } else if ($form.attr('id') === 'registerForm') {
+      if (!validateForm($form)) {
+        e.preventDefault();
+        showError('register', 'Preencha todos os campos corretamente.');
+        return;
+      }
+    }
 
+    $submitBtn.html($submitBtnLoader + ' ' + $submitBtnText).prop('disabled', true);
   }
 
   
