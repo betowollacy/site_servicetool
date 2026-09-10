@@ -169,12 +169,8 @@
 .customer-chart-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 25px; }
 .customer-chart-heading h2, .customer-insight-panel h2 { margin: 5px 0 0; color: var(--ink); font-size: 1.25rem; }
 .customer-chart-total { color: var(--sub); font-size: 12px; }
-.customer-chart-stage { display: grid; grid-template-columns: repeat(4, 1fr); align-items: end; gap: 16px; min-height: 176px; padding: 10px 8px 0; background: repeating-linear-gradient(to bottom, transparent 0, transparent 43px, rgba(128, 153, 177, .14) 44px); border-bottom: 1px solid var(--border); }
-.customer-column-wrap { display: flex; align-items: center; flex-direction: column; justify-content: flex-end; min-width: 0; height: 166px; }
-.customer-column-value { margin-bottom: 6px; color: var(--ink); font-size: 13px; }
-.customer-column-track { display: flex; align-items: flex-end; width: min(42px, 70%); height: 112px; overflow: hidden; border-radius: 9px 9px 4px 4px; background: var(--off); }
-.customer-column-fill { display: block; width: 100%; min-height: 7px; border-radius: 8px 8px 3px 3px; box-shadow: 0 0 18px rgba(54, 136, 255, .2); transition: height .5s ease; }
-.customer-column-label { display: flex; align-items: center; gap: 5px; width: 100%; margin-top: 10px; overflow: hidden; color: var(--sub); font-size: 10px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.customer-chart-wrap { min-height: 240px; display: flex; align-items: center; justify-content: center; }
+.customer-chart-wrap .apexcharts-legend-text { color: var(--sub) !important; }
 .customer-dot { width: 8px; height: 8px; border-radius: 50%; }
 .dot-green, .fill-green { background: #20b486; }
 .dot-blue, .fill-blue { background: #3688ff; }

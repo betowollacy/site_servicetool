@@ -48,15 +48,7 @@
     <section class="customer-analytics-grid">
         <div class="customer-chart-panel">
             <div class="customer-chart-heading"><div><span class="customer-dashboard-eyebrow"><i class="bi bi-bar-chart-fill"></i> Visão geral</span><h2>Fluxo de pedidos</h2></div><span class="customer-chart-total">{{ total_orders }} total</span></div>
-            <div class="customer-chart-stage">
-                {% for item in status_chart %}
-                <div class="customer-column-wrap">
-                    <strong class="customer-column-value">{{ item.count }}</strong>
-                    <div class="customer-column-track"><span class="customer-column-fill fill-{{ item.color }}" style="height: {{ item.percent }}%"></span></div>
-                    <span class="customer-column-label"><i class="customer-dot dot-{{ item.color }}"></i>{{ item.label }}</span>
-                </div>
-                {% endfor %}
-            </div>
+            <div class="customer-chart-wrap"><div id="customerStatusChart" aria-label="Distribuição dos pedidos por status"></div></div>
         </div>
         <div class="customer-insight-panel">
             <span class="customer-dashboard-eyebrow"><i class="bi bi-lightbulb-fill"></i> Resumo</span>
@@ -106,4 +98,30 @@
         </div>
     </div>
 </div>
+{% endblock %}
+{% block footer_script %}
+{{ status_chart|json_script:'customer-status-data' }}
+<script src="{% static 'frontend/js/plugins/apexcharts.min.js' %}"></script>
+<script>
+(function () {
+    var target = document.querySelector('#customerStatusChart');
+    var dataNode = document.querySelector('#customer-status-data');
+    if (!target || !dataNode || !window.ApexCharts) return;
+    var items = JSON.parse(dataNode.textContent);
+    var dark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    var colors = { green: '#20b486', blue: '#3688ff', amber: '#e6a322', red: '#dc5b68' };
+    var chart = new ApexCharts(target, {
+        chart: { type: 'donut', height: 240, toolbar: { show: false }, fontFamily: 'inherit' },
+        series: items.map(function (item) { return item.count; }),
+        labels: items.map(function (item) { return item.label; }),
+        colors: items.map(function (item) { return colors[item.color]; }),
+        stroke: { width: 4, colors: [dark ? '#0b1a2a' : '#ffffff'] },
+        legend: { position: 'right', fontSize: '12px', labels: { colors: dark ? '#9bb0c4' : '#64748b' }, markers: { width: 8, height: 8, radius: 8 } },
+        dataLabels: { enabled: false },
+        plotOptions: { pie: { donut: { size: '72%', labels: { show: true, name: { color: dark ? '#9bb0c4' : '#64748b', fontSize: '11px' }, value: { color: dark ? '#edf7ff' : '#0f172a', fontSize: '22px', fontWeight: 700 }, total: { show: true, label: 'Pedidos', color: dark ? '#9bb0c4' : '#64748b', formatter: function () { return '{{ total_orders }}'; } } } } } },
+        tooltip: { theme: dark ? 'dark' : 'light' }
+    });
+    chart.render();
+}());
+</script>
 {% endblock %}
