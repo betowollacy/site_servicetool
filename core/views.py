@@ -404,14 +404,18 @@ def _pay_with_asaas(request, customer, invoice):
         )
         messages.error(request, 'Falha ao gerar pagamento no Asaas. Tente novamente.')
         return redirect('checkout', invoice_id=invoice.id)
+    encoded_image = payment.get('encodedImage') or payment.get('pixQrCode') or ''
+    if encoded_image and not encoded_image.startswith('http') and not encoded_image.startswith('data:'):
+        encoded_image = 'data:image/png;base64,' + encoded_image
+    pix_payload = payment.get('payload') or payment.get('pixCopyPaste') or ''
     PaymentDeposit.objects.create(
         name='Asaas - PIX',
         gateway_amount=invoice.invoice_amount,
         gateway_payment_id=payment.get('id') or '',
-        qrcode_url=payment.get('pixQrCode') or '',
-        pix_code=payment.get('pixCopyPaste') or '',
+        qrcode_url=encoded_image,
+        pix_code=pix_payload,
         checkout_url=payment.get('invoiceUrl') or '',
-        gateway_note=(payment.get('pixCopyPaste') or '')[:100],
+        gateway_note=pix_payload[:100],
         gateway_data=json.dumps(payment, ensure_ascii=False)[:4000],
         status='Pending',
         invoice=invoice,

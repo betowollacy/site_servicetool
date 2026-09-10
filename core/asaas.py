@@ -15,8 +15,8 @@ class AsaasError(Exception):
 
 def api_base(gateway):
     if getattr(gateway, 'asaas_sandbox', True):
-        return 'https://sandbox.asaas.com/api/v3'
-    return 'https://api.asaas.com/api/v3'
+        return 'https://api-sandbox.asaas.com/v3'
+    return 'https://api.asaas.com/v3'
 
 
 def call(gateway, method, path, body=None, timeout=40):
@@ -61,8 +61,17 @@ def create_pix_payment(invoice, gateway):
         'value': float(invoice.invoice_amount),
         'dueDate': date.today().isoformat(),
         'description': f'Fatura #{invoice.id} - {invoice.invoice_title or invoice.invoice_for or "Deposito"}',
+        'externalReference': f'invoice-{invoice.id}',
     }
-    return call(gateway, 'POST', '/payments', body)
+    payment = call(gateway, 'POST', '/payments', body)
+    if not payment.get('id'):
+        raise AsaasError(payment, 200)
+    payment.update(get_pix_qr_code(gateway, payment['id']))
+    return payment
+
+
+def get_pix_qr_code(gateway, payment_id):
+    return call(gateway, 'GET', f'/payments/{payment_id}/pixQrCode')
 
 
 def get_payment(gateway, payment_id):
