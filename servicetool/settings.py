@@ -6,6 +6,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 def _env(name, default):
     return os.environ.get(name, default)
 
+
+def _load_env_file(path):
+    env_path = Path(path)
+    if not env_path.is_file():
+        return
+    for line in env_path.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, _, value = line.partition('=')
+        key, value = key.strip(), value.strip().strip('"').strip("'")
+        os.environ.setdefault(key, value)
+
+
+_load_env_file(BASE_DIR / '.env')
+
 SECRET_KEY = _env('DJANGO_SECRET_KEY', 'django-insecure-servicetool-smm-reseller-dev-key')
 
 DEBUG = _env('DJANGO_DEBUG', 'True').strip().lower() not in ('0', 'false', 'no', 'off')
