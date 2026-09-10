@@ -40,6 +40,7 @@ class Customer(models.Model):
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     mobile = models.CharField(max_length=30, blank=True, null=True)
+    cpf_cnpj = models.CharField(max_length=30, blank=True, null=True)
     password = models.CharField(max_length=255)
     role = models.CharField(max_length=50, choices=ROLES, default='Customer')
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))

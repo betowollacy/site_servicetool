@@ -42,9 +42,19 @@ def get_or_create_customer(gateway, customer):
     data = call(gateway, 'GET', f'/customers?email={email}')
     for row in data.get('data', []):
         if row.get('email') and row['email'].lower() == (customer.email or '').lower():
+            if customer.cpf_cnpj:
+                row_cpf = (''.join(ch for ch in (row.get('cpfCnpj') or '') if ch.isdigit()))
+                new_cpf = (''.join(ch for ch in customer.cpf_cnpj if ch.isdigit()))
+                if row_cpf and row_cpf != new_cpf:
+                    call(gateway, 'POST', f'/customers/{row["id"]}', body={
+                        'name': customer.name or 'Cliente',
+                        'cpfCnpj': new_cpf,
+                        'mobilePhone': customer.mobile or '',
+                    })
             return row['id']
     body = {
         'name': customer.name or 'Cliente',
+        'cpfCnpj': (''.join(ch for ch in (customer.cpf_cnpj or '') if ch.isdigit())) or None,
         'email': customer.email,
         'mobilePhone': customer.mobile or '',
         'notificationDisabled': False,

@@ -166,6 +166,7 @@ def register_view(request):
         email = request.POST.get('email', '').strip()
         mobile = request.POST.get('mobile', '').strip()
         password = request.POST.get('password', '')
+        cpf_cnpj = request.POST.get('cpf_cnpj', '').strip()
         currency = 'BRL'
         if Customer.objects.filter(email__iexact=email).exists():
             ctx = {'register_error': 'E-mail já cadastrado.'}
@@ -176,7 +177,7 @@ def register_view(request):
             ctx.update(_base_ctx(request))
             return render(request, 'frontend/homepage.html', ctx)
         Customer.objects.create(
-            name=name, email=email, mobile=mobile,
+            name=name, email=email, mobile=mobile, cpf_cnpj=cpf_cnpj or None,
             password=Customer.make_password(password), currency=currency,
         )
         messages.success(request, 'Cadastro realizado com sucesso. Faça login.')
@@ -390,8 +391,17 @@ def gateway_pay(request, customer, invoice_id):
 
 def _pay_with_asaas(request, customer, invoice):
     gateway = PaymentGateway.objects.filter(name__iexact='Asaas', status='Active').first()
+    cpf_cnpj = request.POST.get('cpf_cnpj', '').strip() if request.method == 'POST' else ''
+    if cpf_cnpj:
+        only_digits = ''.join(ch for ch in cpf_cnpj if ch.isdigit())
+        if only_digits and not customer.cpf_cnpj:
+            customer.cpf_cnpj = only_digits
+            customer.save(update_fields=['cpf_cnpj'])
     if not gateway or not (gateway.asaas_api_key or '').strip():
         messages.error(request, 'Gateway Asaas nao configurado. Adicione a chave de API no painel.')
+        return redirect('checkout', invoice_id=invoice.id)
+    if not (''.join(ch for ch in (customer.cpf_cnpj or '') if ch.isdigit())):
+        messages.error(request, 'Informe seu CPF ou CNPJ para gerar o PIX.')
         return redirect('checkout', invoice_id=invoice.id)
     try:
         payment = asaas.create_pix_payment(invoice, gateway)
