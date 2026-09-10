@@ -111,7 +111,7 @@
     width: 100%;
     max-width: none;
     height: auto;
-    max-height: 680px;
+    max-height: 420px;
     object-fit: cover;
     border: 0 !important;
     border-radius: 0;
@@ -120,7 +120,7 @@
 
 @media (max-width: 767px) {
     .homepage-banner { margin-bottom: 20px; }
-    .homepage-banner-img { min-height: 210px; object-fit: cover; }
+    .homepage-banner-img { min-height: 170px; object-fit: cover; }
 }
 
 .customer-dashboard-welcome,
