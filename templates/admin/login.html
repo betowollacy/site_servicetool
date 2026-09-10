@@ -1,0 +1,37 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height:70vh">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <img src="{{ siteLogo }}" alt="logo" style="max-width:160px;max-height:80px;object-fit:contain" />
+                    <h4 class="fw-semibold mt-3 mb-0">Painel Administrativo</h4>
+                    <p class="text-muted mb-0">Entre para continuar</p>
+                </div>
+                {% if form.errors %}
+                <div class="alert alert-danger py-2">
+                    E-mail ou senha incorretos.
+                </div>
+                {% endif %}
+                <form method="post" action="{% url 'admin:login' %}" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ next }}" />
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold mb-1">E-mail / Usuário</label>
+                        <input type="text" name="username" id="id_username" class="form-control" autofocus required />
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold mb-1">Senha</label>
+                        <input type="password" name="password" id="id_password" class="form-control" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 rounded">
+                        <i class="ti ti-login me-2"></i> Entrar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -3,24 +3,24 @@
   font-family: tabler-icons;
   font-style: normal;
   font-weight: 400;
-  src: url('{{ asset('backend/fonts/tabler/tabler-icons.eot') }}'); /* IE9 Compat Modes */
+  src: url('tabler/tabler-icons.eot'); /* IE9 Compat Modes */
   src:
-    url('{{ asset('backend/fonts/tabler/tabler-icons.eot?#iefix') }}') format('embedded-opentype'), /* IE6-IE8 */
-    url('{{ asset('backend/fonts/tabler/tabler-icons.woff2') }}') format('woff2'), /* Super Modern Browsers */
-    url('{{ asset('backend/fonts/tabler/tabler-icons.woff') }}') format('woff'), /* Modern Browsers */
-    url('{{ asset('backend/fonts/tabler/tabler-icons.ttf') }}') format('truetype'), /* Safari, Android, iOS */
-    url('{{ asset('backend/fonts/tabler/tabler-icons.svg#tabler-icons') }}') format('svg'); /* Legacy iOS */
+    url('tabler/tabler-icons.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+    url('tabler/tabler-icons.woff2') format('woff2'), /* Super Modern Browsers */
+    url('tabler/tabler-icons.woff') format('woff'), /* Modern Browsers */
+    url('tabler/tabler-icons.ttf') format('truetype'), /* Safari, Android, iOS */
+    url('tabler/tabler-icons.svg#tabler-icons') format('svg'); /* Legacy iOS */
 }
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
   @font-face {
     font-family: tabler-icons;
-    src: url('/backend/fonts/tabler/tabler-icons.eot'); /* IE9 Compat Modes */
+    src: url('tabler/tabler-icons.eot'); /* IE9 Compat Modes */
   src:
-    url('/backend/fonts/tabler/tabler-icons.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
-    url('/backend/fonts/tabler/tabler-icons.woff2') format('woff2'), /* Super Modern Browsers */
-    url('/backend/fonts/tabler/tabler-icons.woff') format('woff'), /* Modern Browsers */
-    url('/backend/fonts/tabler/tabler-icons.ttf') format('truetype'), /* Safari, Android, iOS */
-    url('/backend/fonts/tabler/tabler-icons.svg#tabler-icons') format('svg'); /* Legacy iOS */
+    url('tabler/tabler-icons.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+    url('tabler/tabler-icons.woff2') format('woff2'), /* Super Modern Browsers */
+    url('tabler/tabler-icons.woff') format('woff'), /* Modern Browsers */
+    url('tabler/tabler-icons.ttf') format('truetype'), /* Safari, Android, iOS */
+    url('tabler/tabler-icons.svg#tabler-icons') format('svg'); /* Legacy iOS */
   }
 }
 .ti {
