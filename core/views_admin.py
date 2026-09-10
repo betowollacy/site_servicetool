@@ -26,7 +26,7 @@ STATUS_MAP = {
 SERVICE_STATUS_CHOICES = ['Waiting Action', 'In Process', 'Success', 'Rejected']
 
 TYPE_MAP = {
-    'server': ('Server Service', 'Server'),
+    'server': ('Server Service', 'Aluguel'),
     'credit': ('Credit Service', 'Crédito'),
     'imei': ('IMEI Service', 'IMEI'),
 }
