@@ -48,11 +48,12 @@
     <section class="customer-analytics-grid">
         <div class="customer-chart-panel">
             <div class="customer-chart-heading"><div><span class="customer-dashboard-eyebrow"><i class="bi bi-bar-chart-fill"></i> Visão geral</span><h2>Fluxo de pedidos</h2></div><span class="customer-chart-total">{{ total_orders }} total</span></div>
-            <div class="customer-bars">
+            <div class="customer-chart-stage">
                 {% for item in status_chart %}
-                <div class="customer-bar-row">
-                    <div class="customer-bar-label"><span><i class="customer-dot dot-{{ item.color }}"></i>{{ item.label }}</span><strong>{{ item.count }}</strong></div>
-                    <div class="customer-bar-track"><span class="customer-bar-fill fill-{{ item.color }}" style="width: {{ item.percent }}%"></span></div>
+                <div class="customer-column-wrap">
+                    <strong class="customer-column-value">{{ item.count }}</strong>
+                    <div class="customer-column-track"><span class="customer-column-fill fill-{{ item.color }}" style="height: {{ item.percent }}%"></span></div>
+                    <span class="customer-column-label"><i class="customer-dot dot-{{ item.color }}"></i>{{ item.label }}</span>
                 </div>
                 {% endfor %}
             </div>
