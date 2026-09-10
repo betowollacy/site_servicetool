@@ -208,24 +208,17 @@ def admin_service_edit(request, svtype, service_id):
 
 @_staff
 def admin_currency_list(request):
-    return render(request, 'admin/currency_list.html', {'currencies': Currency.objects.all()})
+    return render(request, 'admin/currency_list.html', {'currencies': Currency.objects.filter(code='BRL')})
 
 
 @_staff
 def admin_currency_update(request, currency_id):
     cur = Currency.objects.filter(id=currency_id).first()
-    if cur and request.method == 'POST':
-        rate = request.POST.get('rate')
-        status = request.POST.get('status')
-        if rate is not None and rate != '':
-            try:
-                cur.rate = Decimal(rate)
-            except Exception:
-                pass
-        if status in ('Active', 'Inactive'):
-            cur.status = status
+    if cur and cur.code == 'BRL' and request.method == 'POST':
+        cur.status = 'Active'
+        cur.rate = Decimal('1')
         cur.save()
-        messages.success(request, 'Moeda atualizada com sucesso.')
+        messages.success(request, 'BRL é a moeda única do site (fixa em R$).')
     return redirect('admin_currency_list')
 
 
@@ -233,7 +226,7 @@ def admin_currency_update(request, currency_id):
 def admin_gateway_list(request):
     return render(request, 'admin/gateway_list.html', {
         'gateways': PaymentGateway.objects.all(),
-        'currencies': Currency.objects.all(),
+        'currencies': Currency.objects.filter(status='Active'),
         'webhook_asaas': request.build_absolute_uri(reverse('asaas_webhook')),
         'webhook_binance': request.build_absolute_uri(reverse('binance_webhook')),
     })

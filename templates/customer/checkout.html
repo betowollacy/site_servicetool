@@ -29,7 +29,7 @@
                         <table class="table">
                             <tr>
                                 <td><b>{{ invoice.invoice_title|default:invoice.invoice_for }}</b></td>
-                                <td class="text-end">{{ currency_icon }}{{ invoice.invoice_amount|floatformat:2 }} {{ invoice.customer_currency }}</td>
+                                <td class="text-end">R$ {{ invoice.invoice_amount|floatformat:2 }}</td>
                             </tr>
                         </table>
                     </div>

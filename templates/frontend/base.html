@@ -79,16 +79,8 @@
                 <i class="bi bi-moon-stars-fill theme-toggle-icon" id="themeToggleIcon"></i>
             </button>
 
-            <div class="dropdown d-none d-lg-block">
-                <button class="btn dropdown-toggle arrow-none me-0 currency-btn rounded-2" data-bs-toggle="dropdown" role="button" aria-haspopup="false" aria-expanded="false">
-                    {% if currency_code %}{{ currency_code }}{% else %}USD{% endif %}
-                    <i class="bi bi-chevron-down ms-auto"></i>
-                </button>
-                <div class="dropdown-menu dropdown-menu-end currency-dropdown">
-                    {% for currency in currencyList %}
-                    <a href="#" class="dropdown-item">{{ currency.icon }} {{ currency.code }}</a>
-                    {% endfor %}
-                </div>
+            <div class="d-none d-lg-block">
+                <span class="btn currency-btn rounded-2 me-0">BRL <i class="bi bi-asterisk ms-1"></i></span>
             </div>
 
             <div class="nav-auth">
@@ -159,7 +151,7 @@
                     </div>
                     <div>
                         <div class="fw-bold top-footer-title">Recarga Fácil</div>
-                        <div style="font-size:11px;opacity:.65;">PIX, USDT e mais</div>
+                        <div style="font-size:11px;opacity:.65;">Pagamentos via PIX</div>
                     </div>
                 </div>
             </div>

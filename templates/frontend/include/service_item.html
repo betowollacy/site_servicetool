@@ -6,7 +6,7 @@
         <div class="flex-grow-1">
             <a href="{% url 'service_view' item.slug %}" class="d-block fw-semibold text-white mb-1">{{ item.title }}</a>
             <div class="d-flex flex-wrap gap-2">
-                <span class="badge">{{ currency_icon }}{{ item.price|floatformat:2 }}</span>
+                <span class="badge">R$ {{ item.price|floatformat:2 }}</span>
                 <span class="badge">{{ item.delivery_time }}</span>
                 <a href="{% url 'category' item.category_slug %}" class="badge text-decoration-none">{{ item.service_type_display }}</a>
             </div>

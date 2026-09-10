@@ -56,15 +56,6 @@
                                         <label for="regMobile" class="form-label fw-semibold mb-1">Celular</label>
                                         <input type="tel" name="mobile" class="form-control" id="regMobile" placeholder="Seu Celular" autocomplete="off" required>
                                     </div>
-                                    <div class="mb-3">
-                                        <label for="regCurrency2" class="form-label fw-semibold mb-1">Moeda</label>
-                                        <select class="form-select" name="currency" id="regCurrency2" required autocomplete="off">
-                                            <option value="">Escolha a moeda</option>
-                                            {% for currency in currencyList %}
-                                            <option value="{{ currency.code }}">{{ currency.code }} - {{ currency.name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
                                     <div class="mb-4">
                                         <label for="regPassword" class="form-label fw-semibold mb-1">Senha</label>
                                         <div class="position-relative">

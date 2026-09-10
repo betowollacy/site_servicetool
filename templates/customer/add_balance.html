@@ -30,7 +30,7 @@
                                 <h2 class="display-1 fs-4 fw-medium">Adicionar Saldo/Fundos</h2>
                                 <hr class="text-muted">
                                 <div class="mb-4 pb-1">
-                                    <label for="addAmountField" class="form-label">Informe o valor em <strong>{{ currency.code }}</strong></label>
+                                    <label for="addAmountField" class="form-label">Informe o valor em <strong>BRL (R$)</strong></label>
                                     <input type="text" name="Amount" class="form-control" id="addAmountField" value="{{ add_amount }}" placeholder="Informe o valor">
                                 </div>
                                 <div class="row mb-4 justify-content-center justify-content-md-start mx-auto">
@@ -56,7 +56,7 @@
                                         <tbody>
                                             <tr>
                                                 <td class="border-top-0 border-bottom ps-0 pt-2">Saldo Atual</td>
-                                                <td class="border-top-0 border-bottom pt-2 text-end pe-0">{{ currency_icon }}{{ Customer.balance|floatformat:2 }} {{ currency.code }}</td>
+                                                <td class="border-top-0 border-bottom pt-2 text-end pe-0">R$ {{ Customer.balance|floatformat:2 }}</td>
                                             </tr>
                                         </tbody>
                                     </table>

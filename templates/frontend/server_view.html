@@ -32,8 +32,8 @@
                     </div>
                     <div class="d-flex gap-2 border-top border-bottom px-4">
                         <div class="stat-cell">
-                            <div class="stat-lbl">Preço</div>
-                            <div class="stat-val text-primary">{{ currency_icon }}{{ Price|floatformat:2 }}</div>
+                            <div class="stat-lbl">PreÃ§o</div>
+                            <div class="stat-val text-primary">R$ {{ Price|floatformat:2 }}</div>
                         </div>
                         <div class="stat-cell">
                             <div class="stat-lbl">Entrega</div>
@@ -41,7 +41,7 @@
                         </div>
                         {% if serviceData.duration %}
                         <div class="stat-cell">
-                            <div class="stat-lbl">Duração</div>
+                            <div class="stat-lbl">DuraÃ§Ã£o</div>
                             <div class="stat-val text-success">{{ serviceData.duration }}</div>
                         </div>
                         {% endif %}
@@ -80,8 +80,8 @@
                             <div class="mb-4">
                                 <div class="form-check">
                                     <input class="form-check-input" id="form-check-input" type="checkbox" value="" checked required />
-                                    <label class="form-check-label" for="form-check-input">Eu concordo com os <a href="#">termos e condições</a></label>
-                                    <div class="invalid-feedback">Você deve concordar antes de enviar.</div>
+                                    <label class="form-check-label" for="form-check-input">Eu concordo com os <a href="#">termos e condiÃ§Ãµes</a></label>
+                                    <div class="invalid-feedback">VocÃª deve concordar antes de enviar.</div>
                                 </div>
                             </div>
                             <div class="mb-1">
@@ -90,7 +90,7 @@
                         </form>
                         {% else %}
                         <div class="text-center py-4">
-                            <p class="mb-3 text-muted">Por favor, faça login para fazer um pedido.</p>
+                            <p class="mb-3 text-muted">Por favor, faÃ§a login para fazer um pedido.</p>
                             <button class="btn btn-primary rounded" data-bs-toggle="modal" data-bs-target="#gsmAuthModal" data-auth-view="login">Entrar / Cadastrar</button>
                         </div>
                         {% endif %}
@@ -125,7 +125,7 @@
                     <div class="card-header pb-0 pt-2 border-0">
                         <ul class="nav nav-tabs analytics-tab" id="myTab" role="tablist">
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link active fw-semibold px-0 mb-2 pb-2" id="related-tab" data-bs-toggle="tab" data-bs-target="#related-tab-pane" type="button" role="tab" aria-controls="related-tab-pane" aria-selected="true">SERVIÇOS RELACIONADOS</button>
+                                <button class="nav-link active fw-semibold px-0 mb-2 pb-2" id="related-tab" data-bs-toggle="tab" data-bs-target="#related-tab-pane" type="button" role="tab" aria-controls="related-tab-pane" aria-selected="true">SERVIÃ‡OS RELACIONADOS</button>
                             </li>
                         </ul>
                     </div>
@@ -138,7 +138,7 @@
                                     <div>
                                         <p class="text-muted mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
                                         <div>
-                                            <span class="badge bg-light-primary text-uppercase" style="font-size:11px">{{ currency_icon }}{{ s.price|floatformat:2 }}</span>
+                                            <span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span>
                                             <span class="badge bg-light-warning text-uppercase" style="font-size:11px">{{ s.delivery_time }}</span>
                                         </div>
                                     </div>
@@ -162,7 +162,7 @@
                 var agree = $('#form-check-input').is(':checked');
                 if (!agree) {
                     e.preventDefault();
-                    $('.show-error-message').html('<div class="alert alert-danger py-2">Você deve concordar com os termos antes de enviar.</div>');
+                    $('.show-error-message').html('<div class="alert alert-danger py-2">VocÃª deve concordar com os termos antes de enviar.</div>');
                 }
             });
         }

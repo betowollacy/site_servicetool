@@ -32,7 +32,7 @@
                 <tr>
                     <td>#{{ s.id }}</td>
                     <td>{{ s.title }}</td>
-                    <td>{{ currency_icon }}{{ s.price_for|floatformat:2 }}</td>
+                    <td>R$ {{ s.price_for|floatformat:2 }}</td>
                     <td>{{ s.delivery_time|default:"-" }}</td>
                     <td>{{ s.sells }}</td>
                     <td><span class="badge {% if s.status == 'Active' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ s.status }}</span></td>

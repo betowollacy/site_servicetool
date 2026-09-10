@@ -36,7 +36,7 @@
                 <table class="table">
                     <tr>
                         <td><b>Valor</b></td>
-                        <td class="text-end">{{ currency_icon }}{{ invoice.invoice_amount|floatformat:2 }} {{ invoice.customer_currency }}</td>
+                        <td class="text-end">R$ {{ invoice.invoice_amount|floatformat:2 }}</td>
                     </tr>
                     <tr>
                         <td><b>Gateway de Pagamento</b></td>
@@ -49,7 +49,7 @@
                     {% if invoice.invoice_status == 'Paid' %}
                     <tr>
                         <td><b>Total Pago</b></td>
-                        <td class="text-end">{{ currency_icon }}{{ invoice.total_paid|floatformat:2 }} {{ invoice.payment_currency }}</td>
+                        <td class="text-end">R$ {{ invoice.total_paid|floatformat:2 }}</td>
                     </tr>
                     {% endif %}
                 </table>

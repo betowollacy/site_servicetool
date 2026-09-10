@@ -39,7 +39,7 @@
                                 <div class="flex-grow-1 fw-medium text-muted text-wrap text-break">
                                     <p class="mb-2">{{ s.title }}</p>
                                     <div>
-                                        <span class="badge bg-light-primary text-uppercase" style="font-size:11px">{{ currency_icon }}{{ s.price|floatformat:2 }}</span>
+                                        <span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span>
                                         <span class="badge bg-light-warning text-uppercase" style="font-size:11px">{{ s.delivery_time }}</span>
                                     </div>
                                 </div>
@@ -49,7 +49,7 @@
                 </div>
                 {% empty %}
                 <div class="col-12 text-center py-5">
-                    <h5 class="text-muted">Nenhum serviço disponível nesta categoria.</h5>
+                    <h5 class="text-muted">Nenhum serviÃ§o disponÃ­vel nesta categoria.</h5>
                 </div>
                 {% endfor %}
             </div>

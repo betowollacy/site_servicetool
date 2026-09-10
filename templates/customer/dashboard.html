@@ -28,7 +28,7 @@
                     <div class="card text-center border-primary">
                         <div class="card-body">
                             <h5>Saldo Disponível</h5>
-                            <h3>{{ currency_icon }}{{ balance|floatformat:2 }}</h3>
+                            <h3>R$ {{ balance|floatformat:2 }}</h3>
                         </div>
                     </div>
                 </div>
@@ -52,7 +52,7 @@
                     <div class="card text-center border-danger">
                         <div class="card-body">
                             <h5>Total Gasto</h5>
-                            <h3>{{ currency_icon }}{{ total_spent|floatformat:2 }}</h3>
+                            <h3>R$ {{ total_spent|floatformat:2 }}</h3>
                         </div>
                     </div>
                 </div>
@@ -81,7 +81,7 @@
                         <td>#{{ order.id }}</td>
                         <td>{{ order.created_at|date:"d M, Y" }}</td>
                         <td>{{ order.service_title }}</td>
-                        <td>{{ currency_icon }}{{ order.service_price|floatformat:2 }}</td>
+                        <td>R$ {{ order.service_price|floatformat:2 }}</td>
                         <td><span class="badge bg-light-primary">{{ order.service_status }}</span></td>
                     </tr>
                     {% empty %}

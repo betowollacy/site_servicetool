@@ -15,7 +15,7 @@
             {% endif %}
 
             <p>Fatura <b>#{{ invoice.id }}</b> - {{ invoice.invoice_title|default:invoice.invoice_for }}</p>
-            <h4 class="mb-4">{{ currency_icon }}{{ invoice.invoice_amount|floatformat:2 }} {{ invoice.customer_currency }}</h4>
+            <h4 class="mb-4">R$ {{ invoice.invoice_amount|floatformat:2 }}</h4>
 
             {% if deposit %}
                 {% if deposit.status == 'Paid' %}
@@ -35,10 +35,9 @@
                             </div>
                         </div>
                     {% elif deposit.checkout_url %}
-                        <p>Clique no botão abaixo para pagar com USDT.</p>
-                        <a href="{{ deposit.checkout_url }}" target="_blank" rel="noopener" class="btn btn-warning rounded w-100 mb-3">
-                            <i class="fas fa-external-link-alt me-2"></i>Pagar agora na Binance</a>
-                        <p class="small text-muted">Se você não for direcionado automaticamente, clique acima. Após o pagamento, aguarde a confirmação nesta página.</p>
+                        <p>Processando pagamento... Aguarde a confirmação.</p>
+                        <a href="{{ deposit.checkout_url }}" target="_blank" rel="noopener" class="btn btn-primary rounded w-100 mb-3">
+                            <i class="fas fa-external-link-alt me-2"></i>Abrir página de pagamento</a>
                     {% endif %}
                     <hr>
                     <div class="d-flex justify-content-between align-items-center">

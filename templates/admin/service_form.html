@@ -57,7 +57,7 @@
                                 <option value="percentage_base" {% if service.price_type == 'percentage_base' %}selected{% endif %}>Percentual</option>
                             </select>
                         </div>
-                        <div class="col-md-6 mb-3"><label class="form-label">Preço Base (USD)</label><input type="text" class="form-control" name="original_price" value="{{ service.original_price|default:'0.00' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Preço Base (R$)</label><input type="text" class="form-control" name="original_price" value="{{ service.original_price|default:'0.00' }}"></div>
                         <div class="col-md-6 mb-3"><label class="form-label">Lucro Cliente</label><input type="text" class="form-control" name="customer_profit_amount" value="{{ service.customer_profit_amount|default:'0.00' }}"></div>
                         <div class="col-md-6 mb-3"><label class="form-label">Lucro Revendedor</label><input type="text" class="form-control" name="reseller_profit_amount" value="{{ service.reseller_profit_amount|default:'0.00' }}"></div>
                         <div class="col-md-6 mb-3"><label class="form-label">Lucro Distribuidor</label><input type="text" class="form-control" name="distributor_profit_amount" value="{{ service.distributor_profit_amount|default:'0.00' }}"></div>

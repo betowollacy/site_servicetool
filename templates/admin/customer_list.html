@@ -25,8 +25,8 @@
                     <td>{{ c.name }}</td>
                     <td>{{ c.email }}</td>
                     <td>{{ c.mobile|default:"-" }}</td>
-                    <td>{{ c.currency }}</td>
-                    <td>{{ c.currency_icon }}{{ c.balance|floatformat:2 }}</td>
+                    <td>BRL</td>
+                    <td>R$ {{ c.balance|floatformat:2 }}</td>
                     <td>{{ c.role }}</td>
                     <td><span class="badge {% if c.status == 'Active' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ c.status }}</span></td>
                 </tr>

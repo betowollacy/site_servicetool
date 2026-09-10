@@ -74,7 +74,7 @@ def _service_tags(service):
 
 def _base_ctx(request):
     return {
-        'currency_icon': SystemSetting.get('currencyIcon', '$'),
+        'currency_icon': 'R$',
         'sliders': Slider.objects.filter(status='Active').order_by('id'),
         'groups': ServiceGroup.objects.filter(status='Active'),
         'activeGateway': PaymentGateway.objects.filter(status='Active'),
@@ -166,7 +166,7 @@ def register_view(request):
         email = request.POST.get('email', '').strip()
         mobile = request.POST.get('mobile', '').strip()
         password = request.POST.get('password', '')
-        currency = request.POST.get('currency', 'USD')
+        currency = 'BRL'
         if Customer.objects.filter(email__iexact=email).exists():
             ctx = {'register_error': 'E-mail já cadastrado.'}
             ctx.update(_base_ctx(request))

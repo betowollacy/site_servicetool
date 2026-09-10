@@ -17,9 +17,8 @@
                     <th>Código</th>
                     <th>Nome</th>
                     <th>Ícone</th>
-                    <th>Taxa (1 USD)</th>
+                    <th>Taxa</th>
                     <th>Status</th>
-                    <th>Ação</th>
                 </tr>
             </thead>
             <tbody>
@@ -29,19 +28,8 @@
                     <td>{{ cur.code }}</td>
                     <td>{{ cur.name }}</td>
                     <td>{{ cur.icon }}</td>
-                    <td>
-                        <form method="post" action="{% url 'admin_currency_update' cur.id %}" class="d-flex gap-2 align-items-center">
-                            {% csrf_token %}
-                            <input type="text" name="rate" value="{{ cur.rate }}" class="form-control form-control-sm" style="width:100px">
-                            <select name="status" class="form-select form-select-sm" style="width:130px">
-                                <option value="Active" {% if cur.status == 'Active' %}selected{% endif %}>Ativa</option>
-                                <option value="Inactive" {% if cur.status == 'Inactive' %}selected{% endif %}>Inativa</option>
-                            </select>
-                            <button class="btn btn-sm btn-primary">Salvar</button>
-                        </form>
-                    </td>
-                    <td><span class="badge {% if cur.status == 'Active' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ cur.status }}</span></td>
-                    <td><span class="badge bg-light-primary">{{ cur.type|default:"N/A" }}</span></td>
+                    <td>{{ cur.rate }}</td>
+                    <td><span class="badge bg-light-success">{{ cur.status }}</span></td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="7" class="text-center">Nenhuma moeda.</td></tr>

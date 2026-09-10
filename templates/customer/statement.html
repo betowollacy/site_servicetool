@@ -30,8 +30,8 @@
                         <td>{{ stmt.created_at|date:"d M, Y h:i A" }}</td>
                         <td>{{ stmt.description }}</td>
                         <td><span class="badge {% if stmt.type == 'Credit' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ stmt.type }}</span></td>
-                        <td>{{ currency_icon }}{{ stmt.amount|floatformat:2 }}</td>
-                        <td>{{ currency_icon }}{{ stmt.balance|floatformat:2 }}</td>
+                        <td>R$ {{ stmt.amount|floatformat:2 }}</td>
+                        <td>R$ {{ stmt.balance|floatformat:2 }}</td>
                     </tr>
                     {% empty %}
                     <tr><td colspan="5" class="text-center">Nenhum lançamento ainda.</td></tr>

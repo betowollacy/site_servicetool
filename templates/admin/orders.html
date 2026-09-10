@@ -39,7 +39,7 @@
                     <td>{{ order.customer.name }}</td>
                     <td>{{ order.service_title }}</td>
                     <td>{{ order.service_input1 }}</td>
-                    <td>{{ currency_icon }}{{ order.service_price|floatformat:2 }}</td>
+                    <td>R$ {{ order.service_price|floatformat:2 }}</td>
                     <td>{{ order.payment_methode|default:"-" }}</td>
                     <td><span class="badge bg-light-primary">{{ order.service_status }}</span></td>
                     <td>

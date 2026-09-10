@@ -90,7 +90,7 @@
                             <td>#{{ order.id }}</td>
                             <td>{{ order.customer.name }}</td>
                             <td>{{ order.service_title }}</td>
-                            <td>{{ currency_icon }}{{ order.service_price|floatformat:2 }}</td>
+                            <td>R$ {{ order.service_price|floatformat:2 }}</td>
                             <td><span class="badge bg-light-primary">{{ order.service_status }}</span></td>
                             <td>{{ order.created_at|date:"d M, Y H:i" }}</td>
                         </tr>

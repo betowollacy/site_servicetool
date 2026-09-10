@@ -23,7 +23,7 @@
                     <td>#{{ inv.id }}</td>
                     <td>{{ inv.customer_name|default:inv.customer.email }}</td>
                     <td>{{ inv.invoice_title|default:inv.invoice_for }}</td>
-                    <td>{{ currency_icon }}{{ inv.invoice_amount|floatformat:2 }} {{ inv.customer_currency }}</td>
+                    <td>R$ {{ inv.invoice_amount|floatformat:2 }}</td>
                     <td>{{ inv.payment_gateway|default:"-" }}</td>
                     <td><span class="badge {% if inv.invoice_status == 'Paid' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ inv.invoice_status }}</span></td>
                     <td>{{ inv.created_at|date:"d M, Y H:i" }}</td>
