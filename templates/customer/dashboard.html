@@ -38,11 +38,12 @@
         <i class="bi bi-lightning-charge-fill customer-balance-mark" aria-hidden="true"></i>
     </section>
 
-    <section class="row g-3 customer-metrics">
-        <div class="col-6 col-xl-3"><div class="customer-metric metric-blue-card"><div class="customer-metric-top"><span class="customer-metric-icon metric-blue"><i class="bi bi-receipt"></i></span><i class="bi bi-arrow-up-right metric-arrow"></i></div><small>Total de pedidos</small><strong>{{ total_orders }}</strong><span class="customer-metric-note">ordens registradas</span></div></div>
-        <div class="col-6 col-xl-3"><div class="customer-metric metric-amber-card"><div class="customer-metric-top"><span class="customer-metric-icon metric-amber"><i class="bi bi-hourglass-split"></i></span><i class="bi bi-arrow-up-right metric-arrow"></i></div><small>Aguardando ação</small><strong>{{ waitingAction }}</strong><span class="customer-metric-note">precisam de atenção</span></div></div>
-        <div class="col-6 col-xl-3"><div class="customer-metric metric-green-card"><div class="customer-metric-top"><span class="customer-metric-icon metric-green"><i class="bi bi-shield-check"></i></span><span class="customer-active-pill"><i class="bi bi-circle-fill"></i> Ativa</span></div><small>Status da conta</small><strong>Ativa</strong><span class="customer-metric-note">tudo funcionando normalmente</span></div></div>
-        <div class="col-6 col-xl-3"><div class="customer-metric metric-violet-card"><div class="customer-metric-top"><span class="customer-metric-icon metric-violet"><i class="bi bi-wallet2"></i></span><i class="bi bi-arrow-up-right metric-arrow"></i></div><small>Total gasto</small><strong>R$ {{ total_spent|floatformat:2 }}</strong><span class="customer-metric-note">em serviços contratados</span></div></div>
+    <section class="row g-3 customer-metrics customer-order-stats">
+        <div class="col-6 col-xl"><div class="customer-metric metric-blue-card"><div class="customer-metric-top"><span class="customer-metric-icon metric-blue"><i class="bi bi-list-check"></i></span></div><small>Total de pedidos</small><strong>{{ total_orders }}</strong></div></div>
+        <div class="col-6 col-xl"><div class="customer-metric metric-amber-card"><div class="customer-metric-top"><span class="customer-metric-icon metric-amber"><i class="bi bi-clock-fill"></i></span></div><small>Aguardando ação</small><strong>{{ waitingAction }}</strong></div></div>
+        <div class="col-6 col-xl"><div class="customer-metric metric-blue-card"><div class="customer-metric-top"><span class="customer-metric-icon metric-blue"><i class="bi bi-arrow-repeat"></i></span></div><small>Em processo</small><strong>{{ in_process }}</strong></div></div>
+        <div class="col-6 col-xl"><div class="customer-metric metric-green-card"><div class="customer-metric-top"><span class="customer-metric-icon metric-green"><i class="bi bi-check-circle-fill"></i></span></div><small>Concluídos</small><strong>{{ completed_orders }}</strong></div></div>
+        <div class="col-6 col-xl"><div class="customer-metric metric-red-card"><div class="customer-metric-top"><span class="customer-metric-icon metric-red"><i class="bi bi-x-circle-fill"></i></span></div><small>Cancelados</small><strong>{{ cancelled_orders }}</strong></div></div>
     </section>
 
     <section class="customer-analytics-grid">
@@ -69,11 +70,21 @@
         <a href="{% url 'customer_order_history' %}" class="btn btn-sm btn-outline-primary rounded-2">Ver histórico <i class="bi bi-arrow-right"></i></a>
     </div>
 
+    <div class="customer-orders-toolbar">
+        <div class="customer-filter-pills">
+            <button class="customer-filter-pill active" type="button" data-order-filter="all"><i class="bi bi-stack"></i> Todos</button>
+            <button class="customer-filter-pill" type="button" data-order-filter="server_service">Servidores</button>
+            <button class="customer-filter-pill" type="button" data-order-filter="imei_service">IMEI</button>
+            <button class="customer-filter-pill" type="button" data-order-filter="credit_service">Créditos</button>
+        </div>
+        <label class="customer-order-search"><i class="bi bi-search"></i><input id="customerOrderSearch" type="search" placeholder="Buscar pedidos..."></label>
+    </div>
+
     <div class="card customer-orders-card">
         <div class="card-body table-responsive p-0">
             <table class="table">
                 <thead>
-                    <tr>
+                    <tr data-order-type="{{ order.service_type }}">
                         <th>ID</th>
                         <th>Data</th>
                         <th>Serviço</th>
@@ -103,6 +114,19 @@
 {{ status_chart|json_script:'customer-status-data' }}
 <script src="{% static 'frontend/js/plugins/apexcharts.min.js' %}"></script>
 <script>
+(function () {
+    var search = document.querySelector('#customerOrderSearch');
+    var rows = Array.prototype.slice.call(document.querySelectorAll('.customer-orders-card tbody tr[data-order-type]'));
+    var filters = document.querySelectorAll('[data-order-filter]');
+    var activeFilter = 'all';
+    function filterRows() {
+        var query = (search ? search.value : '').toLowerCase();
+        rows.forEach(function (row) { row.hidden = activeFilter !== 'all' && row.dataset.orderType !== activeFilter || query && row.textContent.toLowerCase().indexOf(query) === -1; });
+    }
+    filters.forEach(function (button) { button.addEventListener('click', function () { filters.forEach(function (item) { item.classList.remove('active'); }); button.classList.add('active'); activeFilter = button.dataset.orderFilter; filterRows(); }); });
+    if (search) search.addEventListener('input', filterRows);
+}());
+
 (function () {
     var target = document.querySelector('#customerStatusChart');
     var dataNode = document.querySelector('#customer-status-data');

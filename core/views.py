@@ -206,6 +206,9 @@ def _require_customer(view):
 def customer_dashboard(request, customer):
     orders = CustomerOrder.objects.filter(customer=customer)
     waiting_action = orders.filter(service_status='Waiting Action').count()
+    in_process = orders.filter(service_status='In Process').count()
+    completed_orders = orders.filter(service_status='Success').count()
+    cancelled_orders = orders.filter(service_status='Rejected').count()
     status_chart = []
     status_colors = {
         'Success': 'green',
@@ -225,6 +228,9 @@ def customer_dashboard(request, customer):
         })
     ctx = {
         'waitingAction': waiting_action,
+        'in_process': in_process,
+        'completed_orders': completed_orders,
+        'cancelled_orders': cancelled_orders,
         'total_orders': orders.count(),
         'total_spent': orders.aggregate(s=Sum('service_price'))['s'] or Decimal('0.00'),
         'balance': customer.balance,
