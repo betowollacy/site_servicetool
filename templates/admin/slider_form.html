@@ -11,9 +11,13 @@
             {% csrf_token %}
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">URL da Imagem <span class="text-danger">*</span></label>
-                    <input type="text" name="img" class="form-control" required value="{{ slider.img|default:'' }}" placeholder="https://...">
-                    <div class="form-text">Link direto da imagem do banner (ou caminho /static/...).</div>
+                    <label class="form-label">Imagem do Slide</label>
+                    <div class="input-group">
+                        <input type="text" name="img" id="sliderImgInput" class="form-control" required value="{{ slider.img|default:'' }}" placeholder="https://... ou /media/...">
+                        <button type="button" class="btn btn-primary" id="uploadSliderBtn">Enviar imagem</button>
+                    </div>
+                    <input type="file" id="uploadSliderFile" accept="image/*" class="d-none">
+                    <div class="form-text">Cole um link direto, ou clique em "Enviar imagem" para subir um arquivo do seu computador.</div>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Link de Destino</label>
@@ -41,9 +45,63 @@
         {% if slider %}
         <div class="mt-4">
             <label class="form-label fw-semibold">Pré-visualização</label>
-            <div><img src="{{ slider.img }}" alt="" style="max-width: 100%; border-radius: 8px;"></div>
+            <div><img src="{{ slider.img }}" id="sliderPreview" alt="" style="max-width: 100%; border-radius: 8px;"></div>
+        </div>
+        {% else %}
+        <div class="mt-4" id="sliderPreviewWrap" style="display: none;">
+            <label class="form-label fw-semibold">Pré-visualização</label>
+            <div><img src="" id="sliderPreview" alt="" style="max-width: 100%; border-radius: 8px;"></div>
         </div>
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block footer_script %}
+<script>
+    $(function () {
+        function updatePreview() {
+            var src = $("#sliderImgInput").val().trim();
+            if (src) {
+                $("#sliderPreviewWrap").show();
+                $("#sliderPreview").attr("src", src);
+            } else {
+                $("#sliderPreviewWrap").hide();
+            }
+        }
+        $("#sliderImgInput").on("input", updatePreview).on("change", updatePreview);
+        updatePreview();
+
+        $("#uploadSliderBtn").on("click", function () {
+            $("#uploadSliderFile").trigger("click");
+        });
+
+        $("#uploadSliderFile").on("change", function () {
+            var file = this.files[0];
+            if (!file) return;
+            var fd = new FormData();
+            fd.append("image", file);
+            fd.append("csrfmiddlewaretoken", $("input[name=csrfmiddlewaretoken]").val());
+            $("#uploadSliderBtn").prop("disabled", true).text("Enviando...");
+            $.ajax({
+                url: "{% url 'admin_slider_upload_image' %}",
+                method: "POST",
+                data: fd,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    $("#sliderImgInput").val(res.url);
+                    updatePreview();
+                    $("#uploadSliderBtn").prop("disabled", false).text("Enviar imagem");
+                },
+                error: function (xhr) {
+                    var msg = "Falha no envio.";
+                    try { msg = JSON.parse(xhr.responseText).error || msg; } catch (e) {}
+                    alert(msg);
+                    $("#uploadSliderBtn").prop("disabled", false).text("Enviar imagem");
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

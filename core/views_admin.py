@@ -1,9 +1,13 @@
 from decimal import Decimal
 
+import uuid
+
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import logout
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.text import slugify
@@ -311,6 +315,25 @@ def admin_slider_delete(request, slider_id):
     Slider.objects.filter(id=slider_id).delete()
     messages.success(request, 'Slider removido.')
     return redirect('admin_slider_list')
+
+
+@_staff
+def admin_slider_upload_image(request):
+    if request.method != 'POST' or not request.FILES.get('image'):
+        return JsonResponse({'error': 'Envie um arquivo de imagem.'}, status=400)
+    f = request.FILES['image']
+    name = (f.name or '').lower()
+    ext = name.rsplit('.', 1)[-1] if '.' in name else ''
+    if ext not in ('png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'):
+        return JsonResponse({'error': 'Formato não permitido (use PNG, JPG, WEBP, GIF ou BMP).'}, status=400)
+    subdir = settings.MEDIA_ROOT / 'sliders'
+    subdir.mkdir(parents=True, exist_ok=True)
+    fname = f"slider_{uuid.uuid4().hex[:10]}.{ext}"
+    dest = subdir / fname
+    with open(dest, 'wb+') as out:
+        for chunk in f.chunks():
+            out.write(chunk)
+    return JsonResponse({'url': f"{settings.MEDIA_URL}sliders/{fname}"})
 
 
 # --------------------------------------------------------------------------- #

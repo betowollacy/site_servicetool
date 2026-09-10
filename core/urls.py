@@ -20,6 +20,7 @@ urlpatterns = [
     path('admin-panel/logout/', views_admin.admin_logout, name='admin_logout'),
 
     path('admin-panel/sliders/', views_admin.admin_slider_list, name='admin_slider_list'),
+    path('admin-panel/sliders/upload-image/', views_admin.admin_slider_upload_image, name='admin_slider_upload_image'),
     path('admin-panel/sliders/new/', views_admin.admin_slider_new, name='admin_slider_new'),
     path('admin-panel/sliders/<int:slider_id>/edit/', views_admin.admin_slider_edit, name='admin_slider_edit'),
     path('admin-panel/sliders/<int:slider_id>/delete/', views_admin.admin_slider_delete, name='admin_slider_delete'),
