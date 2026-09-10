@@ -20,7 +20,7 @@ CATEGORY_SLUGS = {
     'server-service': {
         'type': 'Server Service',
         'display': 'Server',
-        'title': 'Activation/Server Service',
+        'title': 'Ativações e Créditos',
     },
     'credit-service': {
         'type': 'Credit Service',
