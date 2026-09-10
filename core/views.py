@@ -152,8 +152,7 @@ def login_view(request):
         customer = Customer.objects.filter(email__iexact=email).first()
         if customer and customer.check_password(password) and customer.status == 'Active':
             request.session['customer_id'] = customer.id
-            next_url = request.POST.get('next') or reverse('customer_dashboard')
-            return redirect(next_url)
+            return redirect('homepage')
         ctx = {'login_error': 'E-mail ou senha inválidos.'}
         ctx.update(_base_ctx(request))
         return render(request, 'frontend/homepage.html', ctx)
