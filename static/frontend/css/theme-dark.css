@@ -9,26 +9,33 @@
     --tl: #0f1419;
     --ink: #e6edf3;
     --sub: #9aa4ad;
-    --dim: #6e7a85;
-    --rule: #1f2a33;
-    --off: #141b22;
-    --w: #0d1217;
-    --muted: #8b949e;
-    --border: #2a3641;
-    --white: #0d1217;
-    --bs-body-bg: #0f1419;
-    --bs-body-color: #dee2e6;
-    --bs-body-bg-rgb: 15, 20, 25;
+        --dim: #647b91;
+        --rule: #1b344b;
+        --off: #0d1b2b;
+        --w: #081522;
+        --muted: #86a0b8;
+        --border: #23425d;
+        --white: #0b1a2a;
+        --tech-cyan: #47e5ff;
+        --tech-blue: #4d7cff;
+        --bs-primary: #2378ff;
+        --bs-primary-rgb: 35, 120, 255;
+        --bs-body-bg: #07111f;
+        --bs-body-color: #dcecff;
+        --bs-body-bg-rgb: 7, 17, 31;
 }
 
 [data-bs-theme="dark"] body {
-    background-color: #0f1419;
-    color: #dee2e6;
+        background-color: #07111f;
+        background-image: linear-gradient(rgba(71, 229, 255, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(71, 229, 255, .035) 1px, transparent 1px);
+        background-size: 32px 32px;
+        color: #dcecff;
 }
 
 [data-bs-theme="dark"] .servicetool-header {
-    background-color: #10151a;
-    border-bottom-color: #2a3641;
+        background: linear-gradient(135deg, #071525 0%, #102b4b 55%, #11203d 100%);
+        border-bottom-color: #285b7b;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, .28), 0 1px 0 rgba(71, 229, 255, .18);
 }
 
 [data-bs-theme="dark"] .servicetool-theme-header {
@@ -148,4 +155,29 @@
 [data-bs-theme="dark"] .text-body-secondary,
 [data-bs-theme="dark"] .form-label {
     color: #9aa4ad !important;
+}
+
+[data-bs-theme="dark"] .btn-primary {
+    background: linear-gradient(135deg, #2378ff, #23c8ed);
+    border-color: #47e5ff;
+    box-shadow: 0 6px 18px rgba(35, 120, 255, .24);
+}
+
+[data-bs-theme="dark"] .btn-primary:hover,
+[data-bs-theme="dark"] .btn-primary:focus {
+    background: linear-gradient(135deg, #3d8cff, #47e5ff);
+    border-color: #8af3ff;
+}
+
+[data-bs-theme="dark"] .page-title,
+[data-bs-theme="dark"] h1,
+[data-bs-theme="dark"] h2,
+[data-bs-theme="dark"] h3,
+[data-bs-theme="dark"] h4,
+[data-bs-theme="dark"] h5 {
+    color: #edf7ff;
+}
+
+[data-bs-theme="dark"] .text-primary {
+    color: var(--tech-cyan) !important;
 }

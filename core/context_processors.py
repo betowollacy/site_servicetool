@@ -23,7 +23,7 @@ def site_context(request):
     if customer_id:
         customer = Customer.objects.filter(id=customer_id).first()
 
-    them_mode = SystemSetting.get('themeMode', 'light')
+    them_mode = SystemSetting.get('themeMode', 'dark')
     theme_color = SystemSetting.get('themeColor', 'preset-1')
     if them_mode != 'dark':
         them_mode = 'light'
