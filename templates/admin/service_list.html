@@ -5,7 +5,7 @@
         <h4 class="mb-0">Lista de Serviços - {{ type_label }}</h4>
         <ul class="nav nav-pills mt-3">
             <li class="nav-item"><a class="nav-link {% if service_type == 'Server Service' %}active{% endif %}" href="{% url 'admin_service_list' 'server' %}">Aluguel</a></li>
-            <li class="nav-item"><a class="nav-link {% if service_type == 'Credit Service' %}active{% endif %}" href="{% url 'admin_service_list' 'credit' %}">Crédito</a></li>
+            <li class="nav-item"><a class="nav-link {% if service_type == 'Credit Service' %}active{% endif %}" href="{% url 'admin_service_list' 'credit' %}">Créditos</a></li>
             <li class="nav-item"><a class="nav-link {% if service_type == 'IMEI Service' %}active{% endif %}" href="{% url 'admin_service_list' 'imei' %}">IMEI</a></li>
         </ul>
     </div>
