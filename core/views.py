@@ -84,9 +84,9 @@ def _base_ctx(request):
 
 
 def homepage(request):
-    hot_services = _active_services().filter(recommended=1).order_by('-sells')[:10]
-    trending_services = _active_services().order_by('-sells')[:10]
-    recent_services = _active_services().order_by('-created_at')[:10]
+    hot_services = _active_services().filter(recommended=1).order_by('-sells')
+    trending_services = _active_services().order_by('-sells')
+    recent_services = _active_services().order_by('-created_at')
     ctx = {
         'hot_services': [_service_dict(s) for s in hot_services],
         'trending_services': [_service_dict(s) for s in trending_services],
