@@ -72,8 +72,8 @@
                 <button class="nav-arrow nav-arrow-right" id="arrowRight" title="Scroll right"><i class="bi bi-chevron-right"></i></button>
             </div>
 
-            <button type="button" class="btn theme-toggle-btn rounded-2 d-none d-lg-flex align-items-center gap-1 me-2" id="themeToggleBtn" aria-label="Alternar modo escuro/claro" style="border:1px solid var(--border);background:var(--off);">
-                <i class="bi bi-moon-stars-fill theme-toggle-icon" id="themeToggleIcon"></i>
+            <button type="button" class="btn theme-toggle-btn rounded-2 d-none d-lg-flex align-items-center gap-1 me-2" id="themeToggleBtn" aria-label="Alternar modo escuro/claro" title="Alternar tema" style="border:1px solid var(--border);background:var(--off);color:var(--ink);">
+                <i class="bi bi-moon-stars-fill theme-toggle-icon" id="themeToggleIcon" aria-hidden="true"></i>
             </button>
 
             <div class="d-none d-lg-block">
@@ -93,6 +93,8 @@
                         <li><hr class="dropdown-divider"></li>
                         {% if siteWaUrl %}<li><a class="dropdown-item" href="{{ siteWaUrl }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Suporte via WhatsApp</a></li>{% endif %}
                         {% if siteEmail %}<li><a class="dropdown-item" href="mailto:{{ siteEmail }}"><i class="bi bi-envelope"></i> Suporte por e-mail</a></li>{% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Sair</a></li>
                     </ul>
                 </div>
                 {% else %}
@@ -191,8 +193,8 @@
         <div class="offcanvas-header border-bottom bg-primary">
             <i class="bi bi-chevron-left me-3 fs-4 text-white pointer" data-bs-dismiss="offcanvas" aria-label="Close"></i>
             <a class="navbar-brand" href="{% url 'homepage' %}"><img src="{{ siteLogo }}" alt="logo" style="max-width: 150px; max-height:40px; object-fit:contain" /></a>
-            <button type="button" class="btn btn-sm btn-light ms-auto theme-toggle-btn rounded-2" id="themeToggleBtnMobile" aria-label="Alternar modo escuro/claro">
-                <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
+            <button type="button" class="btn btn-sm btn-light ms-auto theme-toggle-btn rounded-2" id="themeToggleBtnMobile" aria-label="Alternar modo escuro/claro" title="Alternar tema">
+                <i class="bi bi-moon-stars-fill theme-toggle-icon" aria-hidden="true"></i>
             </button>
         </div>
         <div class="offcanvas-body">
@@ -205,6 +207,8 @@
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_order_history' %}"><i class="bi bi-bag"></i> Histórico de ordem <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_add_balance' %}"><i class="bi bi-wallet2"></i> Recarga <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             {% if siteWaUrl %}<a class="text-reset border-bottom mb-2 pb-2 d-block" href="{{ siteWaUrl }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Suporte <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>{% endif %}
+            {% if siteEmail %}<a class="text-reset border-bottom mb-2 pb-2 d-block" href="mailto:{{ siteEmail }}"><i class="bi bi-envelope"></i> Suporte por e-mail <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>{% endif %}
+            <a href="{% url 'logout' %}" class="btn btn-light-danger border-danger rounded w-100 mt-3 d-flex align-items-center justify-content-center gap-1"><i class="bi bi-box-arrow-right"></i> Sair</a>
             {% endif %}
             {% if customer %}
             <a href="{% url 'logout' %}" class="btn btn-light-danger border-danger rounded w-100 mt-3 d-flex align-items-center justify-content-center gap-1"><i class="bi bi-box-arrow-right"></i> Sair</a>
@@ -266,6 +270,37 @@
                 applyTheme(current === "dark" ? "light" : "dark");
             });
         });
+
+        (function () {
+            var root = document.documentElement;
+            var buttons = document.querySelectorAll('.theme-toggle-btn');
+            var savedTheme = localStorage.getItem('servicetool-theme');
+
+            function updateThemeIcon(theme) {
+                document.querySelectorAll('.theme-toggle-icon').forEach(function (icon) {
+                    icon.classList.toggle('bi-sun-fill', theme === 'dark');
+                    icon.classList.toggle('bi-moon-stars-fill', theme !== 'dark');
+                });
+                buttons.forEach(function (button) {
+                    button.setAttribute('aria-label', theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro');
+                });
+            }
+
+            var initialTheme = savedTheme === 'light' || savedTheme === 'dark'
+                ? savedTheme
+                : (root.getAttribute('data-bs-theme') || 'dark');
+            root.setAttribute('data-bs-theme', initialTheme);
+            updateThemeIcon(initialTheme);
+
+            buttons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    var nextTheme = root.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                    root.setAttribute('data-bs-theme', nextTheme);
+                    localStorage.setItem('servicetool-theme', nextTheme);
+                    updateThemeIcon(nextTheme);
+                });
+            });
+        }());
     </script>
 
     </div>
