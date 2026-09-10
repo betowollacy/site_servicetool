@@ -21,7 +21,7 @@
                                     <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
                                         <ol class="breadcrumb mb-1 pb-0">
                                             <li class="breadcrumb-item"><a href="{% url 'homepage' %}" class="breadcrumb-item active">Home</a></li>
-                                            <li class="breadcrumb-item"><a href="{% url 'category' item_catslug %}" class="breadcrumb-item active">{{ serviceData.service_type }}</a></li>
+                                            <li class="breadcrumb-item"><a href="{% url 'category' item_catslug %}" class="breadcrumb-item active">Serviços</a></li>
                                             <li class="breadcrumb-item active" aria-current="page">Fazer um pedido</li>
                                         </ol>
                                     </nav>
@@ -32,7 +32,7 @@
                     </div>
                     <div class="d-flex gap-2 border-top border-bottom px-4">
                         <div class="stat-cell">
-                            <div class="stat-lbl">PreÃ§o</div>
+                            <div class="stat-lbl">Preço</div>
                             <div class="stat-val text-primary">R$ {{ Price|floatformat:2 }}</div>
                         </div>
                         <div class="stat-cell">
@@ -41,7 +41,7 @@
                         </div>
                         {% if serviceData.duration %}
                         <div class="stat-cell">
-                            <div class="stat-lbl">DuraÃ§Ã£o</div>
+                            <div class="stat-lbl">Duração</div>
                             <div class="stat-val text-success">{{ serviceData.duration }}</div>
                         </div>
                         {% endif %}
@@ -80,17 +80,17 @@
                             <div class="mb-4">
                                 <div class="form-check">
                                     <input class="form-check-input" id="form-check-input" type="checkbox" value="" checked required />
-                                    <label class="form-check-label" for="form-check-input">Eu concordo com os <a href="#">termos e condiÃ§Ãµes</a></label>
-                                    <div class="invalid-feedback">VocÃª deve concordar antes de enviar.</div>
+                                    <label class="form-check-label" for="form-check-input">Eu concordo com os <a href="#">termos e condições</a></label>
+                                    <div class="invalid-feedback">Você deve concordar antes de enviar.</div>
                                 </div>
                             </div>
                             <div class="mb-1">
-                                <button type="submit" class="btn btn-primary rounded place-order w-100" id="placeOrderBtn">FazER UM PEDIDO</button>
+                                <button type="submit" class="btn btn-primary rounded place-order w-100" id="placeOrderBtn">FAZER UM PEDIDO</button>
                             </div>
                         </form>
                         {% else %}
                         <div class="text-center py-4">
-                            <p class="mb-3 text-muted">Por favor, faÃ§a login para fazer um pedido.</p>
+                                <p class="mb-3 text-muted">Por favor, faça login para fazer um pedido.</p>
                             <button class="btn btn-primary rounded" data-bs-toggle="modal" data-bs-target="#servicetoolAuthModal" data-auth-view="login">Entrar / Cadastrar</button>
                         </div>
                         {% endif %}
