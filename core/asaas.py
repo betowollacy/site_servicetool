@@ -65,10 +65,14 @@ def get_or_create_customer(gateway, customer):
 
 def create_pix_payment(invoice, gateway):
     customer_id = get_or_create_customer(gateway, invoice.customer)
+    try:
+        fee = float(gateway.charge or 0)
+    except (TypeError, ValueError):
+        fee = 0.0
     body = {
         'customer': customer_id,
         'billingType': 'PIX',
-        'value': float(invoice.invoice_amount),
+        'value': float(invoice.invoice_amount) + fee,
         'dueDate': date.today().isoformat(),
         'description': f'Fatura #{invoice.id} - {invoice.invoice_title or invoice.invoice_for or "Deposito"}',
         'externalReference': f'invoice-{invoice.id}',

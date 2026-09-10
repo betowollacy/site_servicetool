@@ -31,6 +31,14 @@
                                 <td><b>{{ invoice.invoice_title|default:invoice.invoice_for }}</b></td>
                                 <td class="text-end">R$ {{ invoice.invoice_amount|floatformat:2 }}</td>
                             </tr>
+                            {% for gateway in activeGateway %}
+                            {% if gateway.NAME == 'Asaas' %}
+                            <tr>
+                                <td><b>Taxa fixa (PIX Asaas)</b></td>
+                                <td class="text-end">R$ {{ gateway.CHARGE|floatformat:2 }}</td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
                         </table>
                         <div class="mb-3">
                             <label class="form-label fw-semibold">CPF ou CNPJ (para o pagamento PIX)</label>

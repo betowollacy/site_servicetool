@@ -10,6 +10,7 @@ from core.models import Currency, Customer, Invoice, PaymentGateway, PaymentDepo
 class AsaasGateway:
     asaas_api_key = 'test-token'
     asaas_sandbox = True
+    charge = Decimal('0.50')
 
 
 class FakeInvoice:
