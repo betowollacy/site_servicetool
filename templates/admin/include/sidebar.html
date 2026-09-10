@@ -21,9 +21,9 @@
                         <span class="pc-mtext">Lista de Serviços</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
                     </div>
                     <ul class="pc-submenu">
-                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_service_list' 'server' %}">Server <span class="float-end">{{ serverServiceCount }}</span></a></li>
-                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_service_list' 'credit' %}">Crédito <span class="float-end">{{ creditServiceCount }}</span></a></li>
-                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_service_list' 'imei' %}">IMEI <span class="float-end">{{ imeiServiceCount }}</span></a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_service_list' 'server' %}">Server <span class="pc-submenu-count">{{ serverServiceCount }}</span></a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_service_list' 'credit' %}">Crédito <span class="pc-submenu-count">{{ creditServiceCount }}</span></a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_service_list' 'imei' %}">IMEI <span class="pc-submenu-count">{{ imeiServiceCount }}</span></a></li>
                     </ul>
                 </li>
 
@@ -33,10 +33,10 @@
                         <span class="pc-mtext">Histórico de Pedidos</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
                     </div>
                     <ul class="pc-submenu">
-                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'waiting' %}">Aguardando Ação <span class="float-end">{{ waitingActionCount }}</span></a></li>
-                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'in_process' %}">Em Processo <span class="float-end">{{ inProcessCount }}</span></a></li>
-                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'success' %}">Sucesso <span class="float-end">{{ successCount }}</span></a></li>
-                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'rejected' %}">Rejeitados <span class="float-end">{{ rejectedCount }}</span></a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'waiting' %}">Aguardando Ação <span class="pc-submenu-count">{{ waitingActionCount }}</span></a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'in_process' %}">Em Processo <span class="pc-submenu-count">{{ inProcessCount }}</span></a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'success' %}">Sucesso <span class="pc-submenu-count">{{ successCount }}</span></a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'rejected' %}">Rejeitados <span class="pc-submenu-count">{{ rejectedCount }}</span></a></li>
                     </ul>
                 </li>
 

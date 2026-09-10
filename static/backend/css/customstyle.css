@@ -221,3 +221,23 @@ tr{
         display: block;
     }
 }
+
+.pc-sidebar .pc-submenu .pc-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    overflow: hidden;
+}
+.pc-sidebar .pc-submenu .pc-link .pc-submenu-count {
+    flex-shrink: 0;
+    min-width: 22px;
+    text-align: center;
+    background: var(--bs-primary);
+    color: #fff;
+    border-radius: 5px;
+    padding: 0 6px;
+    font-size: 11px;
+    line-height: 18px;
+    font-weight: 700;
+}
