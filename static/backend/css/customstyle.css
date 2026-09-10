@@ -241,3 +241,6 @@ tr{
     line-height: 18px;
     font-weight: 700;
 }
+
+.pc-sidebar .pc-hasmenu:hover > .pc-submenu { display: none !important; }
+.pc-sidebar .pc-hasmenu.pc-trigger:hover > .pc-submenu { display: block !important; }
