@@ -106,6 +106,13 @@
                 $('table.dataTable').DataTable({ language: { search: 'Buscar', lengthMenu: 'Mostrar _MENU_ por página', info: 'Mostrando _START_ a _END_ de _TOTAL_', paginate: { next: 'Próximo', previous: 'Anterior' } } });
             }
             $(function () {
+                document.querySelectorAll('.pc-navbar li.pc-hasmenu').forEach(function(li) {
+                    li.classList.remove('pc-trigger');
+                    var submenu = li.querySelector(':scope > .pc-submenu');
+                    if (submenu) {
+                        submenu.removeAttribute('style');
+                    }
+                });
                 var path = window.location.pathname;
                 $('.pc-navbar .pc-submenu a').each(function () {
                     var href = $(this).attr('href');
