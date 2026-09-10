@@ -241,6 +241,26 @@ video {
     flex-shrink: 0;
     margin-left: 10px;
 }
+  .customer-nav-menu .dropdown-toggle::after {
+    margin-left: 2px;
+  }
+  .customer-nav-dropdown {
+    min-width: 220px;
+    margin-top: 8px !important;
+    padding: 8px;
+  }
+  .customer-nav-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    border-radius: 6px;
+    font-size: 13px;
+    padding: 9px 10px;
+  }
+  .customer-nav-dropdown .dropdown-item i {
+    width: 16px;
+    color: var(--bs-primary);
+  }
 .login-btn{
     background: var(--bs-primary-glass-bg);
     border: 1px solid var(--bs-primary-glass-border) !important;
