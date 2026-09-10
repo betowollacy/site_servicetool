@@ -211,6 +211,20 @@ def admin_service_edit(request, svtype, service_id):
 
 
 @_staff
+def admin_service_delete(request, svtype, service_id):
+    db_type, label = _service_type_from(svtype)
+    service = ServiceList.objects.filter(id=service_id, service_type=db_type).first()
+    if not service:
+        messages.error(request, 'Serviço não encontrado.')
+        return redirect('admin_service_list', svtype)
+    if request.method == 'POST':
+        title = service.title
+        service.delete()
+        messages.success(request, f'Serviço "{title}" excluído com sucesso.')
+    return redirect('admin_service_list', svtype)
+
+
+@_staff
 def admin_currency_list(request):
     return render(request, 'admin/currency_list.html', {'currencies': Currency.objects.filter(code='BRL')})
 
