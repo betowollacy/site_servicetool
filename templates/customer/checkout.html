@@ -32,18 +32,18 @@
                                 <td class="text-end">R$ {{ invoice.invoice_amount|floatformat:2 }}</td>
                             </tr>
                             {% for gateway in activeGateway %}
-                            {% if gateway.CHARGE > 0 %}
+                            {% if gateway.NAME == 'Asaas' %}
                             <tr>
-                                <td><b>Taxa ({{ gateway.NAME }})</b></td>
+                                <td><b>Taxa fixa (PIX Asaas)</b></td>
                                 <td class="text-end">R$ {{ gateway.CHARGE|floatformat:2 }}</td>
                             </tr>
                             {% endif %}
                             {% endfor %}
                         </table>
-                        <div class="mb-3" id="cpfField">
+                        <div class="mb-3">
                             <label class="form-label fw-semibold">CPF ou CNPJ (para o pagamento PIX)</label>
                             <input type="text" name="cpf_cnpj" class="form-control" maxlength="18" value="{{ customer.cpf_cnpj|default:'' }}" placeholder="000.000.000-00">
-                            <div class="form-text">Obrigatório para cobranças via Asaas.</div>
+                            <div class="form-text">Obrigatório para cobranças via Asaas. Só dígitos.</div>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -73,13 +73,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-{% block footer_script %}
-<script>
-document.querySelectorAll('input[name="payment_methode"]').forEach(function(radio) {
-    radio.addEventListener('change', function() {
-        document.getElementById('cpfField').style.display = this.value.toLowerCase() === 'asaas' ? 'block' : 'none';
-    });
-});
-</script>
 {% endblock %}

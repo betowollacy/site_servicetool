@@ -515,7 +515,7 @@ def checkout(request, customer, invoice_id):
     ctx = {
         'invoice': invoice,
         'currency': currency,
-        'activeGateway': PaymentGateway.objects.filter(status='Active'),
+        'activeGateway': PaymentGateway.objects.filter(name__iexact='Asaas', status='Active'),
     }
     ctx.update(_base_ctx(request))
     return render(request, 'customer/checkout.html', ctx)
@@ -528,9 +528,7 @@ def gateway_pay(request, customer, invoice_id):
         gateway_name = request.POST.get('payment_methode', '').strip()
         if gateway_name.lower() == 'asaas':
             return _pay_with_asaas(request, customer, invoice)
-        elif gateway_name.lower() == 'binance':
-            return _pay_with_binance(request, customer, invoice)
-        messages.error(request, 'Selecione um gateway de pagamento válido.')
+        messages.error(request, 'Selecione o pagamento via PIX com Asaas.')
         return redirect('checkout', invoice_id=invoice.id)
     return redirect('checkout', invoice_id=invoice.id)
 
