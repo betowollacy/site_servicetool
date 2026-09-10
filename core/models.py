@@ -148,7 +148,6 @@ class ServiceList(models.Model):
     login_url = models.TextField(blank=True, null=True)
     register_url = models.TextField(blank=True, null=True)
     article = models.TextField(blank=True, null=True)
-    order_description = models.TextField(blank=True, null=True)
 
     service_tags = models.CharField(max_length=500, blank=True, null=True)
     meta_description = models.CharField(max_length=500, blank=True, null=True)
