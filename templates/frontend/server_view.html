@@ -1,5 +1,6 @@
 {% extends 'frontend/base.html' %}
 {% load static %}
+{% load core_extras %}
 {% block seo %}
 <title>{{ serviceData.title }} - {{ siteTitle }}</title>
 <meta name="description" content="{{ serviceData.meta_description|default:'' }}">
@@ -88,8 +89,8 @@
                                 <button type="submit" class="btn btn-primary rounded place-order w-100" id="placeOrderBtn">FAZER UM PEDIDO</button>
                             </div>
                             {% if serviceData.article %}
-                            <div class="mt-3 p-3 bg-light rounded-2 border-start border-primary border-4 text-muted small" style="white-space: pre-line;" id="service-article">
-                                {{ serviceData.article|safe }}
+                            <div class="mt-3 p-3 bg-light rounded-2 border-start border-primary border-4" style="white-space: pre-line; font-size: 1rem;" id="service-article">
+                                {{ serviceData.article|richtext }}
                             </div>
                             {% endif %}
                         </form>
