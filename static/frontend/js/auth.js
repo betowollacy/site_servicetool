@@ -7,7 +7,7 @@
     otpExpireDelay: 300,
     successReloadSeconds: 3,
     ajaxTimeout: 15000
-  }, window.GSM_AUTH_CONFIG || {});
+  }, window.SERVICETOOL_AUTH_CONFIG || {});
 
   var EMAIL = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
   var FADE_MS = 220;
@@ -27,7 +27,7 @@
     registerOk: '#registerCheckEmailMount'
   };
 
-  var $modal = $('#gsmAuthModal');
+  var $modal = $('#servicetoolAuthModal');
   var state = { registerStep: 1, loginEmail: '', otpTimer: null, reloadTimer: null };
 
   function apiUrl() {

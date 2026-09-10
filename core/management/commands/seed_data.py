@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 
 from core.models import (
-    Currency, PaymentGateway, SystemSetting,
+    Currency, PaymentGateway, Slider, SystemSetting,
 )
 
 
@@ -14,6 +14,7 @@ class Command(BaseCommand):
         self.seed_settings()
         self.seed_currencies()
         self.seed_gateways()
+        self.seed_sliders()
         self.stdout.write(self.style.SUCCESS("Seed concluido com sucesso."))
 
     def set_setting(self, key, value):
@@ -82,7 +83,16 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('  - Gateways: %d' % len(gateways)))
 
     def seed_sliders(self):
-        pass
+        sliders = [
+            ('/static/resource/slider_servicetool.webp', ''),
+            ('/static/resource/promo_usbfix.webp', 'https://usbfix.site/'),
+        ]
+        for img, url in sliders:
+            Slider.objects.update_or_create(
+                img=img,
+                defaults={'url': url, 'status': 'Active', 'width': '', 'height': ''},
+            )
+        self.stdout.write(self.style.SUCCESS('  - Sliders: %d' % len(sliders)))
 
     def seed_services(self):
         pass

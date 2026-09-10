@@ -1,4 +1,4 @@
-/* Orion / GSM Store — custom home interactions */
+/* Orion / SERVICETOOL — custom home interactions */
 (function () {
     "use strict";
 

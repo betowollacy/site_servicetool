@@ -1,4 +1,4 @@
-/* Dark mode overrides para o tema GSM */
+/* Dark mode overrides para o tema SERVICETOOL */
 [data-bs-theme="dark"],
 [data-bs-theme="dark"] body {
     color-scheme: dark;
@@ -26,12 +26,12 @@
     color: #dee2e6;
 }
 
-[data-bs-theme="dark"] .gsm-header {
+[data-bs-theme="dark"] .servicetool-header {
     background-color: #10151a;
     border-bottom-color: #2a3641;
 }
 
-[data-bs-theme="dark"] .gsm-theme-header {
+[data-bs-theme="dark"] .servicetool-theme-header {
     color: #e6edf3;
 }
 
@@ -45,16 +45,16 @@
     border-color: #2a3641;
 }
 
-[data-bs-theme="dark"] .gsm-dropdown {
+[data-bs-theme="dark"] .servicetool-dropdown {
     background: #141b22;
     border-color: #2a3641;
 }
 
-[data-bs-theme="dark"] .gsm-dropdown a {
+[data-bs-theme="dark"] .servicetool-dropdown a {
     color: #e6edf3;
 }
 
-[data-bs-theme="dark"] .gsm-dropdown a:hover {
+[data-bs-theme="dark"] .servicetool-dropdown a:hover {
     background: #1a2430;
 }
 

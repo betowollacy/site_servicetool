@@ -42,7 +42,7 @@ video {
 }
 
 /* HEADER SRATR */
-.gsm-header {
+.servicetool-header {
     background-color: var(--bs-primary);
     color: white;
     border-bottom: 1px solid var(--border);
@@ -50,7 +50,7 @@ video {
     height: 62px;
 }
 
-.gsm-theme-header {
+.servicetool-theme-header {
   max-width: 1200px;
   margin: 0 auto;
   display: flex;
@@ -250,7 +250,7 @@ video {
     border: 1px solid var(--bs-primary-glass-border) !important;
 }
 
-.gsm-dropdown {
+.servicetool-dropdown {
   position: fixed;
   min-width: 180px;
   background: var(--white);
@@ -266,14 +266,14 @@ video {
   pointer-events: none;
 }
 
-.gsm-dropdown.visible {
+.servicetool-dropdown.visible {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
     pointer-events: auto;
 }
 
-.gsm-dropdown a {
+.servicetool-dropdown a {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -287,7 +287,7 @@ video {
   font-family: 'DM Sans', sans-serif;
 }
 
-.gsm-dropdown a:hover {
+.servicetool-dropdown a:hover {
     background: var(--pc-active-background);
     color: var(--bs-dropdown-link-color)
 }
@@ -1416,24 +1416,24 @@ table.dataTable thead th {
 
 
 
-#gsmAuthModal .select2-container--bootstrap-5.select2-container--focus .select2-selection,
-#gsmAuthModal .select2-container--bootstrap-5.select2-container--open .select2-selection {
+#servicetoolAuthModal .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+#servicetoolAuthModal .select2-container--bootstrap-5.select2-container--open .select2-selection {
   border-color: var(--bs-border-color);
   box-shadow: none;
 }
 
-#gsmAuthModal .select2-container--bootstrap-5 .select2-dropdown {
+#servicetoolAuthModal .select2-container--bootstrap-5 .select2-dropdown {
   border-color: var(--bs-border-color);
   border-top: none;
   box-shadow: none;
 }
 
-#gsmAuthModal .select2-container--bootstrap-5 .select2-dropdown .select2-search .select2-search__field:focus {
+#servicetoolAuthModal .select2-container--bootstrap-5 .select2-dropdown .select2-search .select2-search__field:focus {
   border-color: var(--bs-border-color);
   box-shadow: none;
 }
 
-#gsmAuthModal .auth-illus-panel {
+#servicetoolAuthModal .auth-illus-panel {
   background-color: #f8fbfa;
   background-image:
     radial-gradient(ellipse 90% 70% at 50% -10%, rgba(255, 255, 255, 0.95) 0%, transparent 72%),
@@ -1728,7 +1728,7 @@ table.dataTable thead th {
 
 
 @media (max-width: 1399px) {
-    .gsm-theme-header{
+    .servicetool-theme-header{
         max-width: 1120px;
     }
     .footer-main{
@@ -1748,7 +1748,7 @@ table.dataTable thead th {
 
 
 @media (max-width: 1199px) {
-    .gsm-theme-header{
+    .servicetool-theme-header{
         max-width: 940px;
     }
     .custom-xl-left-border{
@@ -1802,11 +1802,11 @@ table.dataTable thead th {
         gap: 30px;
     }
 
-    .gsm-header{
+    .servicetool-header{
         padding: 15px 0;
         height: auto;
     }
-    .gsm-theme-header{
+    .servicetool-theme-header{
         max-width: 695px;
     }
     .nav-container{
@@ -1821,7 +1821,7 @@ table.dataTable thead th {
 
 
 @media (max-width: 767px) {
-    .gsm-theme-header{
+    .servicetool-theme-header{
         max-width: 520px;
     }
     .service-list{
@@ -1853,7 +1853,7 @@ table.dataTable thead th {
 
 
 @media (max-width: 575px) {
-    .gsm-theme-header{
+    .servicetool-theme-header{
         max-width: 574px;
         padding: 0 15px;
     }

@@ -1,7 +1,7 @@
 $(window).on('load', function () {
   setTimeout(function () {
-      $('#gsmtheme-loader').remove();
-      $('#gsmtheme-content').removeClass('d-none').hide().fadeIn(200);
+      $('#servicetooltheme-loader').remove();
+      $('#servicetooltheme-content').removeClass('d-none').hide().fadeIn(200);
   }, 1000);
 });
 
@@ -208,7 +208,7 @@ $('.has-drop').each(function () {
 });
 
 $(document).on('click', function (e) {
-  if (!$(e.target).closest('.has-drop').length && !$(e.target).closest('.gsm-dropdown').length) {
+  if (!$(e.target).closest('.has-drop').length && !$(e.target).closest('.servicetool-dropdown').length) {
     $('.has-drop').each(function () { closeDrop(this, true); });
   }
 });

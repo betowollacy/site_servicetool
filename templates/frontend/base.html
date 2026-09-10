@@ -14,7 +14,7 @@
     <link rel="canonical" href="{{ request.build_absolute_uri }}" />
     <link rel="icon" href="{{ siteFav }}" type="image/x-icon" />
     <link rel="stylesheet" href="{% static 'frontend/css/stylesheet.css' %}" />
-    <link rel="stylesheet" href="{% static 'frontend/css/gsmthemstyle.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/servicetoolstyle.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/modernstyle.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/jquery.dataTables.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/custom-animation.css' %}" />
@@ -43,14 +43,14 @@
 </head>
 <body data-pc-direction="ltr">
 
-    <div id="gsmtheme-loader" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+    <div id="servicetooltheme-loader" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
         <div class="spinner-border text-primary" role="status" style="width:3.5rem;height:3.5rem;"></div>
     </div>
 
-    <div id="gsmtheme-content" class="d-none">
+    <div id="servicetooltheme-content" class="d-none">
 
-    <header class="gsm-header">
-        <div class="gsm-theme-header">
+    <header class="servicetool-header">
+        <div class="servicetool-theme-header">
             <a href="{% url 'homepage' %}" class="nav-logo">
                 <img src="{% static 'resource/logo_header_servicetool.png' %}?v=5" alt="logo" style="max-width:250px;max-height:50px;width:auto;height:50px;object-fit:contain;" />
             </a>
@@ -86,7 +86,7 @@
                     <i class="bi bi-person-fill"></i> {{ customer.name }}
                 </a>
                 {% else %}
-                <button class="btn btn-primary rounded-2 d-none d-lg-flex align-items-center gap-1 login-btn" data-bs-toggle="modal" data-bs-target="#gsmAuthModal" data-auth-view="login">
+                <button class="btn btn-primary rounded-2 d-none d-lg-flex align-items-center gap-1 login-btn" data-bs-toggle="modal" data-bs-target="#servicetoolAuthModal" data-auth-view="login">
                     <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
                         <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
                         <circle cx="12" cy="7" r="4" stroke="white" stroke-width="1.8"/>
@@ -102,7 +102,7 @@
         </div>
     </header>
 
-    <div class="gsm-dropdown" id="drop-down-2">
+    <div class="servicetool-dropdown" id="drop-down-2">
         {% for group in groups %}
         <a href="{% url 'category' group.slug|add:'-service' %}">
             {% if group.slug == 'imei' %}📶{% elif group.slug == 'server' %}📲{% else %}💰{% endif %}
@@ -198,7 +198,7 @@
             {% if customer %}
             <a href="{% url 'logout' %}" class="btn btn-light-danger border-danger rounded w-100 mt-3 d-flex align-items-center justify-content-center gap-1"><i class="bi bi-box-arrow-right"></i> Sair</a>
             {% else %}
-            <button class="btn btn-primary rounded w-100 mt-3 menu-login-btn d-flex align-items-center justify-content-center gap-1" data-bs-toggle="modal" data-bs-target="#gsmAuthModal" data-auth-view="login">
+            <button class="btn btn-primary rounded w-100 mt-3 menu-login-btn d-flex align-items-center justify-content-center gap-1" data-bs-toggle="modal" data-bs-target="#servicetoolAuthModal" data-auth-view="login">
                 <i class="bi bi-person"></i> Login <span class="customer-auth-btn"></span>
             </button>
             {% endif %}
@@ -218,7 +218,7 @@
     <script src="{% static 'frontend/js/owl.carousel.min.js' %}"></script>
     <script src="{% static 'frontend/js/notyf.min.js' %}"></script>
     <script src="{% static 'frontend/js/auth.js' %}"></script>
-    <script src="{% static 'frontend/js/gsmtheme.js' %}"></script>
+    <script src="{% static 'frontend/js/servicetooltheme.js' %}"></script>
     {% block footer_script %}{% endblock %}
     <script>
         $(document).ready(function(){
@@ -229,11 +229,11 @@
             });
             $("[data-switch-auth]").on("click", function(){
                 var target = $(this).data("switch-auth");
-                $("#gsmAuthModal .auth-view").removeClass("show").addClass("d-none");
+                $("#servicetoolAuthModal .auth-view").removeClass("show").addClass("d-none");
                 $("#view-" + target).removeClass("d-none").addClass("show");
             });
             if (window.bootstrap && bootstrap.Modal) {
-                $("#gsmAuthModal").on("show.bs.modal", function () {
+                $("#servicetoolAuthModal").on("show.bs.modal", function () {
                     $("#view-login").removeClass("d-none").addClass("show");
                     $("#view-register").addClass("d-none").removeClass("show");
                 });
@@ -244,11 +244,11 @@
                 $(".theme-toggle-icon").removeClass(theme === "dark" ? "bi-sun-fill" : "bi-moon-stars-fill")
                                        .addClass(theme === "dark" ? "bi-moon-stars-fill" : "bi-sun-fill");
                 if (persist !== false) {
-                    try { localStorage.setItem("gsmTheme", theme); } catch(e) {}
+                    try { localStorage.setItem("servicetoolTheme", theme); } catch(e) {}
                 }
             }
             var savedTheme = null;
-            try { savedTheme = localStorage.getItem("gsmTheme"); } catch(e) {}
+            try { savedTheme = localStorage.getItem("servicetoolTheme"); } catch(e) {}
             applyTheme(savedTheme || "dark");
             $(".theme-toggle-btn").on("click", function(){
                 var current = document.documentElement.getAttribute("data-bs-theme");
