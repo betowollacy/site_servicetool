@@ -1,4 +1,6 @@
 import json
+import random
+import string
 from decimal import Decimal
 
 from django.contrib import messages
@@ -194,6 +196,97 @@ def logout_view(request):
 
 
 # --------------------------------------------------------------------------- #
+# Forgot Password
+# --------------------------------------------------------------------------- #
+
+def _generate_code():
+    return ''.join(random.choices(string.digits, k=6))
+
+
+FORGOT_SESSION_KEY = 'forgot_password'
+
+
+def forgot_password(request):
+    step = request.session.get(FORGOT_SESSION_KEY + '_step', 'request')
+    code = request.session.get(FORGOT_SESSION_KEY + '_code', '')
+    email = request.session.get(FORGOT_SESSION_KEY + '_email', '')
+    masked_email = ''
+    if email:
+        parts = email.split('@')
+        if len(parts) == 2 and len(parts[0]) > 2:
+            masked_email = parts[0][:2] + '***' + '@' + parts[1]
+        else:
+            masked_email = email
+
+    if request.method == 'POST':
+        action = request.POST.get('action', 'request')
+
+        if action == 'request' or step == 'request':
+            email_input = request.POST.get('email', '').strip()
+            customer = Customer.objects.filter(email__iexact=email_input).first()
+            if not customer or customer.status != 'Active':
+                messages.error(request, 'E-mail não encontrado ou conta inativa.')
+                ctx = {'step': 'request'}
+                ctx.update(_base_ctx(request))
+                return render(request, 'customer/forgot_password.html', ctx)
+            new_code = _generate_code()
+            request.session[FORGOT_SESSION_KEY + '_code'] = new_code
+            request.session[FORGOT_SESSION_KEY + '_email'] = email_input
+            request.session[FORGOT_SESSION_KEY + '_step'] = 'verify'
+            messages.success(request, f'Código enviado para {email_input}. (Código de teste: {new_code})')
+            return redirect('forgot_password')
+
+        elif action == 'verify' or step == 'verify':
+            code_input = request.POST.get('code', '').strip()
+            if code_input != code:
+                messages.error(request, 'Código inválido.')
+                masked_email = email
+                ctx = {'step': 'verify', 'masked_email': masked_email}
+                ctx.update(_base_ctx(request))
+                return render(request, 'customer/forgot_password.html', ctx)
+            request.session[FORGOT_SESSION_KEY + '_step'] = 'reset'
+            return redirect('forgot_password')
+
+        elif action == 'reset' or step == 'reset':
+            new_password = request.POST.get('new_password', '')
+            confirm_password = request.POST.get('confirm_password', '')
+            if len(new_password) < 8:
+                messages.error(request, 'A senha deve ter pelo menos 8 caracteres.')
+                ctx = {'step': 'reset', 'code': code}
+                ctx.update(_base_ctx(request))
+                return render(request, 'customer/forgot_password.html', ctx)
+            if new_password != confirm_password:
+                messages.error(request, 'As senhas não coincidem.')
+                ctx = {'step': 'reset', 'code': code}
+                ctx.update(_base_ctx(request))
+                return render(request, 'customer/forgot_password.html', ctx)
+            customer = Customer.objects.filter(email__iexact=email).first()
+            if customer:
+                customer.password = Customer.make_password(new_password)
+                customer.save(update_fields=['password'])
+            for key in list(request.session.keys()):
+                if key.startswith(FORGOT_SESSION_KEY):
+                    del request.session[key]
+            ctx = {'step': 'done'}
+            ctx.update(_base_ctx(request))
+            return render(request, 'customer/forgot_password.html', ctx)
+
+    for key in list(request.session.keys()):
+        if key.startswith(FORGOT_SESSION_KEY) and step not in ('verify', 'reset'):
+            del request.session[key]
+            step = 'request'
+
+    if step == 'verify':
+        ctx = {'step': 'verify', 'masked_email': masked_email}
+    elif step == 'reset':
+        ctx = {'step': 'reset', 'code': code}
+    else:
+        ctx = {'step': 'request'}
+    ctx.update(_base_ctx(request))
+    return render(request, 'customer/forgot_password.html', ctx)
+
+
+# --------------------------------------------------------------------------- #
 # Customer
 # --------------------------------------------------------------------------- #
 
@@ -243,6 +336,44 @@ def customer_dashboard(request, customer):
     }
     ctx.update(_base_ctx(request))
     return render(request, 'customer/dashboard.html', ctx)
+
+
+@_require_customer
+def customer_profile(request, customer):
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        if action == 'update_profile':
+            name = request.POST.get('name', '').strip()
+            mobile = request.POST.get('mobile', '').strip()
+            cpf_cnpj = request.POST.get('cpf_cnpj', '').strip()
+            if not name:
+                messages.error(request, 'Nome é obrigatório.')
+                return redirect('customer_profile')
+            customer.name = name
+            customer.mobile = mobile
+            customer.cpf_cnpj = cpf_cnpj or None
+            customer.save(update_fields=['name', 'mobile', 'cpf_cnpj'])
+            messages.success(request, 'Perfil atualizado com sucesso.')
+        elif action == 'change_password':
+            current = request.POST.get('current_password', '')
+            new_pass = request.POST.get('new_password', '')
+            confirm = request.POST.get('confirm_password', '')
+            if not customer.check_password(current):
+                messages.error(request, 'Senha atual incorreta.')
+                return redirect('customer_profile')
+            if len(new_pass) < 8:
+                messages.error(request, 'A nova senha deve ter pelo menos 8 caracteres.')
+                return redirect('customer_profile')
+            if new_pass != confirm:
+                messages.error(request, 'As senhas não coincidem.')
+                return redirect('customer_profile')
+            customer.password = Customer.make_password(new_pass)
+            customer.save(update_fields=['password'])
+            messages.success(request, 'Senha alterada com sucesso.')
+        return redirect('customer_profile')
+    ctx = {}
+    ctx.update(_base_ctx(request))
+    return render(request, 'customer/profile.html', ctx)
 
 
 @_require_customer
@@ -384,7 +515,7 @@ def checkout(request, customer, invoice_id):
     ctx = {
         'invoice': invoice,
         'currency': currency,
-        'activeGateway': PaymentGateway.objects.filter(name__iexact='Asaas', status='Active'),
+        'activeGateway': PaymentGateway.objects.filter(status='Active'),
     }
     ctx.update(_base_ctx(request))
     return render(request, 'customer/checkout.html', ctx)
@@ -397,7 +528,9 @@ def gateway_pay(request, customer, invoice_id):
         gateway_name = request.POST.get('payment_methode', '').strip()
         if gateway_name.lower() == 'asaas':
             return _pay_with_asaas(request, customer, invoice)
-        messages.error(request, 'Selecione o pagamento via PIX com Asaas.')
+        elif gateway_name.lower() == 'binance':
+            return _pay_with_binance(request, customer, invoice)
+        messages.error(request, 'Selecione um gateway de pagamento válido.')
         return redirect('checkout', invoice_id=invoice.id)
     return redirect('checkout', invoice_id=invoice.id)
 

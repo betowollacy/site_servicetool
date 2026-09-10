@@ -1,0 +1,99 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+{% block seo %}
+<title>Meu Perfil - {{ siteTitle }}</title>
+{% endblock %}
+{% block content %}
+<div class="container customer-dashboard py-3 py-lg-4">
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'homepage' %}" class="breadcrumb-item active">Início</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'customer_dashboard' %}" class="breadcrumb-item active">Painel</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Meu Perfil</li>
+        </ol>
+    </nav>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <section class="customer-dashboard-welcome">
+        <div>
+            <span class="customer-dashboard-eyebrow"><i class="bi bi-person-circle"></i> Meu Perfil</span>
+            <h1>Olá, {{ customer.name }}</h1>
+            <p>Atualize seus dados pessoais e senha.</p>
+        </div>
+    </section>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header"><h6 class="mb-0">Dados Pessoais</h6></div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'customer_profile' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update_profile">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nome</label>
+                            <input type="text" name="name" class="form-control" value="{{ customer.name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">E-mail</label>
+                            <input type="email" class="form-control" value="{{ customer.email }}" disabled>
+                            <div class="form-text">O e-mail não pode ser alterado.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Celular</label>
+                            <input type="tel" name="mobile" class="form-control" value="{{ customer.mobile|default:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">CPF ou CNPJ</label>
+                            <input type="text" name="cpf_cnpj" class="form-control" value="{{ customer.cpf_cnpj|default:'' }}" maxlength="18">
+                        </div>
+                        <button type="submit" class="btn btn-primary rounded-2">Salvar Alterações</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card mb-4">
+                <div class="card-header"><h6 class="mb-0">Alterar Senha</h6></div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'customer_profile' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="change_password">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Senha Atual</label>
+                            <input type="password" name="current_password" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nova Senha</label>
+                            <input type="password" name="new_password" class="form-control" required minlength="8">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Confirmar Nova Senha</label>
+                            <input type="password" name="confirm_password" class="form-control" required minlength="8">
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary rounded-2">Alterar Senha</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h6 class="mb-0">Informações da Conta</h6></div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="d-flex justify-content-between py-2 border-bottom"><span class="text-body-secondary">Saldo</span><strong>R$ {{ customer.balance|floatformat:2 }}</strong></li>
+                        <li class="d-flex justify-content-between py-2 border-bottom"><span class="text-body-secondary">Moeda</span><strong>{{ customer.currency }}</strong></li>
+                        <li class="d-flex justify-content-between py-2 border-bottom"><span class="text-body-secondary">Status</span><strong>{{ customer.status }}</strong></li>
+                        <li class="d-flex justify-content-between py-2"><span class="text-body-secondary">Membro desde</span><strong>{{ customer.created_at|date:"d/m/Y" }}</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

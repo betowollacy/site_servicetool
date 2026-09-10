@@ -26,8 +26,10 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
     path('logout/', views.logout_view, name='logout'),
+    path('forgot-password/', views.forgot_password, name='forgot_password'),
 
     path('customer/dashboard/', views.customer_dashboard, name='customer_dashboard'),
+    path('customer/profile/', views.customer_profile, name='customer_profile'),
     path('customer/order-history/', views.customer_order_history, name='customer_order_history'),
     path('customer/statement/', views.customer_statement, name='customer_statement'),
     path('customer/invoice/', views.customer_invoice_list, name='customer_invoice'),
