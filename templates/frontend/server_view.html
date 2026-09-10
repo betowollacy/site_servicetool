@@ -87,6 +87,11 @@
                             <div class="mb-1">
                                 <button type="submit" class="btn btn-primary rounded place-order w-100" id="placeOrderBtn">FAZER UM PEDIDO</button>
                             </div>
+                            {% if serviceData.order_description %}
+                            <div class="mt-3 p-3 bg-light rounded-2 border-start border-primary border-4 text-muted small" style="white-space: pre-line;" id="order-description">
+                                {{ serviceData.order_description }}
+                            </div>
+                            {% endif %}
                         </form>
                         {% else %}
                         <div class="text-center py-4">

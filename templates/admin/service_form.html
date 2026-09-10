@@ -82,6 +82,7 @@
                         <div class="col-md-6 mb-3"><label class="form-label">URL da Imagem (thumbnail)</label><input type="text" class="form-control" name="thumbnail" value="{{ service.thumbnail|default:'' }}"></div>
                         <div class="col-md-6 mb-3"><label class="form-label">URL do Screenshot</label><input type="text" class="form-control" name="screenshot" value="{{ service.screenshot|default:'' }}"></div>
                         <div class="col-12 mb-3"><label class="form-label">Tags do Serviço (separadas por vírgula)</label><input type="text" class="form-control" name="service_tags" value="{{ service.service_tags|default:'' }}"></div>
+                        <div class="col-12 mb-3"><label class="form-label">Descrição abaixo do botão "Fazer Pedido"</label><textarea class="form-control" name="order_description" rows="4" placeholder="Texto exibido para o cliente abaixo do botão de fazer pedido...">{{ service.order_description|default:'' }}</textarea></div>
                     </div>
                 </div>
 

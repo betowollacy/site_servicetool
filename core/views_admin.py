@@ -133,7 +133,8 @@ def _apply_service_post(service, post):
     service.slug = slugify(post.get('slug') or service.title)
     for f in ['subtitle', 'duration', 'delivery_time', 'min_qnt', 'max_qnt',
               'tool_download', 'login_url', 'register_url', 'thumbnail', 'screenshot',
-              'service_tags', 'meta_description', 'kw1', 'kw2', 'kw3', 'kw4', 'kw5', 'article']:
+              'service_tags', 'meta_description', 'order_description',
+              'kw1', 'kw2', 'kw3', 'kw4', 'kw5', 'article']:
         val = post.get(f)
         if val is not None:
             setattr(service, f, val)
