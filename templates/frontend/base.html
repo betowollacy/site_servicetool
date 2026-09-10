@@ -66,9 +66,6 @@
                                     <svg class="chevron" fill="none" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 </a>
                             </li>
-                            {% for group in groups %}
-                            <li><a href="{% url 'category' group.slug|default:'server-service' %}">🔧 {{ group.name }}</a></li>
-                            {% endfor %}
                         </ul>
                     </div>
                 </div>
@@ -106,9 +103,12 @@
     </header>
 
     <div class="gsm-dropdown" id="drop-down-2">
-        <a href="{% url 'category' 'imei-service' %}">📶 Serviço de Imei e Consultas</a>
-        <a href="{% url 'category' 'server-service' %}">📲 Ativações e Créditos</a>
-        <a href="{% url 'category' 'credit-service' %}">💰 Recarga de Crédito</a>
+        {% for group in groups %}
+        <a href="{% url 'category' group.slug|add:'-service' %}">
+            {% if group.slug == 'imei' %}📶{% elif group.slug == 'server' %}📲{% else %}💰{% endif %}
+            {{ group.name }}
+        </a>
+        {% endfor %}
     </div>
 
     <div id="homePageFlashMessage"></div>
@@ -189,7 +189,7 @@
             <h5 class="display-6 fs-5 border-bottom mb-2 pb-2">LISTA DE SERVIÇO</h5>
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'imei-service' %}">📶 Serviço de Imei e Consultas <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'server-service' %}">📲 Ativações e Créditos <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
-            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'credit-service' %}">💰 Recarga de Crédito <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'credit-service' %}">💰 Aluguel <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             {% if customer %}
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_dashboard' %}" style="margin-top: 12px;"><i class="bi bi-tachometer"></i> Meu Painel <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_order_history' %}"><i class="bi bi-bag"></i> Meus Pedidos <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>

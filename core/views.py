@@ -25,7 +25,7 @@ CATEGORY_SLUGS = {
     'credit-service': {
         'type': 'Credit Service',
         'display': 'Credit',
-        'title': "Tool's Credit Refill",
+        'title': 'Aluguel',
     },
     'imei-service': {
         'type': 'IMEI Service',
