@@ -39,10 +39,10 @@
     </section>
 
     <section class="row g-3 customer-metrics">
-        <div class="col-6 col-xl-3"><div class="customer-metric"><span class="customer-metric-icon metric-blue"><i class="bi bi-receipt"></i></span><small>Total de pedidos</small><strong>{{ total_orders }}</strong></div></div>
-        <div class="col-6 col-xl-3"><div class="customer-metric"><span class="customer-metric-icon metric-amber"><i class="bi bi-hourglass-split"></i></span><small>Aguardando ação</small><strong>{{ waitingAction }}</strong></div></div>
-        <div class="col-6 col-xl-3"><div class="customer-metric"><span class="customer-metric-icon metric-green"><i class="bi bi-check2-circle"></i></span><small>Conta ativa</small><strong>Sim</strong></div></div>
-        <div class="col-6 col-xl-3"><div class="customer-metric"><span class="customer-metric-icon metric-violet"><i class="bi bi-bar-chart-line"></i></span><small>Total gasto</small><strong>R$ {{ total_spent|floatformat:2 }}</strong></div></div>
+        <div class="col-6 col-xl-3"><div class="customer-metric metric-blue-card"><div class="customer-metric-top"><span class="customer-metric-icon metric-blue"><i class="bi bi-receipt"></i></span><i class="bi bi-arrow-up-right metric-arrow"></i></div><small>Total de pedidos</small><strong>{{ total_orders }}</strong><span class="customer-metric-note">ordens registradas</span></div></div>
+        <div class="col-6 col-xl-3"><div class="customer-metric metric-amber-card"><div class="customer-metric-top"><span class="customer-metric-icon metric-amber"><i class="bi bi-hourglass-split"></i></span><i class="bi bi-arrow-up-right metric-arrow"></i></div><small>Aguardando ação</small><strong>{{ waitingAction }}</strong><span class="customer-metric-note">precisam de atenção</span></div></div>
+        <div class="col-6 col-xl-3"><div class="customer-metric metric-green-card"><div class="customer-metric-top"><span class="customer-metric-icon metric-green"><i class="bi bi-shield-check"></i></span><span class="customer-active-pill"><i class="bi bi-circle-fill"></i> Ativa</span></div><small>Status da conta</small><strong>Ativa</strong><span class="customer-metric-note">tudo funcionando normalmente</span></div></div>
+        <div class="col-6 col-xl-3"><div class="customer-metric metric-violet-card"><div class="customer-metric-top"><span class="customer-metric-icon metric-violet"><i class="bi bi-wallet2"></i></span><i class="bi bi-arrow-up-right metric-arrow"></i></div><small>Total gasto</small><strong>R$ {{ total_spent|floatformat:2 }}</strong><span class="customer-metric-note">em serviços contratados</span></div></div>
     </section>
 
     <section class="customer-analytics-grid">
