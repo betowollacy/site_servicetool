@@ -1,0 +1,27 @@
+name: Deploy para VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Conectar e atualizar na VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 178.253.250.178
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/site_servicetool
+            git pull origin main
+            venv/bin/python manage.py migrate --noinput
+            venv/bin/python manage.py collectstatic --noinput
+            systemctl restart servicetool
+            systemctl restart nginx
+            echo "=== DEPLOY OK ==="
+            git log --oneline -1
