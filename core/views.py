@@ -21,19 +21,25 @@ from .models import (
 CATEGORY_SLUGS = {
     'server-service': {
         'type': 'Server Service',
-        'display': 'Server',
-        'title': 'Ativações e Créditos',
+        'display': 'Aluguel',
+        'title': 'Aluguel',
     },
     'credit-service': {
         'type': 'Credit Service',
-        'display': 'Credit',
-        'title': 'Aluguel',
+        'display': 'Créditos',
+        'title': 'Ativações e Créditos',
     },
     'imei-service': {
         'type': 'IMEI Service',
         'display': 'IMEI',
         'title': 'IMEI/SN Service',
     },
+}
+
+GROUP_CATEGORY_MAP = {
+    'remote': 'server-service',
+    'server': 'credit-service',
+    'imei': 'imei-service',
 }
 
 
@@ -75,10 +81,15 @@ def _service_tags(service):
 
 
 def _base_ctx(request):
+    groups = []
+    for g in ServiceGroup.objects.filter(status='Active'):
+        cat_slug = GROUP_CATEGORY_MAP.get(g.slug)
+        if cat_slug:
+            groups.append({'slug': g.slug, 'name': g.name, 'cat_slug': cat_slug})
     return {
         'currency_icon': 'R$',
         'sliders': Slider.objects.filter(status='Active').order_by('id'),
-        'groups': ServiceGroup.objects.filter(status='Active'),
+        'groups': groups,
         'activeGateway': PaymentGateway.objects.filter(name__iexact='Asaas', status='Active'),
     }
 
