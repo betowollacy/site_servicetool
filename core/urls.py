@@ -19,6 +19,16 @@ urlpatterns = [
     path('admin-panel/setting/', views_admin.admin_setting, name='admin_setting'),
     path('admin-panel/logout/', views_admin.admin_logout, name='admin_logout'),
 
+    path('admin-panel/sliders/', views_admin.admin_slider_list, name='admin_slider_list'),
+    path('admin-panel/sliders/new/', views_admin.admin_slider_new, name='admin_slider_new'),
+    path('admin-panel/sliders/<int:slider_id>/edit/', views_admin.admin_slider_edit, name='admin_slider_edit'),
+    path('admin-panel/sliders/<int:slider_id>/delete/', views_admin.admin_slider_delete, name='admin_slider_delete'),
+
+    path('admin-panel/pages/', views_admin.admin_page_list, name='admin_page_list'),
+    path('admin-panel/pages/new/', views_admin.admin_page_new, name='admin_page_new'),
+    path('admin-panel/pages/<int:page_id>/edit/', views_admin.admin_page_edit, name='admin_page_edit'),
+    path('admin-panel/pages/<int:page_id>/delete/', views_admin.admin_page_delete, name='admin_page_delete'),
+
     path('', views.homepage, name='homepage'),
     path('category/<slug:slug>/', views.category, name='category'),
     path('change-theme-mode/', views.change_theme_mode, name='change_theme_mode'),

@@ -1,0 +1,49 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h4 class="mb-0">{% if slider %}Editar Slider #{{ slider.id }}{% else %}Novo Slider{% endif %}</h4>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">URL da Imagem <span class="text-danger">*</span></label>
+                    <input type="text" name="img" class="form-control" required value="{{ slider.img|default:'' }}" placeholder="https://...">
+                    <div class="form-text">Link direto da imagem do banner (ou caminho /static/...).</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Link de Destino</label>
+                    <input type="text" name="url" class="form-control" value="{{ slider.url|default:'' }}" placeholder="https://...">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Largura (px)</label>
+                    <input type="text" name="width" class="form-control" value="{{ slider.width|default:'' }}" placeholder="1600">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Altura (px)</label>
+                    <input type="text" name="height" class="form-control" value="{{ slider.height|default:'' }}" placeholder="580">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-control">
+                        <option value="Active" {% if slider.status == 'Active' %}selected{% endif %}>Ativo</option>
+                        <option value="Inactive" {% if slider.status == 'Inactive' %}selected{% endif %}>Inativo</option>
+                    </select>
+                </div>
+            </div>
+            <a href="{% url 'admin_slider_list' %}" class="btn btn-light">Voltar</a>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </form>
+        {% if slider %}
+        <div class="mt-4">
+            <label class="form-label fw-semibold">Pré-visualização</label>
+            <div><img src="{{ slider.img }}" alt="" style="max-width: 100%; border-radius: 8px;"></div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

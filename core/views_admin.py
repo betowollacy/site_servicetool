@@ -9,8 +9,8 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 from .models import (
-    Currency, Customer, CustomerOrder, Invoice, PaymentGateway, ServiceGroup,
-    ServiceInput, ServiceList, SystemSetting,
+    Currency, Customer, CustomerOrder, Invoice, Page, PaymentGateway, ServiceGroup,
+    ServiceInput, ServiceList, Slider, SystemSetting,
 )
 
 STATUS_MAP = {
@@ -261,3 +261,125 @@ def admin_gateway_update(request, gateway_id):
 def admin_logout(request):
     logout(request)
     return redirect('homepage')
+
+
+# --------------------------------------------------------------------------- #
+# Sliders
+# --------------------------------------------------------------------------- #
+
+@_staff
+def admin_slider_list(request):
+    ctx = {'sliders': Slider.objects.all().order_by('-id')}
+    return render(request, 'admin/slider_list.html', ctx)
+
+
+@_staff
+def admin_slider_new(request):
+    if request.method == 'POST':
+        slider = Slider.objects.create(
+            img=request.POST.get('img', ''),
+            url=request.POST.get('url', '') or None,
+            width=request.POST.get('width', '') or None,
+            height=request.POST.get('height', '') or None,
+            status=request.POST.get('status', 'Inactive'),
+        )
+        messages.success(request, 'Slider criado com sucesso.')
+        return redirect('admin_slider_list')
+    return render(request, 'admin/slider_form.html', {'slider': None})
+
+
+@_staff
+def admin_slider_edit(request, slider_id):
+    slider = Slider.objects.filter(id=slider_id).first()
+    if not slider:
+        messages.error(request, 'Slider não encontrado.')
+        return redirect('admin_slider_list')
+    if request.method == 'POST':
+        slider.img = request.POST.get('img', slider.img)
+        slider.url = request.POST.get('url', '') or None
+        slider.width = request.POST.get('width', '') or None
+        slider.height = request.POST.get('height', '') or None
+        slider.status = request.POST.get('status', 'Inactive')
+        slider.save()
+        messages.success(request, 'Slider atualizado com sucesso.')
+        return redirect('admin_slider_list')
+    return render(request, 'admin/slider_form.html', {'slider': slider})
+
+
+@_staff
+def admin_slider_delete(request, slider_id):
+    Slider.objects.filter(id=slider_id).delete()
+    messages.success(request, 'Slider removido.')
+    return redirect('admin_slider_list')
+
+
+# --------------------------------------------------------------------------- #
+# Pages (CMS)
+# --------------------------------------------------------------------------- #
+
+@_staff
+def admin_page_list(request):
+    ctx = {'pages': Page.objects.all().order_by('-id')}
+    return render(request, 'admin/page_list.html', ctx)
+
+
+@_staff
+def admin_page_new(request):
+    if request.method == 'POST':
+        title = (request.POST.get('page_title') or '').strip()
+        if not title:
+            messages.error(request, 'O título é obrigatório.')
+            return redirect('admin_page_new')
+        page = Page.objects.create(
+            page_title=title,
+            page_slug=slugify(request.POST.get('page_slug') or title),
+            page_article=request.POST.get('page_article', ''),
+            page_visibility=request.POST.get('page_visibility', 'Active'),
+            page_thumbnail=request.POST.get('page_thumbnail', '') or None,
+            page_meta_description=request.POST.get('page_meta_description', '') or None,
+            page_kw1=request.POST.get('page_kw1', '') or None,
+            page_kw2=request.POST.get('page_kw2', '') or None,
+            page_kw3=request.POST.get('page_kw3', '') or None,
+            page_kw4=request.POST.get('page_kw4', '') or None,
+            page_kw5=request.POST.get('page_kw5', '') or None,
+            page_author=request.POST.get('page_author', '') or None,
+        )
+        messages.success(request, 'Página criada com sucesso.')
+        return redirect('admin_page_list')
+    return render(request, 'admin/page_form.html', {'page': None})
+
+
+@_staff
+def admin_page_edit(request, page_id):
+    page = Page.objects.filter(id=page_id).first()
+    if not page:
+        messages.error(request, 'Página não encontrada.')
+        return redirect('admin_page_list')
+    if request.method == 'POST':
+        title = (request.POST.get('page_title') or '').strip()
+        if not title:
+            messages.error(request, 'O título é obrigatório.')
+            return redirect('admin_page_edit', page_id)
+        page.page_title = title
+        page.page_slug = slugify(request.POST.get('page_slug') or title)
+        page.page_article = request.POST.get('page_article', '')
+        page.page_visibility = request.POST.get('page_visibility', 'Active')
+        page.page_thumbnail = request.POST.get('page_thumbnail', '') or None
+        page.page_meta_description = request.POST.get('page_meta_description', '') or None
+        page.page_kw1 = request.POST.get('page_kw1', '') or None
+        page.page_kw2 = request.POST.get('page_kw2', '') or None
+        page.page_kw3 = request.POST.get('page_kw3', '') or None
+        page.page_kw4 = request.POST.get('page_kw4', '') or None
+        page.page_kw5 = request.POST.get('page_kw5', '') or None
+        page.page_author = request.POST.get('page_author', '') or None
+        page.save()
+        messages.success(request, 'Página atualizada com sucesso.')
+        return redirect('admin_page_list')
+    return render(request, 'admin/page_form.html', {'page': page})
+
+
+@_staff
+def admin_page_delete(request, page_id):
+    Page.objects.filter(id=page_id).delete()
+    messages.success(request, 'Página removida.')
+    return redirect('admin_page_list')

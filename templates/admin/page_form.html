@@ -1,0 +1,74 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h4 class="mb-0">{% if page %}Editar Página #{{ page.id }}{% else %}Nova Página{% endif %}</h4>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Título <span class="text-danger">*</span></label>
+                    <input type="text" name="page_title" class="form-control" required value="{{ page.page_title|default:'' }}" placeholder="Termos e Condições">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Slug</label>
+                    <input type="text" name="page_slug" class="form-control" value="{{ page.page_slug|default:'' }}" placeholder="termos-e-condicoes">
+                    <div class="form-text">Deixe em branco para gerar automaticamente.</div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label class="form-label">Status</label>
+                    <select name="page_visibility" class="form-control">
+                        <option value="Active" {% if page.page_visibility == 'Active' %}selected{% endif %}>Ativo</option>
+                        <option value="Inactive" {% if page.page_visibility == 'Inactive' %}selected{% endif %}>Inativo</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Conteúdo (HTML)</label>
+                <textarea name="page_article" class="form-control" rows="14" placeholder="Digite o conteúdo da página...">{{ page.page_article|default:'' }}</textarea>
+                <div class="form-text">Suporta HTML.</div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Thumbnail (URL)</label>
+                    <input type="text" name="page_thumbnail" class="form-control" value="{{ page.page_thumbnail|default:'' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Autor</label>
+                    <input type="text" name="page_author" class="form-control" value="{{ page.page_author|default:'' }}">
+                </div>
+                <div class="col-12 mb-3">
+                    <label class="form-label">Meta Description</label>
+                    <input type="text" name="page_meta_description" class="form-control" value="{{ page.page_meta_description|default:'' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Meta Keyword 1</label>
+                    <input type="text" name="page_kw1" class="form-control" value="{{ page.page_kw1|default:'' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Meta Keyword 2</label>
+                    <input type="text" name="page_kw2" class="form-control" value="{{ page.page_kw2|default:'' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Meta Keyword 3</label>
+                    <input type="text" name="page_kw3" class="form-control" value="{{ page.page_kw3|default:'' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Meta Keyword 4</label>
+                    <input type="text" name="page_kw4" class="form-control" value="{{ page.page_kw4|default:'' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Meta Keyword 5</label>
+                    <input type="text" name="page_kw5" class="form-control" value="{{ page.page_kw5|default:'' }}">
+                </div>
+            </div>
+            <a href="{% url 'admin_page_list' %}" class="btn btn-light">Voltar</a>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

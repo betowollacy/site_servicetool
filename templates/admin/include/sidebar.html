@@ -56,6 +56,17 @@
 
                 <li class="pc-item pc-hasmenu">
                     <div class="pc-link" style="cursor: pointer">
+                        <span class="pc-micon"><i class="ti ti-pages"></i></span>
+                        <span class="pc-mtext">Conteúdo</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
+                    </div>
+                    <ul class="pc-submenu">
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_slider_list' %}">Sliders</a></li>
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_page_list' %}">Páginas</a></li>
+                    </ul>
+                </li>
+
+                <li class="pc-item pc-hasmenu">
+                    <div class="pc-link" style="cursor: pointer">
                         <span class="pc-micon"><i class="ti ti-settings"></i></span>
                         <span class="pc-mtext">Configurações</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
                     </div>

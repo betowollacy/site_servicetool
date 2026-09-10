@@ -1,0 +1,45 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h4 class="mb-0">Páginas (CMS)</h4>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header d-flex justify-content-end">
+        <a href="{% url 'admin_page_new' %}" class="btn btn-primary"><i class="ti ti-plus me-2"></i> Adicionar Página</a>
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-hover dataTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Título</th>
+                    <th>Slug</th>
+                    <th>Visualizações</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for page in pages %}
+                <tr>
+                    <td>#{{ page.id }}</td>
+                    <td>{{ page.page_title }}</td>
+                    <td>/page/{{ page.page_slug }}/</td>
+                    <td>{{ page.page_views }}</td>
+                    <td><span class="badge {% if page.page_visibility == 'Active' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ page.page_visibility }}</span></td>
+                    <td>
+                        <a href="{% url 'page_view' page.page_slug %}" target="_blank" class="btn btn-sm btn-light-secondary"><i class="ti ti-eye"></i> Ver</a>
+                        <a href="{% url 'admin_page_edit' page.id %}" class="btn btn-sm btn-light-primary"><i class="ti ti-edit"></i> Editar</a>
+                        <a href="{% url 'admin_page_delete' page.id %}" class="btn btn-sm btn-light-danger" onclick="return confirm('Remover esta página?')"><i class="ti ti-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center">Nenhuma página cadastrada.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h4 class="mb-0">Sliders do Banner</h4>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header d-flex justify-content-end">
+        <a href="{% url 'admin_slider_new' %}" class="btn btn-primary"><i class="ti ti-plus me-2"></i> Adicionar Slider</a>
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-hover dataTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Imagem</th>
+                    <th>URL</th>
+                    <th>Dimensões</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slider in sliders %}
+                <tr>
+                    <td>#{{ slider.id }}</td>
+                    <td><img src="{{ slider.img }}" alt="" style="max-height: 45px; max-width: 120px; object-fit: contain;"></td>
+                    <td>{{ slider.url|default:"-" }}</td>
+                    <td>{{ slider.width|default:"-" }} x {{ slider.height|default:"-" }}</td>
+                    <td><span class="badge {% if slider.status == 'Active' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ slider.status }}</span></td>
+                    <td>
+                        <a href="{% url 'admin_slider_edit' slider.id %}" class="btn btn-sm btn-light-primary"><i class="ti ti-edit"></i> Editar</a>
+                        <a href="{% url 'admin_slider_delete' slider.id %}" class="btn btn-sm btn-light-danger" onclick="return confirm('Remover este slider?')"><i class="ti ti-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center">Nenhum slider cadastrado.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
