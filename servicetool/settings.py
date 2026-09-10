@@ -3,11 +3,14 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-servicetool-smm-reseller-dev-key'
+def _env(name, default):
+    return os.environ.get(name, default)
 
-DEBUG = True
+SECRET_KEY = _env('DJANGO_SECRET_KEY', 'django-insecure-servicetool-smm-reseller-dev-key')
 
-ALLOWED_HOSTS = ['*']
+DEBUG = _env('DJANGO_DEBUG', 'True').strip().lower() not in ('0', 'false', 'no', 'off')
+
+ALLOWED_HOSTS = [h.strip() for h in _env('DJANGO_ALLOWED_HOSTS', '*').split(',') if h.strip()]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -53,7 +56,7 @@ WSGI_APPLICATION = 'servicetool.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': _env('DJANGO_DB_NAME', str(BASE_DIR / 'db.sqlite3')),
     }
 }
 
@@ -85,4 +88,4 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 LOGIN_URL = '/'
 LOGIN_REDIRECT_URL = '/'
 
-SITE_URL = 'http://127.0.0.1:8000'
+SITE_URL = _env('DJANGO_SITE_URL', 'http://127.0.0.1:8000')
