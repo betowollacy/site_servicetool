@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 
 from core.models import (
-    Currency, SystemSetting,
+    Currency, PaymentGateway, SystemSetting,
 )
 
 
@@ -13,6 +13,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.seed_settings()
         self.seed_currencies()
+        self.seed_gateways()
         self.stdout.write(self.style.SUCCESS("Seed concluido com sucesso."))
 
     def set_setting(self, key, value):
@@ -62,7 +63,23 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('  - Moedas: %d' % len(currencies)))
 
     def seed_gateways(self):
-        pass
+        gateways = [
+            ('Asaas', 'BRL', '0.00', '/static/resource/asaas.svg'),
+            ('Binance', 'USDT', '0.00', '/static/resource/binance_logo.png'),
+            ('bKash', 'BRL', '0.00', '/static/resource/bkash_logo.png'),
+        ]
+        for name, currency, charge, logo in gateways:
+            PaymentGateway.objects.update_or_create(
+                name=name,
+                defaults={
+                    'logo': logo,
+                    'currency_code': currency,
+                    'charge': Decimal(charge),
+                    'country': name,
+                    'status': 'Active',
+                },
+            )
+        self.stdout.write(self.style.SUCCESS('  - Gateways: %d' % len(gateways)))
 
     def seed_sliders(self):
         pass
