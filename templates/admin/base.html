@@ -105,6 +105,16 @@
             if ($.fn.dataTable) {
                 $('table.dataTable').DataTable({ language: { search: 'Buscar', lengthMenu: 'Mostrar _MENU_ por página', info: 'Mostrando _START_ a _END_ de _TOTAL_', paginate: { next: 'Próximo', previous: 'Anterior' } } });
             }
+            $(function () {
+                var path = window.location.pathname;
+                $('.pc-navbar .pc-submenu a').each(function () {
+                    var href = $(this).attr('href');
+                    if (href && href === path) {
+                        $(this).closest('.pc-item').addClass('active');
+                        $(this).closest('.pc-hasmenu').addClass('pc-trigger');
+                    }
+                });
+            });
         </script>
         {% block footer_script %}{% endblock %}
     </body>
