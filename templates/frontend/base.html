@@ -258,6 +258,9 @@
                 document.documentElement.setAttribute("data-bs-theme", theme);
                 $(".theme-toggle-icon").removeClass(theme === "dark" ? "bi-sun-fill" : "bi-moon-stars-fill")
                                        .addClass(theme === "dark" ? "bi-moon-stars-fill" : "bi-sun-fill");
+                document.querySelectorAll('.theme-toggle-btn').forEach(function (button) {
+                    button.setAttribute('aria-label', theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro');
+                });
                 if (persist !== false) {
                     try { localStorage.setItem("servicetoolTheme", theme); } catch(e) {}
                 }
@@ -270,37 +273,6 @@
                 applyTheme(current === "dark" ? "light" : "dark");
             });
         });
-
-        (function () {
-            var root = document.documentElement;
-            var buttons = document.querySelectorAll('.theme-toggle-btn');
-            var savedTheme = localStorage.getItem('servicetool-theme');
-
-            function updateThemeIcon(theme) {
-                document.querySelectorAll('.theme-toggle-icon').forEach(function (icon) {
-                    icon.classList.toggle('bi-sun-fill', theme === 'dark');
-                    icon.classList.toggle('bi-moon-stars-fill', theme !== 'dark');
-                });
-                buttons.forEach(function (button) {
-                    button.setAttribute('aria-label', theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro');
-                });
-            }
-
-            var initialTheme = savedTheme === 'light' || savedTheme === 'dark'
-                ? savedTheme
-                : (root.getAttribute('data-bs-theme') || 'dark');
-            root.setAttribute('data-bs-theme', initialTheme);
-            updateThemeIcon(initialTheme);
-
-            buttons.forEach(function (button) {
-                button.addEventListener('click', function () {
-                    var nextTheme = root.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
-                    root.setAttribute('data-bs-theme', nextTheme);
-                    localStorage.setItem('servicetool-theme', nextTheme);
-                    updateThemeIcon(nextTheme);
-                });
-            });
-        }());
     </script>
 
     </div>
