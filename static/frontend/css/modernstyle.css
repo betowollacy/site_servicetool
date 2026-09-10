@@ -92,6 +92,37 @@
     display: none;
 }
 
+.homepage-banner {
+    width: 100%;
+    margin: 0 0 28px;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+.homepage-banner-image,
+.homepage-banner-image .carousel,
+.homepage-banner-image .carousel-inner,
+.homepage-banner-image .carousel-item,
+.homepage-banner-image a {
+    width: 100%;
+}
+.homepage-banner-img {
+    display: block;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: 680px;
+    object-fit: cover;
+    border: 0 !important;
+    border-radius: 0;
+}
+.homepage-banner-image .carousel-indicators { margin-bottom: 10px; }
+
+@media (max-width: 767px) {
+    .homepage-banner { margin-bottom: 20px; }
+    .homepage-banner-img { min-height: 210px; object-fit: cover; }
+}
+
 .customer-dashboard-welcome,
 .customer-orders-heading {
     display: flex;

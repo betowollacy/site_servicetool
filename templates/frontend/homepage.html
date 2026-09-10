@@ -13,10 +13,10 @@
     <div class="container">
         <div class="row">
             <div class="col-12">
-                <div class="card rounded-0 heighlight-card">
-                    <div class="heighlight-img">
+                <div class="homepage-banner">
+                    <div class="homepage-banner-image">
                         {% if sliders %}
-                        <div id="carouselExampleIndicators" class="carousel slide mb-4" data-bs-ride="carousel">
+                        <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel">
                             <ol class="carousel-indicators">
                                 {% for slider in sliders %}
                                 <li data-bs-target="#carouselExampleIndicators" data-bs-slide-to="{{ forloop.counter0 }}" class="{% if forloop.first %}active{% endif %}"></li>
@@ -25,13 +25,13 @@
                             <div class="carousel-inner">
                                 {% for slider in sliders %}
                                 <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                    <a href="{{ slider.url }}"><img class="img-fluid d-block w-100 border" src="{{ slider.img }}" alt="slide" style="max-width:1515px; max-height:550px"></a>
+                                    <a href="{{ slider.url }}"><img class="homepage-banner-img" src="{{ slider.img }}" alt="slide"></a>
                                 </div>
                                 {% endfor %}
                             </div>
                         </div>
                         {% else %}
-                        <img src="{% static 'resource/slider.webp' %}" class="img-fluid" alt="Top Banner" width="1600" height="580">
+                        <img src="{% static 'resource/slider.webp' %}" class="homepage-banner-img" alt="Top Banner" width="1600" height="580">
                         {% endif %}
                     </div>
                 </div>
