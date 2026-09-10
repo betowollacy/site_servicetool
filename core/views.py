@@ -152,6 +152,10 @@ def login_view(request):
         customer = Customer.objects.filter(email__iexact=email).first()
         if customer and customer.check_password(password) and customer.status == 'Active':
             request.session['customer_id'] = customer.id
+            if request.POST.get('remember_login') == 'on':
+                request.session.set_expiry(60 * 60 * 24 * 30)
+            else:
+                request.session.set_expiry(0)
             return redirect('homepage')
         ctx = {'login_error': 'E-mail ou senha inválidos.'}
         ctx.update(_base_ctx(request))

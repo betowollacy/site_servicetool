@@ -15,19 +15,23 @@
                                 <h1 class="h5 fw-semibold mb-4">Entrar</h1>
                                 <div id="loginErrorMount"></div>
                                 {% if login_error %}<div class="alert alert-danger py-2">{{ login_error }}</div>{% endif %}
-                                <form method="post" action="{% url 'login' %}" novalidate autocomplete="off">
+                                <form method="post" action="{% url 'login' %}" novalidate autocomplete="on">
                                     {% csrf_token %}
                                     <input type="hidden" name="next" value="{{ request.GET.next }}">
                                     <div class="mb-3">
                                         <label for="loginEmail" class="form-label fw-semibold mb-1">E-mail</label>
-                                        <input type="email" name="email" class="form-control email-input" id="loginEmail" placeholder="E-mail" autocomplete="off" required>
+                                        <input type="email" name="email" class="form-control email-input" id="loginEmail" placeholder="E-mail" autocomplete="username" required>
                                     </div>
                                     <div class="mb-3">
                                         <label for="loginPassword" class="form-label fw-semibold mb-1">Senha</label>
                                         <div class="position-relative">
-                                            <input type="password" name="password" class="form-control pe-5" id="loginPassword" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="off" required>
+                                            <input type="password" name="password" class="form-control pe-5" id="loginPassword" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password" required>
                                             <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y px-3 text-secondary toggle-password" data-target="#loginPassword" aria-label="Show password" style="background:none"><i class="bi bi-eye"></i></button>
                                         </div>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" name="remember_login" id="rememberLogin">
+                                        <label class="form-check-label text-body-secondary" for="rememberLogin">Lembrar de mim neste dispositivo</label>
                                     </div>
                                     <button type="submit" class="btn btn-primary w-100 rounded-1">Entrar</button>
                                 </form>
