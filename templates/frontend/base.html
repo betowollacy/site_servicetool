@@ -87,9 +87,9 @@
                         <i class="bi bi-person-fill"></i> {{ customer.name }}
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end customer-nav-dropdown">
-                        <li><a class="dropdown-item" href="{% url 'customer_dashboard' %}"><i class="bi bi-speedometer2"></i> Meu painel</a></li>
+                        <li><a class="dropdown-item" href="{% url 'customer_dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
                         <li><a class="dropdown-item" href="{% url 'customer_add_balance' %}"><i class="bi bi-wallet2"></i> Adicionar saldo</a></li>
-                        <li><a class="dropdown-item" href="{% url 'customer_order_history' %}"><i class="bi bi-bag-check"></i> Histórico de compras</a></li>
+                        <li><a class="dropdown-item" href="{% url 'customer_order_history' %}"><i class="bi bi-bag-check"></i> Histórico de ordem</a></li>
                         <li><hr class="dropdown-divider"></li>
                         {% if siteWaUrl %}<li><a class="dropdown-item" href="{{ siteWaUrl }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Suporte via WhatsApp</a></li>{% endif %}
                         {% if siteEmail %}<li><a class="dropdown-item" href="mailto:{{ siteEmail }}"><i class="bi bi-envelope"></i> Suporte por e-mail</a></li>{% endif %}
@@ -202,7 +202,7 @@
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'credit-service' %}">💰 Aluguel <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             {% if customer %}
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_dashboard' %}" style="margin-top: 12px;"><i class="bi bi-tachometer"></i> Meu Painel <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
-            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_order_history' %}"><i class="bi bi-bag"></i> Meus Pedidos <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_order_history' %}"><i class="bi bi-bag"></i> Histórico de ordem <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_add_balance' %}"><i class="bi bi-wallet2"></i> Recarga <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             {% if siteWaUrl %}<a class="text-reset border-bottom mb-2 pb-2 d-block" href="{{ siteWaUrl }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> Suporte <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>{% endif %}
             {% endif %}
