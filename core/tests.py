@@ -539,6 +539,20 @@ class AdminRefundTests(TestCase):
         self.customer.refresh_from_db()
         self.assertEqual(self.customer.balance, Decimal('10.00'))
 
+    def test_order_delete_removes_order(self):
+        order = self._order()
+        resp = self.client.post(reverse('admin_order_delete', args=[order.id]))
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(CustomerOrder.objects.filter(id=order.id).count(), 0)
+        self.assertEqual(OrderInput.objects.filter(order_id=order.id).count(), 0)
+
+    def test_customer_delete_removes_customer_and_dependents(self):
+        order = self._order()
+        resp = self.client.post(reverse('admin_customer_delete', args=[self.customer.id]))
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(Customer.objects.filter(id=self.customer.id).count(), 0)
+        self.assertEqual(CustomerOrder.objects.filter(id=order.id).count(), 0)
+
 
 class CreditServiceFormTests(TestCase):
     def setUp(self):

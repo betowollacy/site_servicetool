@@ -46,6 +46,10 @@
                                 <input type="text" name="amount" class="form-control form-control-sm" style="max-width:90px" placeholder="R$" required>
                                 <button type="submit" class="btn btn-sm btn-light-danger" title="Estornar/creditar valor"><i class="ti ti-rotate-2"></i></button>
                             </form>
+                            <form method="post" action="{% url 'admin_customer_delete' c.id %}" onsubmit="return confirm('Excluir o cliente &quot;{{ c.name }}&quot; e todos os dados relacionados? Esta ação não pode ser desfeita.')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-light-danger"><i class="ti ti-trash"></i> Deletar</button>
+                            </form>
                         </div>
                     </td>
                 </tr>

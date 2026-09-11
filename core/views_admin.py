@@ -91,6 +91,17 @@ def admin_order_refund(request, order_id):
 
 
 @_staff
+def admin_order_delete(request, order_id):
+    order = CustomerOrder.objects.filter(id=order_id).first()
+    if order and request.method == 'POST':
+        oid = order.id
+        order.delete()
+        messages.success(request, 'Pedido #{} excluído com sucesso.'.format(oid))
+    referer = request.META.get('HTTP_REFERER') or reverse('admin_orders', args=['waiting'])
+    return redirect(referer)
+
+
+@_staff
 def admin_customer_refund(request, customer_id):
     customer = Customer.objects.filter(id=customer_id).first()
     if customer and request.method == 'POST':
@@ -121,6 +132,16 @@ def admin_invoice_list(request):
 @_staff
 def admin_customer_list(request):
     return render(request, 'admin/customer_list.html', {'customers': Customer.objects.all()})
+
+
+@_staff
+def admin_customer_delete(request, customer_id):
+    customer = Customer.objects.filter(id=customer_id).first()
+    if customer and request.method == 'POST':
+        name = customer.name
+        customer.delete()
+        messages.success(request, 'Cliente "{}" excluído com sucesso.'.format(name))
+    return redirect('admin_customer_list')
 
 
 @_staff
