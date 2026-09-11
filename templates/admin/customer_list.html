@@ -36,10 +36,17 @@
                         <div class="small font-monospace text-truncate" style="max-width:140px" title="{% if c.api_key %}{{ c.api_key }}{% else %}sem chave{% endif %}">{% if c.api_key %}{{ c.api_key }}{% else %}-{% endif %}</div>
                     </td>
                     <td>
-                        <form method="post" action="{% url 'admin_customer_api_toggle' c.id %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-xs btn-outline-{% if c.api_allow == 'on' %}danger{% else %}success{% endif %} rounded-2">{% if c.api_allow == 'on' %}Desativar{% else %}Ativar API{% endif %}</button>
-                        </form>
+                        <div class="d-flex flex-column gap-2">
+                            <form method="post" action="{% url 'admin_customer_api_toggle' c.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-xs btn-outline-{% if c.api_allow == 'on' %}danger{% else %}success{% endif %} rounded-2">{% if c.api_allow == 'on' %}Desativar{% else %}Ativar API{% endif %}</button>
+                            </form>
+                            <form method="post" action="{% url 'admin_customer_refund' c.id %}" class="d-flex gap-1" onsubmit="return confirm('Creditar este valor ao saldo do cliente?')">
+                                {% csrf_token %}
+                                <input type="text" name="amount" class="form-control form-control-sm" style="max-width:90px" placeholder="R$" required>
+                                <button type="submit" class="btn btn-sm btn-light-danger" title="Estornar/creditar valor"><i class="ti ti-rotate-2"></i></button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}

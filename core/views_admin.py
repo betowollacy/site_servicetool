@@ -13,10 +13,10 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 from .models import (
-    Currency, Customer, CustomerOrder, Invoice, Page, PaymentGateway, ServiceGroup,
-    ServiceInput, ServiceList, Slider, SystemSetting,
+    Api, Currency, Customer, CustomerOrder, Invoice, Page, PaymentGateway, RemoteServiceInput,
+    RemoteServiceList, ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting,
 )
-from . import public_api
+from . import provider_api, public_api
 
 STATUS_MAP = {
     'waiting': ('Waiting Action', 'Aguardando Ação'),
@@ -73,6 +73,43 @@ def admin_order_update(request, order_id):
         order.save()
         messages.success(request, 'Pedido atualizado com sucesso.')
     return redirect('admin_orders', status='waiting')
+
+
+@_staff
+def admin_order_refund(request, order_id):
+    order = CustomerOrder.objects.filter(id=order_id).first()
+    if order and request.method == 'POST':
+        if order.service_status == 'Rejected':
+            messages.error(request, 'O pedido #{} já está rejeitado/estornado.'.format(order.id))
+        else:
+            amount = order.service_price
+            provider_api.refund_order(order, 'Estorno manual pelo administrador (pedido equivocado).')
+            messages.success(request, 'Pedido #{} estornado: R$ {} devolvidos ao saldo do cliente.'.format(order.id, amount))
+    referer = request.META.get('HTTP_REFERER') or reverse('admin_orders', args=['waiting'])
+    return redirect(referer)
+
+
+@_staff
+def admin_customer_refund(request, customer_id):
+    customer = Customer.objects.filter(id=customer_id).first()
+    if customer and request.method == 'POST':
+        try:
+            amount = Decimal((request.POST.get('amount') or '0').replace(',', '.'))
+        except Exception:
+            amount = Decimal('0')
+        reason = (request.POST.get('reason') or '').strip()[:500]
+        if amount <= 0:
+            messages.error(request, 'Informe um valor maior que zero para estornar.')
+        else:
+            customer.balance = customer.balance + amount
+            customer.save(update_fields=['balance'])
+            Statement.objects.create(
+                customer=customer,
+                description=reason or 'Estorno manual pelo administrador',
+                type='Credit', amount=amount, balance=customer.balance,
+            )
+            messages.success(request, 'Estorno de R$ {} creditado para {}.'.format(amount, customer.name))
+    return redirect('admin_customer_list')
 
 
 @_staff
@@ -298,6 +335,147 @@ def admin_gateway_update(request, gateway_id):
 def admin_logout(request):
     logout(request)
     return redirect('homepage')
+
+
+# --------------------------------------------------------------------------- #
+# APIs do provedor
+# --------------------------------------------------------------------------- #
+
+REMOTE_TYPE_TO_LOCAL = {
+    'IMEI': 'IMEI Service',
+    'REMOTE': 'Credit Service',
+    'SERVER': 'Server Service',
+}
+
+
+@_staff
+def admin_api_list(request):
+    apis = Api.objects.all().order_by('-id')
+    local_services = list(ServiceList.objects.filter(status='Active').order_by('service_type', 'title'))
+    remote_services = list(RemoteServiceList.objects.select_related('api').order_by('api_id', 'SERVICENAME'))
+    linked_by_remote = {}
+    for linked in ServiceList.objects.exclude(api__isnull=True).exclude(referenceid__isnull=True).exclude(referenceid=''):
+        linked_by_remote.setdefault((linked.api_id, linked.referenceid), []).append(linked)
+    return render(request, 'admin/api_list.html', {
+        'apis': apis,
+        'local_services': local_services,
+        'remote_services': remote_services,
+        'linked_by_remote': linked_by_remote,
+        'remote_type_to_local': REMOTE_TYPE_TO_LOCAL,
+    })
+
+
+@_staff
+def admin_api_new(request):
+    if request.method == 'POST':
+        name = (request.POST.get('api_name') or '').strip()
+        if not name:
+            messages.error(request, 'O nome da API é obrigatório.')
+            return redirect('admin_api_list')
+        Api.objects.create(
+            api_name=name,
+            api_type=(request.POST.get('api_type') or '').strip(),
+            api_url=(request.POST.get('api_url') or '').strip(),
+            api_username=(request.POST.get('api_username') or '').strip(),
+            api_key=(request.POST.get('api_key') or '').strip(),
+            status=request.POST.get('status', 'Active'),
+        )
+        messages.success(request, 'API criada com sucesso.')
+        return redirect('admin_api_list')
+    return render(request, 'admin/api_form.html', {'api': None})
+
+
+@_staff
+def admin_api_update(request, api_id):
+    api = Api.objects.filter(id=api_id).first()
+    if api and request.method == 'POST':
+        api.api_name = (request.POST.get('api_name') or api.api_name).strip()
+        api.api_type = (request.POST.get('api_type') or '').strip()
+        api.api_url = (request.POST.get('api_url') or '').strip()
+        api.api_username = (request.POST.get('api_username') or '').strip()
+        if request.POST.get('api_key') is not None:
+            api.api_key = request.POST['api_key'].strip()
+        if request.POST.get('status') in ('Active', 'Inactive'):
+            api.status = request.POST['status']
+        api.save()
+        messages.success(request, 'API atualizada com sucesso.')
+    return redirect('admin_api_list')
+
+
+@_staff
+def admin_api_test(request, api_id):
+    api = Api.objects.filter(id=api_id).first()
+    if api:
+        try:
+            info = provider_api.account_info(api)
+            messages.success(request, 'Conexão OK. Conta: {} | Saldo: {}'.format(info['mail'], info['credit']))
+        except provider_api.ProviderError as exc:
+            messages.error(request, 'Falha na conexão: {}'.format(exc))
+    return redirect('admin_api_list')
+
+
+@_staff
+def admin_api_import(request, api_id):
+    api = Api.objects.filter(id=api_id).first()
+    if api:
+        try:
+            catalog = provider_api.fetch_catalog(api)
+        except provider_api.ProviderError as exc:
+            messages.error(request, 'Falha ao importar: {}'.format(exc))
+            return redirect('admin_api_list')
+        seen = set()
+        for item in catalog:
+            remote, was_created = RemoteServiceList.objects.update_or_create(
+                api=api,
+                referenceid=item['referenceid'],
+                defaults={
+                    'SERVICENAME': item['name'],
+                    'SERVICETYPE': item['servicetype'],
+                    'CREDIT': Decimal(str(item['credit']) or '0'),
+                    'added': True,
+                },
+            )
+            fields = list(dict.fromkeys(item['fields']))
+            RemoteServiceInput.objects.filter(remote_service=remote).exclude(name__in=fields).delete()
+            for fname in fields:
+                RemoteServiceInput.objects.get_or_create(remote_service=remote, name=fname)
+            seen.add(remote.id)
+        messages.success(request, 'Importados {} serviços do provedor ({} novos).'.format(
+            len(catalog), len(seen)))
+    return redirect('admin_api_list')
+
+
+@_staff
+def admin_api_link(request):
+    if request.method == 'POST':
+        remote_id = request.POST.get('remote_id')
+        service_id = request.POST.get('service_id') or None
+        remote = RemoteServiceList.objects.filter(id=remote_id).first()
+        if remote:
+            ServiceList.objects.filter(api=remote.api, referenceid=remote.referenceid)\
+                                .update(api=None, referenceid='')
+            if service_id:
+                service = ServiceList.objects.filter(id=service_id).first()
+                if service:
+                    service.api = remote.api
+                    service.referenceid = remote.referenceid
+                    service.process_type = 'Auto'
+                    service.save(update_fields=['api', 'referenceid', 'process_type'])
+                    local_type = REMOTE_TYPE_TO_LOCAL.get(remote.SERVICETYPE.upper(), service.service_type)
+                    if local_type != service.service_type:
+                        service.service_type = local_type
+                        service.save(update_fields=['service_type'])
+                    remote_fields = list(remote.service_fields.all())
+                    if remote_fields:
+                        ServiceInput.objects.filter(service=service).delete()
+                        for rf in remote_fields:
+                            ServiceInput.objects.create(service=service, name=rf.name)
+                    messages.success(request, 'Serviço "{}" vinculado ao provedor.'.format(service.title))
+                else:
+                    messages.error(request, 'Serviço local não encontrado.')
+            else:
+                messages.success(request, 'Serviço do provedor desvinculado.')
+    return redirect('admin_api_list')
 
 
 # --------------------------------------------------------------------------- #

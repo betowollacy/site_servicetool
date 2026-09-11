@@ -1,13 +1,16 @@
 import base64
 import json
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.test import TestCase, override_settings
+from django.urls import reverse
 
-from core import asaas
+from core import asaas, provider_api
 from core.models import (
-    Currency, Customer, CustomerOrder, Invoice, OrderInput, PaymentDeposit,
-    PaymentGateway, ServiceGroup, ServiceInput, ServiceList, Statement,
+    Api, Currency, Customer, CustomerOrder, Invoice, OrderInput, PaymentDeposit,
+    PaymentGateway, RemoteServiceInput, RemoteServiceList, ServiceGroup, ServiceInput,
+    ServiceList, Statement, User,
 )
 
 
@@ -225,3 +228,301 @@ class PublicApiTests(TestCase):
         inputs = {i.field_name: i.field_value for i in order.order_inputs.all()}
         self.assertEqual(inputs['Email'], 'user@email.com')
         self.assertEqual(inputs['Username'], 'alo')
+
+
+class ProviderApiTests(TestCase):
+    def setUp(self):
+        Currency.objects.create(code='BRL', name='Brazilian Real', icon='R$', rate=Decimal('1.0000'), status='Active')
+        self.api = Api.objects.create(
+            api_name='Expert Server', api_type='gsm',
+            api_url='https://expertserver.com.br/public',
+            api_username='enterserver@hotmail.com', api_key='CHAVE-TESTE', status='Active',
+        )
+        self.customer = Customer.objects.create(
+            name='Cliente', email='cliente@teste.com', password=Customer.make_password('senha123'),
+            currency='BRL', balance=Decimal('100.00'), api_allow='on', api_key='APIKEY-TESTE',
+        )
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
+        self.service = ServiceList.objects.create(
+            service_type='IMEI Service', service_group=self.group, title='IMEI Unlock',
+            original_price=Decimal('20.00'), status='Active', api=self.api,
+            referenceid='9001', min_qnt='1', max_qnt='5', slug='imei-unlock',
+        )
+        ServiceInput.objects.create(service=self.service, name='IMEI')
+        ServiceInput.objects.create(service=self.service, name='LINK')
+        self.url = '/public/api/index.php'
+
+    def _order(self):
+        return CustomerOrder.objects.create(
+            customer=self.customer, service=self.service, service_status='In Process',
+            service_type='imei_service', service_qnt='1', service_price=Decimal('20.00'),
+            service_title=self.service.title, payment_methode='Api',
+        )
+
+    def _place(self, customfield=''):
+        params = '<ID>{}</ID><QNT>1</QNT>'.format(self.service.id)
+        if customfield:
+            params += '<CUSTOMFIELD>{}</CUSTOMFIELD>'.format(customfield)
+        return self.client.post(self.url, {
+            'username': self.customer.email,
+            'apiaccesskey': self.customer.api_key,
+            'action': 'placeimeiorder',
+            'parameters': params,
+        })
+
+    def test_endpoint_normalization(self):
+        self.assertEqual(provider_api.endpoint_for(self.api),
+                         'https://expertserver.com.br/public/api/index.php')
+        self.api.api_url = 'https://x.com/public/api'
+        self.assertEqual(provider_api.endpoint_for(self.api),
+                         'https://x.com/public/api/index.php')
+        self.api.api_url = 'https://x.com/public/api/index.php'
+        self.assertEqual(provider_api.endpoint_for(self.api),
+                         'https://x.com/public/api/index.php')
+
+    def test_provider_for_order_requires_link(self):
+        order = self._order()
+        self.assertIsNotNone(provider_api.provider_for_order(order))
+        self.service.referenceid = ''
+        self.service.save(update_fields=['referenceid'])
+        self.assertIsNone(provider_api.provider_for_order(order))
+
+    def test_endpoint_for_empty(self):
+        self.api.api_url = ''
+        self.api.save(update_fields=['api_url'])
+        order = self._order()
+        self.assertIsNone(provider_api.provider_for_order(order))
+
+    @patch('core.provider_api._request')
+    def test_submit_local_order_places_at_provider(self, req):
+        def fake(api, action, parameters=''):
+            self.assertEqual(action, 'placeimeiorder')
+            self.assertIn('9001', parameters)
+            self.assertIn('CUSTOMFIELD', parameters)
+            return {'SUCCESS': [{'MESSAGE': 'Order received', 'REFERENCEID': '5550001'}], 'apiversion': '1.0'}
+        req.side_effect = fake
+        order = self._order()
+        OrderInput.objects.create(order=order, field_name='IMEI', field_value='351234567890123')
+        ok, ref = provider_api.submit_local_order(order)
+        self.assertTrue(ok)
+        self.assertEqual(ref, '5550001')
+        order.refresh_from_db()
+        self.assertEqual(order.trx_id, '5550001')
+        self.assertEqual(order.process_type, 'Auto')
+
+    @patch('core.provider_api._request')
+    def test_sync_local_order_fetches_code(self, req):
+        def fake(api, action, parameters=''):
+            self.assertEqual(action, 'getimeiorder')
+            return {'SUCCESS': [{'STATUS': 4, 'CODE': 'RESULTADO-123'}], 'apiversion': '1.0'}
+        req.side_effect = fake
+        order = self._order()
+        order.trx_id = '5550001'
+        order.save(update_fields=['trx_id'])
+        provider_api.sync_local_order(order)
+        order.refresh_from_db()
+        self.assertEqual(order.service_status, 'Success')
+        self.assertEqual(order.service_comments, 'RESULTADO-123')
+
+    @patch('core.provider_api._request')
+    def test_sync_refunds_when_provider_rejects(self, req):
+        def fake(api, action, parameters=''):
+            return {'SUCCESS': [{'STATUS': 3, 'CODE': 'Rejected by provider'}], 'apiversion': '1.0'}
+        req.side_effect = fake
+        order = self._order()
+        order.trx_id = '5550001'
+        order.save(update_fields=['trx_id'])
+        provider_api.sync_local_order(order)
+        order.refresh_from_db()
+        self.customer.refresh_from_db()
+        self.assertEqual(order.service_status, 'Rejected')
+        self.assertEqual(order.service_comments, 'Rejected by provider')
+        self.assertEqual(self.customer.balance, Decimal('120.00'))
+        self.assertEqual(Statement.objects.filter(customer=self.customer, type='Credit').count(), 1)
+
+    @patch('core.provider_api._request')
+    def test_place_order_via_public_api_forwards(self, req):
+        def fake(api, action, parameters=''):
+            return {'SUCCESS': [{'MESSAGE': 'Order received', 'REFERENCEID': '777'}], 'apiversion': '1.0'}
+        req.side_effect = fake
+        resp = self._place()
+        data = json.loads(resp.content)
+        ref = data['SUCCESS'][0]['REFERENCEID']
+        order = CustomerOrder.objects.get(id=ref)
+        self.assertEqual(order.trx_id, '777')
+        self.assertEqual(order.service, self.service)
+        self.assertEqual(order.service_status, 'In Process')
+
+    @patch('core.provider_api._request')
+    def test_place_order_refunds_when_provider_rejects(self, req):
+        req.side_effect = provider_api.ProviderError('Insufficient balance')
+        resp = self._place()
+        data = json.loads(resp.content)
+        ref = data['SUCCESS'][0]['REFERENCEID']
+        order = CustomerOrder.objects.get(id=ref)
+        self.customer.refresh_from_db()
+        self.assertEqual(order.service_status, 'Rejected')
+        self.assertEqual(self.customer.balance, Decimal('100.00'))
+        self.assertIn('Insufficient balance', order.service_comments)
+
+    @patch('core.provider_api._request')
+    def test_unlinked_service_does_not_call_provider(self, req):
+        other = ServiceList.objects.create(
+            service_type='IMEI Service', service_group=self.group, title='Outro',
+            original_price=Decimal('5.00'), status='Active', referenceid='', slug='outro',
+        )
+        resp = self.client.post(self.url, {
+            'username': self.customer.email,
+            'apiaccesskey': self.customer.api_key,
+            'action': 'placeimeiorder',
+            'parameters': '<ID>{}</ID><QNT>1</QNT>'.format(other.id),
+        })
+        data = json.loads(resp.content)
+        order = CustomerOrder.objects.get(id=data['SUCCESS'][0]['REFERENCEID'])
+        self.assertEqual(order.service_status, 'In Process')
+        req.assert_not_called()
+
+
+class ProviderApiAdminTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='adminapi', password='senha123', is_staff=True)
+        self.api = Api.objects.create(
+            api_name='Expert Server', api_url='https://expertserver.com.br/public',
+            api_username='enterserver@hotmail.com', api_key='KEY', status='Active',
+        )
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
+        self.service = ServiceList.objects.create(
+            service_type='IMEI Service', service_group=self.group, title='IMEI Unlock',
+            original_price=Decimal('20.00'), status='Active', slug='imei-unlock',
+        )
+        ServiceInput.objects.create(service=self.service, name='IMEI')
+
+    def _login(self):
+        self.client.force_login(self.staff)
+
+    @patch('core.provider_api._request')
+    def test_fetch_catalog_parses_list(self, req):
+        def fake(api, action, parameters=''):
+            return {'SUCCESS': [{'LIST': {
+                'Ferramentas': {'GROUPNAME': 'Ferramentas', 'GROUPTYPE': 'IMEI', 'SERVICES': {
+                    '7': {'SERVICEID': '7', 'SERVICETYPE': 'IMEI', 'SERVICENAME': 'Unlock 1',
+                          'CREDIT': 10, 'CUSTOM': {'customname': 'IMEI'}},
+                    '9': {'SERVICEID': '9', 'SERVICETYPE': 'IMEI', 'SERVICENAME': 'Unlock 2',
+                          'CREDIT': 15, 'Requires.Custom': [{'fieldname': 'ID'}, {'fieldname': 'LINK'}]},
+                }},
+            }}], 'apiversion': '1.0'}
+        req.side_effect = fake
+        catalog = provider_api.fetch_catalog(self.api)
+        self.assertEqual(len(catalog), 2)
+        self.assertEqual(catalog[0]['referenceid'], '7')
+        self.assertEqual(catalog[0]['fields'], ['IMEI'])
+        self.assertEqual(catalog[1]['fields'], ['ID', 'LINK'])
+
+    @patch('core.provider_api.fetch_catalog')
+    def test_admin_import_creates_remote_services(self, fetch):
+        fetch.return_value = [
+            {'referenceid': '7', 'name': 'Unlock 1', 'servicetype': 'IMEI', 'credit': 10,
+             'group': 'Ferramentas', 'time': '', 'fields': ['IMEI']},
+        ]
+        self._login()
+        resp = self.client.post(reverse('admin_api_import', args=[self.api.id]))
+        self.assertEqual(resp.status_code, 302)
+        remote = RemoteServiceList.objects.get(api=self.api)
+        self.assertEqual(remote.referenceid, '7')
+        self.assertEqual(remote.SERVICENAME, 'Unlock 1')
+        self.assertEqual(list(remote.service_fields.values_list('name', flat=True)), ['IMEI'])
+
+    def test_admin_link_binds_service(self):
+        remote = RemoteServiceList.objects.create(
+            api=self.api, referenceid='7', SERVICETYPE='IMEI', SERVICENAME='Unlock 1',
+            CREDIT=Decimal('10.00'))
+        RemoteServiceInput.objects.create(remote_service=remote, name='IMEI')
+        self._login()
+        resp = self.client.post(
+            reverse('admin_api_link'),
+            {'remote_id': remote.id, 'service_id': self.service.id},
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.service.refresh_from_db()
+        self.assertEqual(self.service.api_id, self.api.id)
+        self.assertEqual(self.service.referenceid, '7')
+        self.assertEqual(self.service.process_type, 'Auto')
+        self.assertEqual(list(self.service.service_fields.values_list('name', flat=True)), ['IMEI'])
+
+    def test_admin_link_unlinks(self):
+        self.service.api = self.api
+        self.service.referenceid = '7'
+        self.service.save(update_fields=['api', 'referenceid'])
+        remote = RemoteServiceList.objects.create(
+            api=self.api, referenceid='7', SERVICETYPE='IMEI', SERVICENAME='Unlock 1',
+            CREDIT=Decimal('10.00'))
+        self._login()
+        resp = self.client.post(reverse('admin_api_link'), {'remote_id': remote.id, 'service_id': ''})
+        self.assertEqual(resp.status_code, 302)
+        self.service.refresh_from_db()
+        self.assertIsNone(self.service.api_id)
+        self.assertEqual(self.service.referenceid, '')
+
+    def test_admin_api_list_requires_staff(self):
+        resp = self.client.get(reverse('admin_api_list'))
+        self.assertEqual(resp.status_code, 302)
+        self._login()
+        resp = self.client.get(reverse('admin_api_list'))
+        self.assertEqual(resp.status_code, 200)
+
+
+class AdminRefundTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='adminrefund', password='senha123', is_staff=True)
+        self.customer = Customer.objects.create(
+            name='Cliente', email='cliente@teste.com', password=Customer.make_password('senha123'),
+            currency='BRL', balance=Decimal('10.00'),
+        )
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
+        self.service = ServiceList.objects.create(
+            service_type='IMEI Service', service_group=self.group, title='IMEI Unlock',
+            original_price=Decimal('20.00'), status='Active', slug='imei-unlock',
+        )
+        self.client.force_login(self.staff)
+
+    def _order(self, status='In Process'):
+        return CustomerOrder.objects.create(
+            customer=self.customer, service=self.service, service_status=status,
+            service_type='imei_service', service_qnt='1', service_price=Decimal('20.00'),
+            service_title=self.service.title, payment_methode='Balance',
+        )
+
+    def test_order_refund_returns_balance_and_rejects(self):
+        order = self._order()
+        resp = self.client.post(reverse('admin_order_refund', args=[order.id]))
+        self.assertEqual(resp.status_code, 302)
+        self.customer.refresh_from_db()
+        order.refresh_from_db()
+        self.assertEqual(order.service_status, 'Rejected')
+        self.assertEqual(self.customer.balance, Decimal('30.00'))
+        stmt = Statement.objects.get(customer=self.customer, type='Credit')
+        self.assertEqual(stmt.amount, Decimal('20.00'))
+        self.assertEqual(stmt.order, order)
+
+    def test_order_refund_does_not_double_refund(self):
+        order = self._order(status='Rejected')
+        resp = self.client.post(reverse('admin_order_refund', args=[order.id]))
+        self.customer.refresh_from_db()
+        self.assertEqual(self.customer.balance, Decimal('10.00'))
+        self.assertEqual(Statement.objects.filter(customer=self.customer, type='Credit').count(), 0)
+
+    def test_customer_refund_free_amount(self):
+        resp = self.client.post(reverse('admin_customer_refund', args=[self.customer.id]),
+                                {'amount': '5,50', 'reason': 'Compra errada'})
+        self.assertEqual(resp.status_code, 302)
+        self.customer.refresh_from_db()
+        self.assertEqual(self.customer.balance, Decimal('15.50'))
+        stmt = Statement.objects.get(customer=self.customer, type='Credit')
+        self.assertEqual(stmt.amount, Decimal('5.50'))
+        self.assertEqual(stmt.description, 'Compra errada')
+
+    def test_customer_refund_requires_positive_amount(self):
+        resp = self.client.post(reverse('admin_customer_refund', args=[self.customer.id]),
+                                {'amount': '0', 'reason': ''})
+        self.customer.refresh_from_db()
+        self.assertEqual(self.customer.balance, Decimal('10.00'))

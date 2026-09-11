@@ -1,0 +1,115 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h4 class="mb-0">APIs do Provedor</h4>
+        <p class="text-muted mb-0">Configure as APIs dos provedores que revendem serviços automaticamente.</p>
+    </div>
+</div>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+<div class="row g-3 mb-3">
+    <div class="col-12 d-flex justify-content-end">
+        <a href="{% url 'admin_api_new' %}" class="btn btn-primary"><i class="ti ti-plus me-2"></i> Nova API</a>
+    </div>
+</div>
+
+{% for api in apis %}
+<div class="card mb-3">
+    <div class="card-header d-flex flex-wrap align-items-center gap-2">
+        <h6 class="mb-0"><i class="ti ti-plug-connected me-2"></i>{{ api.api_name }}
+            <span class="badge bg-{% if api.status == 'Active' %}success{% else %}secondary{% endif %} ms-1">{{ api.status }}</span>
+        </h6>
+        <div class="ms-auto d-flex gap-2">
+            <form method="post" action="{% url 'admin_api_test' api.id %}">{% csrf_token %}
+                <button class="btn btn-sm btn-outline-secondary"><i class="ti ti-device-desktop-analytics me-1"></i> Testar conexão</button>
+            </form>
+            <form method="post" action="{% url 'admin_api_import' api.id %}" onsubmit="return confirm('Importar/atualizar os serviços do provedor?')">{% csrf_token %}
+                <button class="btn btn-sm btn-outline-primary"><i class="ti ti-download me-1"></i> Importar serviços</button>
+            </form>
+        </div>
+    </div>
+    <form method="post" action="{% url 'admin_api_update' api.id %}">
+        {% csrf_token %}
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3"><label class="form-label">Nome</label><input type="text" name="api_name" class="form-control" value="{{ api.api_name }}" required></div>
+                <div class="col-md-4 mb-3"><label class="form-label">Tipo (opcional)</label><input type="text" name="api_type" class="form-control" value="{{ api.api_type|default:'' }}" placeholder="gsm"></div>
+                <div class="col-md-4 mb-3"><label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="Active" {% if api.status == 'Active' %}selected{% endif %}>Ativo</option>
+                        <option value="Inactive" {% if api.status == 'Inactive' %}selected{% endif %}>Inativo</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3"><label class="form-label">URL da API</label><input type="text" name="api_url" class="form-control font-monospace" value="{{ api.api_url|default:'' }}" placeholder="https://provedor.com.br/public"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Usuário (username)</label><input type="text" name="api_username" class="form-control font-monospace" value="{{ api.api_username|default:'' }}"></div>
+                <div class="col-12 mb-3"><label class="form-label">Chave da API (apiaccesskey)</label><input type="text" name="api_key" class="form-control font-monospace" value="{{ api.api_key|default:'' }}"></div>
+            </div>
+        </div>
+        <div class="card-footer"><button class="btn btn-primary"><i class="ti ti-device-floppy me-2"></i> Salvar</button></div>
+    </form>
+</div>
+{% empty %}
+<div class="card"><div class="card-body text-center text-muted py-5">Nenhuma API configurada ainda. Clique em "Nova API".</div></div>
+{% endfor %}
+
+<div class="card">
+    <div class="card-header"><h6 class="mb-0"><i class="ti ti-link me-2"></i> Serviços do provedor (vincular ao catálogo)</h6></div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover dataTable">
+                <thead>
+                    <tr>
+                        <th>API</th>
+                        <th>ID no provedor</th>
+                        <th>Serviço (provedor)</th>
+                        <th>Tipo</th>
+                        <th>Preço</th>
+                        <th>Serviço local vinculado</th>
+                        <th class="text-end">Ação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for remote in remote_services %}
+                    <tr>
+                        <td>{{ remote.api.api_name }}</td>
+                        <td><code>{{ remote.referenceid|default:'-' }}</code></td>
+                        <td>{{ remote.SERVICENAME }}</td>
+                        <td><span class="badge bg-light-primary">{{ remote.SERVICETYPE }}</span></td>
+                        <td>{{ remote.CREDIT }}</td>
+                        <td>
+                            {% for key, links in linked_by_remote.items %}
+                                {% if key.0 == remote.api_id and key.1 == remote.referenceid %}
+                                    {% for s in links %}
+                                    <span class="badge bg-success">{{ s.title }}</span>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td class="text-end">
+                            <form method="post" action="{% url 'admin_api_link' %}" class="d-flex gap-2 justify-content-end">
+                                {% csrf_token %}
+                                <input type="hidden" name="remote_id" value="{{ remote.id }}">
+                                <select name="service_id" class="form-select form-select-sm" style="max-width:260px">
+                                    <option value="">-- Desvincular --</option>
+                                    {% for svc in local_services %}
+                                    <option value="{{ svc.id }}" data-type="{{ svc.service_type }}">{{ svc.id }} - {{ svc.service_type }} - {{ svc.title }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="btn btn-sm btn-primary"><i class="ti ti-link"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">Nenhum serviço importado. Use o botão "Importar serviços" em alguma API.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

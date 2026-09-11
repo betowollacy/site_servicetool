@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from . import asaas, binance, public_api
+from . import asaas, binance, provider_api, public_api
 from .models import (
     Api, ApiLog, Currency, Customer, CustomerOrder, GatewayLog, Invoice,
     OrderInput, Page, PaymentDeposit, PaymentGateway, ServiceGroup, ServiceInput,
@@ -488,6 +488,7 @@ def submit_order(request, customer):
 
     order = CustomerOrder.objects.create(
         customer=customer,
+        service=service,
         service_status='Waiting Action',
         service_type=_invoice_type_key(service.service_type),
         service_price=service.original_price,
@@ -511,6 +512,9 @@ def submit_order(request, customer):
             customer=customer, description=f"Order #{order.id} - {service.title}",
             type='Debit', amount=price, balance=customer.balance, order=order,
         )
+        forwarded, msg = provider_api.submit_local_order(order)
+        if forwarded is False:
+            provider_api.refund_order(order, msg or 'Falha ao enviar para o provedor.')
         messages.success(request, 'Pedido realizado com sucesso.')
         return redirect('customer_order_history')
     else:

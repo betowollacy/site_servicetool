@@ -15,6 +15,7 @@ from .models import (
     Customer, CustomerOrder, OrderInput, ServiceGroup, ServiceList, Statement,
     SystemSetting,
 )
+from . import provider_api
 
 API_VERSION = '1.0'
 RATE_LIMIT_MINUTES = 5
@@ -197,6 +198,7 @@ def _create_paid_order(customer, service, qnt, fields):
             return None, 'Not enough balance.'
         order = CustomerOrder.objects.create(
             customer=customer,
+            service=service,
             service_status='In Process',
             service_type=_service_type_key(service.service_type),
             service_qnt=str(qnt),
@@ -346,6 +348,11 @@ def _get_order(customer, parameters):
         order = None
     if not order:
         return _api_error('Order ID not found!')
+    try:
+        provider_api.sync_local_order(order)
+        order.refresh_from_db()
+    except Exception:
+        pass
     return _api_success({
         'SUCCESS': [{
             'STATUS': _status_code(order.service_status),
@@ -364,6 +371,11 @@ def _get_order_bulk(customer, parameters):
         order = None
         if order_id is not None and str(order_id) != '':
             order = CustomerOrder.objects.filter(customer=customer, id=_to_int(order_id, 0)).first()
+            try:
+                provider_api.sync_local_order(order)
+                order.refresh_from_db()
+            except Exception:
+                pass
         bulk[ref_id] = {
             'SUCCESS': [{
                 'STATUS': _status_code(order.service_status) if order else 0,
@@ -387,6 +399,9 @@ def _place_order(customer, parameters):
     order, err = _create_paid_order(customer, service, qnt, fields)
     if err:
         return _api_error(err)
+    forwarded, msg = provider_api.submit_local_order(order)
+    if forwarded is False:
+        provider_api.refund_order(order, msg or 'Falha ao enviar para o provedor.')
     return _api_success({
         'SUCCESS': [{
             'MESSAGE': 'Order received',
@@ -419,6 +434,9 @@ def _place_bulk_order(customer, parameters):
         if err:
             bulk[ref_id] = {'status': 'error', 'message': err}
         else:
+            forwarded, msg = provider_api.submit_local_order(order)
+            if forwarded is False:
+                provider_api.refund_order(order, msg or 'Falha ao enviar para o provedor.')
             bulk[ref_id] = {'status': 'success', 'message': 'Order received', 'referenceid': order.id}
     return _api_bulk(bulk)
 

@@ -1,0 +1,36 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12"><h4 class="mb-0">Nova API do Provedor</h4></div>
+</div>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+<div class="card">
+    <form method="post">
+        {% csrf_token %}
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3"><label class="form-label">Nome</label><input type="text" name="api_name" class="form-control" required placeholder="Ex.: Expert Server"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Tipo (opcional)</label><input type="text" name="api_type" class="form-control" value="gsm" placeholder="gsm"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">URL da API</label><input type="text" name="api_url" class="form-control font-monospace" required placeholder="https://provedor.com.br/public"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="Active" selected>Ativo</option>
+                        <option value="Inactive">Inativo</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3"><label class="form-label">Usuário (username)</label><input type="text" name="api_username" class="form-control font-monospace" required></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Chave da API (apiaccesskey)</label><input type="text" name="api_key" class="form-control font-monospace" required></div>
+            </div>
+            <div class="alert alert-light border mb-0"><i class="ti ti-info-circle me-1"></i> Após criar, clique em "Importar serviços" na lista para baixar o catálogo do provedor.</div>
+        </div>
+        <div class="card-footer">
+            <button class="btn btn-primary"><i class="ti ti-device-floppy me-2"></i> Salvar</button>
+            <a href="{% url 'admin_api_list' %}" class="btn btn-light">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

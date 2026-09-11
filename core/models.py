@@ -252,6 +252,7 @@ class CustomerOrder(models.Model):
     ]
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='orders')
+    service = models.ForeignKey(ServiceList, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
     service_status = models.CharField(max_length=30, choices=SERVICE_STATUS, default='Waiting Action')
     service_type = models.CharField(max_length=30, choices=SERVICE_TYPES, default='server_service')
     service_qnt = models.CharField(max_length=30, blank=True, null=True)
@@ -445,6 +446,7 @@ class RemoteServiceList(models.Model):
         ('imei_service', 'IMEI'),
     ]
     api = models.ForeignKey(Api, on_delete=models.CASCADE, null=True, blank=True, related_name='remote_services')
+    referenceid = models.CharField(max_length=255, blank=True, null=True)
     SERVICETYPE = models.CharField(max_length=50)
     SERVICENAME = models.CharField(max_length=255)
     CREDIT = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))

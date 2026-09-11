@@ -43,7 +43,17 @@
                     <td>{{ order.payment_methode|default:"-" }}</td>
                     <td><span class="badge bg-light-primary">{{ order.service_status }}</span></td>
                     <td>
-                        <button class="btn btn-sm btn-light-primary" data-bs-toggle="collapse" data-bs-target="#order-{{ order.id }}"><i class="ti ti-edit"></i> Atualizar</button>
+                        <div class="d-flex flex-wrap gap-2 align-items-start">
+                            <button class="btn btn-sm btn-light-primary" data-bs-toggle="collapse" data-bs-target="#order-{{ order.id }}"><i class="ti ti-edit"></i> Atualizar</button>
+                            {% if order.service_status != 'Rejected' %}
+                            <form method="post" action="{% url 'admin_order_refund' order.id %}" onsubmit="return confirm('Estornar este pedido? Devolverá R$ {{ order.service_price|floatformat:2 }} ao saldo do cliente.')">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-light-danger"><i class="ti ti-rotate-2"></i> Estornar</button>
+                            </form>
+                            {% else %}
+                            <span class="badge bg-light-danger">Estornado</span>
+                            {% endif %}
+                        </div>
                         <div class="collapse mt-2" id="order-{{ order.id }}">
                             <form method="post" action="{% url 'admin_order_update' order.id %}">
                                 {% csrf_token %}
