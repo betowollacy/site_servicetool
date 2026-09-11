@@ -538,3 +538,57 @@ class AdminRefundTests(TestCase):
                                 {'amount': '0', 'reason': ''})
         self.customer.refresh_from_db()
         self.assertEqual(self.customer.balance, Decimal('10.00'))
+
+
+class CreditServiceFormTests(TestCase):
+    def setUp(self):
+        Currency.objects.create(code='BRL', name='Brazilian Real', icon='R$', rate=Decimal('1.0000'), status='Active')
+        self.customer = Customer.objects.create(
+            name='Cliente Crédito', email='credito@teste.com', mobile='11999999999',
+            password=Customer.make_password('senha123'), currency='BRL',
+            balance=Decimal('100.00'),
+        )
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
+        self.service = ServiceList.objects.create(
+            service_type='Credit Service', service_group=self.group,
+            title='Phoenix Tool Créditos', original_price=Decimal('10.00'),
+            status='Active', slug='phoenix-creditos',
+        )
+
+    def _login(self):
+        session = self.client.session
+        session['customer_id'] = self.customer.id
+        session.save()
+
+    def test_server_view_offers_quantity_and_email_for_credit(self):
+        self._login()
+        resp = self.client.get(reverse('service_view', args=[self.service.slug]))
+        html = resp.content.decode()
+        self.assertIn('name="Quantidade de Créditos"', html)
+        self.assertIn('name="Email"', html)
+
+    def test_imei_service_does_not_receive_credit_fields(self):
+        self._login()
+        imei = ServiceList.objects.create(
+            service_type='IMEI Service', service_group=self.group,
+            title='Unlock', original_price=Decimal('5.00'), status='Active', slug='unlock',
+        )
+        ServiceInput.objects.create(service=imei, name='IMEI')
+        resp = self.client.get(reverse('service_view', args=[imei.slug]))
+        html = resp.content.decode()
+        self.assertIn('name="IMEI"', html)
+        self.assertNotIn('Quantidade de Créditos', html)
+
+    def test_submit_order_stores_quantity_and_email(self):
+        self._login()
+        resp = self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+            'Quantidade de Créditos': '5',
+            'Email': 'ferramenta@email.com',
+        })
+        self.assertEqual(resp.status_code, 302)
+        order = CustomerOrder.objects.latest('id')
+        self.assertEqual(order.service_qnt, '5')
+        inputs = {i.field_name: i.field_value for i in order.order_inputs.all()}
+        self.assertEqual(inputs.get('Email'), 'ferramenta@email.com')
+        self.assertNotIn('Quantidade de Créditos', inputs)

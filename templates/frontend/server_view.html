@@ -60,7 +60,13 @@
                                 {% for serviceInput in serviceInputs %}
                                 <div class="mb-3">
                                     <label class="form-label" for="fields.{{ forloop.counter0 }}">Informe <b>{{ serviceInput.name }}</b></label>
-                                    <input type="text" class="form-control" name="{{ serviceInput.name }}" id="fields.{{ forloop.counter0 }}" placeholder="{{ serviceInput.name }}">
+                                    <input type="{% if 'Quantidade' in serviceInput.name %}number{% else %}text{% endif %}" class="form-control" name="{{ serviceInput.name }}" id="fields.{{ forloop.counter0 }}" placeholder="{{ serviceInput.name }}" {% if 'Quantidade' in serviceInput.name %}min="1" step="1"{% endif %} {% if 'Quantidade' in serviceInput.name or serviceInput.name == 'Email' %}required{% endif %}>
+                                    {% if 'Quantidade' in serviceInput.name %}
+                                    <small class="text-muted">Quantidade de créditos a adicionar na conta da ferramenta.</small>
+                                    {% endif %}
+                                    {% if serviceInput.name == 'Email' %}
+                                    <small class="text-muted">E-mail da conta da ferramenta onde serão creditados os créditos.</small>
+                                    {% endif %}
                                 </div>
                                 {% endfor %}
                             </div>

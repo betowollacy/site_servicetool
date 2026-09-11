@@ -2,6 +2,7 @@ import json
 import random
 import string
 from decimal import Decimal
+from types import SimpleNamespace
 
 from django.contrib import messages
 from django.db.models import Q, Sum
@@ -13,9 +14,9 @@ from django.views.decorators.http import require_POST
 
 from . import asaas, binance, provider_api, public_api
 from .models import (
-    Api, ApiLog, Currency, Customer, CustomerOrder, GatewayLog, Invoice,
-    OrderInput, Page, PaymentDeposit, PaymentGateway, ServiceGroup, ServiceInput,
-    ServiceList, Slider, Statement, SystemSetting,
+    Api, ApiLog, CREDIT_SERVICE_EXTRA_FIELDS, Currency, Customer, CustomerOrder,
+    GatewayLog, Invoice, OrderInput, Page, PaymentDeposit, PaymentGateway,
+    ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting,
 )
 
 CATEGORY_SLUGS = {
@@ -122,15 +123,31 @@ def category(request, slug):
     return render(request, 'frontend/category.html', ctx)
 
 
+def _service_input_fields(service):
+    """Campos de entrada do servico. Para Credit Service garante Email e Password."""
+    names = list(service.service_fields.values_list('name', flat=True))
+    if service.service_type == 'Credit Service':
+        for extra in CREDIT_SERVICE_EXTRA_FIELDS:
+            if extra not in names:
+                names.append(extra)
+    return names
+
+
+def _service_input_objects(service):
+    """Objetos de entrada usados no template (ServiceInput + extras sinteticos)."""
+    names = _service_input_fields(service)
+    db = {si.name: si for si in service.service_fields.all()}
+    return [db.get(name, SimpleNamespace(name=name)) for name in names]
+
+
 def server_view(request, slug):
     service = get_object_or_404(ServiceList, slug=slug)
     if service.status != 'Active':
         return redirect('homepage')
-    service_fields = list(service.service_fields.all())
     tags = _service_tags(service)
     ctx = {
         'serviceData': service,
-        'serviceInputs': service_fields,
+        'serviceInputs': _service_input_objects(service),
         'serviceTags': tags,
         'Price': service.original_price,
         'keyWord': ','.join(t for t in [service.kw1, service.kw2, service.kw3, service.kw4, service.kw5] if t),
@@ -495,9 +512,16 @@ def submit_order(request, customer):
         service_title=service.title,
         seen='false',
     )
-    for field in service.service_fields.all():
-        value = request.POST.get(field.name, '').strip()
-        OrderInput.objects.create(order=order, field_name=field.name, field_value=value)
+    for field_name in _service_input_fields(service):
+        if 'quantidade' in field_name.lower() or field_name.lower().startswith(('qtd', 'qty', 'qnt')):
+            try:
+                order.service_qnt = int(str(request.POST.get(field_name, '1') or '1').strip())
+            except (TypeError, ValueError):
+                order.service_qnt = 1
+            order.save(update_fields=['service_qnt'])
+            continue
+        value = request.POST.get(field_name, '').strip()
+        OrderInput.objects.create(order=order, field_name=field_name, field_value=value)
         if not order.service_input1:
             order.service_input1 = value
             order.save(update_fields=['service_input1'])

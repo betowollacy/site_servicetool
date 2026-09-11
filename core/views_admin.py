@@ -13,8 +13,9 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 from .models import (
-    Api, Currency, Customer, CustomerOrder, Invoice, Page, PaymentGateway, RemoteServiceInput,
-    RemoteServiceList, ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting,
+    Api, CREDIT_SERVICE_EXTRA_FIELDS, Currency, Customer, CustomerOrder, Invoice, Page,
+    PaymentGateway, RemoteServiceInput, RemoteServiceList, ServiceGroup, ServiceInput,
+    ServiceList, Slider, Statement, SystemSetting,
 )
 from . import provider_api, public_api
 
@@ -476,8 +477,15 @@ def admin_api_link(request):
                     remote_fields = list(remote.service_fields.all())
                     if remote_fields:
                         ServiceInput.objects.filter(service=service).delete()
+                        remote_names = [rf.name for rf in remote_fields]
                         for rf in remote_fields:
                             ServiceInput.objects.create(service=service, name=rf.name)
+                    else:
+                        remote_names = []
+                    if local_type == 'Credit Service':
+                        for extra in CREDIT_SERVICE_EXTRA_FIELDS:
+                            if extra not in remote_names:
+                                ServiceInput.objects.get_or_create(service=service, name=extra)
                     messages.success(request, 'Serviço "{}" vinculado ao provedor.'.format(service.title))
                 else:
                     messages.error(request, 'Serviço local não encontrado.')

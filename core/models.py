@@ -186,6 +186,9 @@ class ServiceList(models.Model):
         return self.original_price
 
 
+CREDIT_SERVICE_EXTRA_FIELDS = ('Quantidade de Créditos', 'Email')
+
+
 class ServiceInput(models.Model):
     service = models.ForeignKey(ServiceList, on_delete=models.CASCADE, related_name='service_fields')
     name = models.CharField(max_length=255)
