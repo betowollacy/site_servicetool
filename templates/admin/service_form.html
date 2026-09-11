@@ -10,7 +10,7 @@
 <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
 {% endfor %}
 {% endif %}
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div class="card">
         <div class="card-body">
@@ -87,7 +87,13 @@
                         <div class="col-md-6 mb-3"><label class="form-label">URL de Download da Ferramenta</label><input type="text" class="form-control" name="tool_download" value="{{ service.tool_download|default:'' }}"></div>
                         <div class="col-md-6 mb-3"><label class="form-label">URL de Login da Ferramenta</label><input type="text" class="form-control" name="login_url" value="{{ service.login_url|default:'' }}"></div>
                         <div class="col-md-6 mb-3"><label class="form-label">URL de Cadastro da Ferramenta</label><input type="text" class="form-control" name="register_url" value="{{ service.register_url|default:'' }}"></div>
-                        <div class="col-md-6 mb-3"><label class="form-label">URL da Imagem (thumbnail)</label><input type="text" class="form-control" name="thumbnail" value="{{ service.thumbnail|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">URL da Imagem (thumbnail)</label>
+                            <input type="text" class="form-control" name="thumbnail" value="{{ service.thumbnail|default:'' }}">
+                            {% if service.thumbnail %}<img src="{{ service.thumbnail }}" alt="thumbnail atual" width="120" class="mt-2 rounded border">{% endif %}
+                            <label class="form-label mt-3">Ou envie um arquivo de imagem</label>
+                            <input type="file" class="form-control" name="thumbnail_image" accept=".jpg,.jpeg,.png,.webp,.gif">
+                            <small class="text-muted">Se enviar um arquivo, ele substitui a URL acima automaticamente.</small>
+                        </div>
                         <div class="col-md-6 mb-3"><label class="form-label">URL do Screenshot</label><input type="text" class="form-control" name="screenshot" value="{{ service.screenshot|default:'' }}"></div>
                         <div class="col-12 mb-3"><label class="form-label">Tags do Serviço (separadas por vírgula)</label><input type="text" class="form-control" name="service_tags" value="{{ service.service_tags|default:'' }}"></div>
                     </div>

@@ -1,5 +1,6 @@
 from decimal import Decimal
-
+from pathlib import Path
+import os
 import uuid
 
 from django.conf import settings
@@ -265,7 +266,26 @@ def _save_fields(service, fields_text):
             ServiceInput.objects.create(service=service, name=line)
 
 
-@_staff
+def _save_uploaded_thumbnail(service, files, request=None):
+    """Salva a imagem enviada em MEDIA_ROOT/thumbnails e atualiza o campo thumbnail."""
+    img = files.get('thumbnail_image')
+    if not img:
+        return
+    ext = os.path.splitext(img.name)[1].lower() or '.jpg'
+    if ext not in ('.jpg', '.jpeg', '.png', '.webp', '.gif'):
+        if request:
+            messages.warning(request, 'Formato de imagem não suportado (use JPG, PNG, WEBP ou GIF).')
+        return
+    folder = Path(settings.MEDIA_ROOT) / 'thumbnails'
+    folder.mkdir(parents=True, exist_ok=True)
+    name = f"{service.slug or 'service'}-{uuid.uuid4().hex[:8]}{ext}"
+    with open(folder / name, 'wb+') as dest:
+        for chunk in img.chunks():
+            dest.write(chunk)
+    service.thumbnail = f"{settings.MEDIA_URL}thumbnails/{name}"
+    service.save(update_fields=['thumbnail'])
+
+
 def admin_service_new(request, svtype):
     db_type, label = _service_type_from(svtype)
     if request.method == 'POST':
@@ -283,6 +303,7 @@ def admin_service_new(request, svtype):
         )
         _apply_service_post(service, request.POST)
         _save_fields(service, request.POST.get('fields', ''))
+        _save_uploaded_thumbnail(service, request.FILES, request)
         messages.success(request, 'Serviço criado com sucesso.')
         return redirect('admin_service_list', svtype)
     return render(request, 'admin/service_form.html', {
@@ -303,6 +324,7 @@ def admin_service_edit(request, svtype, service_id):
     if request.method == 'POST':
         _apply_service_post(service, request.POST)
         _save_fields(service, request.POST.get('fields', ''))
+        _save_uploaded_thumbnail(service, request.FILES, request)
         messages.success(request, 'Serviço atualizado com sucesso.')
         return redirect('admin_service_list', svtype)
     return render(request, 'admin/service_form.html', {
