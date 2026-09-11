@@ -12,41 +12,42 @@
     .order-row { cursor: pointer; }
     .order-row:hover { background-color: rgba(13, 110, 253, .06); }
 
-    .gsm-modal .modal-content { border: none; border-radius: 10px; overflow: hidden; }
+    .gsm-modal .modal-content { border: 1px solid var(--bs-border-color); border-radius: 10px; overflow: hidden; background: var(--bs-body-bg); }
     .gsm-modal-header {
         background: #16307c; color: #fff; padding: 16px 20px;
         font-weight: 700; font-size: 18px; letter-spacing: .3px;
     }
     .gsm-modal-header .btn-close { filter: invert(1); opacity: .9; }
-    .gsm-service-title { font-size: 17px; font-weight: 600; color: #1f2937; margin: 4px 0 16px; }
+    .gsm-service-title { font-size: 17px; font-weight: 600; color: var(--bs-body-color); margin: 4px 0 16px; }
     .gsm-card {
-        border: 1px solid #e5e7eb; border-radius: 10px;
-        padding: 14px 16px; margin-bottom: 14px; background: #fff;
+        border: 1px solid var(--bs-border-color); border-radius: 10px;
+        padding: 14px 16px; margin-bottom: 14px; background: var(--bs-body-bg);
     }
-    .gsm-card.gray { background: #f9fafb; }
-    .gsm-lbl { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: #6b7280; margin-bottom: 8px; }
-    .gsm-amount { font-size: 26px; font-weight: 800; color: #111827; }
-    .gsm-amount small { font-size: 15px; font-weight: 600; color: #374151; }
+    .gsm-card.gray { background: var(--bs-tertiary-bg); }
+    .gsm-lbl { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--bs-secondary-color); margin-bottom: 8px; }
+    .gsm-amount { font-size: 26px; font-weight: 800; color: var(--bs-body-color); }
+    .gsm-amount small { font-size: 15px; font-weight: 600; color: var(--bs-secondary-color); }
     .gsm-badge { font-size: 14px; font-weight: 600; padding: 6px 14px; border-radius: 8px; color: #fff; }
     .gsm-badge.success { background: #16a34a; }
     .gsm-badge.processing { background: #d97706; }
     .gsm-badge.rejected { background: #dc2626; }
     .gsm-badge.waiting { background: #6b7280; }
-    .gsm-timeline-item { padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+    .gsm-timeline-item { padding: 8px 0; border-bottom: 1px solid var(--bs-border-color); }
     .gsm-timeline-item:last-child { border-bottom: none; padding-bottom: 0; }
-    .gsm-timeline-lbl { font-size: 13px; color: #6b7280; margin-bottom: 2px; }
-    .gsm-timeline-val { font-size: 15px; font-weight: 700; color: #111827; }
-    .gsm-timeline-val.green { color: #16a34a; }
+    .gsm-timeline-lbl { font-size: 13px; color: var(--bs-secondary-color); margin-bottom: 2px; }
+    .gsm-timeline-val { font-size: 15px; font-weight: 700; color: var(--bs-body-color); }
+    .gsm-timeline-val.green { color: #22c55e; }
     .btn-copy {
-        border: 1.5px solid #16307c; color: #16307c; background: #fff;
+        border: 1.5px solid #5b7bd5; color: var(--bs-body-color); background: transparent;
         border-radius: 999px; font-size: 13px; font-weight: 600;
         padding: 4px 16px; display: inline-flex; align-items: center; gap: 6px;
     }
-    .btn-copy:hover { background: #16307c; color: #fff; }
+    .btn-copy:hover { background: #16307c; border-color: #16307c; color: #fff; }
     .gsm-reply-text {
-        font-family: monospace; font-size: 15px; color: #111827;
+        font-family: monospace; font-size: 15px; color: var(--bs-body-color);
         word-break: break-all; white-space: pre-wrap; padding-top: 4px;
     }
+    .gsm-reply-text.muted { color: var(--bs-secondary-color); font-family: inherit; }
 </style>
 <div class="container">
     <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
@@ -127,18 +128,18 @@
                                         {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
                                         <div class="gsm-reply-text" id="reply-{{ order.id }}">{{ order.replied_in|default:order.service_comments }}</div>
                                         {% elif order.service_status == 'In Process' %}
-                                        <div class="gsm-reply-text" style="color:#6b7280">Seu pedido está em processamento. A resposta aparecerá aqui em instantes.</div>
+                                        <div class="gsm-reply-text muted">Seu pedido está em processamento. A resposta aparecerá aqui em instantes.</div>
                                         {% elif order.service_status == 'Rejected' %}
-                                        <div class="gsm-reply-text" style="color:#6b7280">Pedido não concluído. O valor foi estornado ao seu saldo.</div>
+                                        <div class="gsm-reply-text muted">Pedido não concluído. O valor foi estornado ao seu saldo.</div>
                                         {% else %}
-                                        <div class="gsm-reply-text" style="color:#6b7280">Aguardando confirmação do pagamento.</div>
+                                        <div class="gsm-reply-text muted">Aguardando confirmação do pagamento.</div>
                                         {% endif %}
                                     </div>
 
                                     {% if order.service_input1 %}
                                     <div class="gsm-card gray">
                                         <div class="gsm-lbl">Entrada</div>
-                                        <div class="gsm-reply-text" style="font-family:inherit">{{ order.service_input1 }}</div>
+                                        <div class="gsm-reply-text muted">{{ order.service_input1 }}</div>
                                     </div>
                                     {% endif %}
                                 </div>
