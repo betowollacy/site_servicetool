@@ -3,6 +3,11 @@
 <div class="row mb-3">
     <div class="col-12"><h4 class="mb-0">Faturas</h4></div>
 </div>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
 <div class="card">
     <div class="card-body table-responsive">
         <table class="table table-hover dataTable">
@@ -15,6 +20,7 @@
                     <th>Gateway</th>
                     <th>Status</th>
                     <th>Data</th>
+                    <th>Ação</th>
                 </tr>
             </thead>
             <tbody>
@@ -27,9 +33,25 @@
                     <td>{{ inv.payment_gateway|default:"-" }}</td>
                     <td><span class="badge {% if inv.invoice_status == 'Paid' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ inv.invoice_status }}</span></td>
                     <td>{{ inv.created_at|date:"d M, Y H:i" }}</td>
+                    <td>
+                        <div class="d-flex flex-wrap gap-2">
+                            <form method="post" action="{% url 'admin_invoice_toggle_paid' inv.id %}" onsubmit="return confirm('Alterar o status da fatura #{{ inv.id }}? Esta ação apenas muda o status, não credita saldo ao cliente.')">
+                                {% csrf_token %}
+                                {% if inv.invoice_status == 'Paid' %}
+                                <button class="btn btn-sm btn-light-warning" title="Marcar como não paga"><i class="ti ti-circle-x"></i> Não Paga</button>
+                                {% else %}
+                                <button class="btn btn-sm btn-light-success" title="Marcar como paga"><i class="ti ti-circle-check"></i> Paga</button>
+                                {% endif %}
+                            </form>
+                            <form method="post" action="{% url 'admin_invoice_delete' inv.id %}" onsubmit="return confirm('Excluir a fatura #{{ inv.id }}? Esta ação não pode ser desfeita.')">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-light-danger"><i class="ti ti-trash"></i> Deletar</button>
+                            </form>
+                        </div>
+                    </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" class="text-center">Nenhuma fatura.</td></tr>
+                <tr><td colspan="8" class="text-center">Nenhuma fatura.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

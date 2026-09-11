@@ -130,6 +130,27 @@ def admin_invoice_list(request):
 
 
 @_staff
+def admin_invoice_delete(request, invoice_id):
+    inv = Invoice.objects.filter(id=invoice_id).first()
+    if inv and request.method == 'POST':
+        iid = inv.id
+        inv.delete()
+        messages.success(request, 'Fatura #{} excluída com sucesso.'.format(iid))
+    return redirect('admin_invoice_list')
+
+
+@_staff
+def admin_invoice_toggle_paid(request, invoice_id):
+    inv = Invoice.objects.filter(id=invoice_id).first()
+    if inv and request.method == 'POST':
+        inv.invoice_status = 'Unpaid' if inv.invoice_status == 'Paid' else 'Paid'
+        inv.total_paid = inv.invoice_amount if inv.invoice_status == 'Paid' else Decimal('0')
+        inv.save(update_fields=['invoice_status', 'total_paid'])
+        messages.success(request, 'Fatura #{} marcada como {}.'.format(inv.id, inv.invoice_status))
+    return redirect('admin_invoice_list')
+
+
+@_staff
 def admin_customer_list(request):
     return render(request, 'admin/customer_list.html', {'customers': Customer.objects.all()})
 
