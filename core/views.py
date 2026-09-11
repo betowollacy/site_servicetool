@@ -99,10 +99,15 @@ def homepage(request):
     hot_services = _active_services().filter(recommended=1).order_by('-sells')
     trending_services = _active_services().order_by('-sells')
     recent_services = _active_services().order_by('-created_at')
+    carousel = list(_active_services().filter(home_carousel=True).order_by('-sells'))
+    carousel_groups = [carousel[i:i + 3] for i in range(0, len(carousel), 3)]
     ctx = {
         'hot_services': [_service_dict(s) for s in hot_services],
         'trending_services': [_service_dict(s) for s in trending_services],
         'recent_services': [_service_dict(s) for s in recent_services],
+        'recent_top': [_service_dict(s) for s in recent_services[:4]],
+        'carousel_groups': [[_service_dict(s) for s in group] for group in carousel_groups],
+        'has_carousel': bool(carousel),
         'total_services': ServiceList.objects.filter(status='Active').count(),
         'total_customers': Customer.objects.count(),
     }

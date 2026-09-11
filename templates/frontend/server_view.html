@@ -34,7 +34,7 @@
                     <div class="d-flex gap-2 border-top border-bottom px-4">
                         <div class="stat-cell">
                             <div class="stat-lbl">Preço</div>
-                            <div class="stat-val text-primary">R$ {{ Price|floatformat:2 }}</div>
+                            <div class="stat-val text-primary">{% if customer %}R$ {{ Price|floatformat:2 }}{% else %}Consultar valor{% endif %}</div>
                         </div>
                         <div class="stat-cell">
                             <div class="stat-lbl">Entrega</div>
@@ -147,7 +147,7 @@
                                     <div>
                                         <p class="text-muted mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
                                         <div>
-                                            <span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span>
+                                            {% if customer %}<span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span>{% else %}<span class="badge bg-light-secondary text-uppercase" style="font-size:11px">Consultar valor</span>{% endif %}
                                             <span class="badge bg-light-warning text-uppercase" style="font-size:11px">{{ s.delivery_time }}</span>
                                         </div>
                                     </div>
