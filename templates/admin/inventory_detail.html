@@ -57,7 +57,7 @@
                 <form method="post" action="{% url 'admin_inventory_add' inventory.id %}">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label class="form-label">Uma credencial por linha: <code>usuario;senha</code> <code>usuario|senha</code> ou <code>usuario:senha</code></label>
+                        <label class="form-label">Uma credencial por linha: <code>usuario;senha</code> <code>usuario|senha</code> <code>usuario:senha</code> ou <code>login</code> numa linha e <code>senha</code> na linha de baixo</label>
                         <textarea name="codes" class="form-control" rows="6" placeholder="tool@amg.com;senha123&#10;tool2@amg.com|outrasenha&#10;usuario3:senha3"></textarea>
                     </div>
                     <button type="submit" class="btn btn-success btn-sm"><i class="ti ti-plus me-1"></i> Adicionar ao estoque</button>

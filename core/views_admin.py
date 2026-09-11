@@ -433,32 +433,57 @@ def admin_service_delete(request, svtype, service_id):
 # Inventário de logins/senhas (entrega manual quando a API está desligada)
 # --------------------------------------------------------------------------- #
 
+def _inline_credential(line):
+    """Tenta interpretar a linha como 'usuario;senha', 'usuario|senha',
+    'usuario:senha' ou 'usuario<TAB>senha'. Retorna (user, passwd) ou None
+    se a linha não tem separador (é apenas um valor solto)."""
+    user = passwd = None
+    for sep in (';', '|', '\t'):
+        if sep in line:
+            user, passwd = line.split(sep, 1)
+            break
+    if user is None and line.count(':') == 1 and '://' not in line:
+        user, passwd = line.split(':', 1)
+    if user is None:
+        return None
+    user, passwd = user.strip(), passwd.strip()
+    if not user and not passwd:
+        return None
+    return user, passwd
+
+
 def _parse_credentials(text):
     """Converte a lista de credenciais em linhas prontas para o estoque.
 
-    Cada linha: "usuario;senha", "usuario|senha" ou "usuario:senha".
+    Aceita uma credencial por linha ("usuario;senha", "usuario|senha",
+    "usuario:senha") OU o login numa linha e a senha na linha seguinte:
+      tool@amg.com
+      senha123
     """
     creds = []
+    pending = None
     for line in (text or '').splitlines():
         line = line.strip()
         if not line:
             continue
-        for sep in (';', '|'):
-            if sep in line:
-                user, passwd = line.split(sep, 1)
-                break
-        else:
-            if line.count(':') == 1 and '://' not in line:
-                user, passwd = line.split(':', 1)
+        pair = _inline_credential(line)
+        if pair is not None:
+            if pending is not None:
+                creds.append(pending)
+                pending = None
+            user, passwd = pair
+            if user and passwd:
+                creds.append('Usuario: {} | Senha: {}'.format(user, passwd))
             else:
-                user, passwd = line, ''
-        user, passwd = user.strip(), passwd.strip()
-        if not user and not passwd:
+                creds.append(user or passwd)
             continue
-        if user and passwd:
-            creds.append('Usuario: {} | Senha: {}'.format(user, passwd))
+        if pending is None:
+            pending = line
         else:
-            creds.append(user or passwd)
+            creds.append('Usuario: {} | Senha: {}'.format(pending, line))
+            pending = None
+    if pending is not None:
+        creds.append(pending)
     return creds
 
 

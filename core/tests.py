@@ -734,6 +734,25 @@ class InventoryDeliveryTests(TestCase):
         inv.refresh_from_db()
         self.assertEqual(inv.availableCount, 2)
 
+    def test_quick_add_groups_login_and_password_on_separate_lines(self):
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',
+            original_price=Decimal('20.00'), status='Active', slug='amt-duaslinhas',
+        )
+        resp = self.client.post(reverse('admin_inventory_quick_add'), {
+            'service_id': self.service.id,
+            'codes': 'tool@amg.com\nsenha123\ntool2@amg.com\noutrasenha',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.service.refresh_from_db()
+        inv = self.service.inventory
+        codes = list(InventoryData.objects.filter(inventory=inv).values_list('code', flat=True))
+        self.assertEqual(len(codes), 2)
+        self.assertIn('Usuario: tool@amg.com | Senha: senha123', codes)
+        self.assertIn('Usuario: tool2@amg.com | Senha: outrasenha', codes)
+        inv.refresh_from_db()
+        self.assertEqual(inv.availableCount, 2)
+
     def test_quick_add_requires_service(self):
         resp = self.client.post(reverse('admin_inventory_quick_add'), {
             'service_id': '',
