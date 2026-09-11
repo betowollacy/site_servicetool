@@ -38,8 +38,10 @@
             </div>
         </div>
 
+        {% include 'frontend/include/product_carousel.html' with carousel_id='promoCarousel' carousel_title='Promoções do Dia' groups=promo_groups %}
+
         {% if recent_top %}
-        <div class="card rounded-0">
+        <div class="card rounded-0 mt-4">
             <div class="card-header border-bottom-0 pt-4 pb-2">
                 <h5 class="text-primary text-uppercase fs-5 border-start border-primary border-5 ps-2">Adicionados Recentemente</h5>
             </div>
@@ -64,49 +66,7 @@
         </div>
         {% endif %}
 
-        {% if has_carousel %}
-        <div class="card rounded-0 mt-4">
-            <div class="card-header border-bottom-0 pt-4 pb-2">
-                <h5 class="text-primary text-uppercase fs-5 border-start border-primary border-5 ps-2">Métodos de Desbloqueio</h5>
-            </div>
-            <div class="card-body pt-3">
-                <div id="unlockMethodsCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000">
-                    <div class="carousel-inner">
-                        {% for group in carousel_groups %}
-                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <div class="row">
-                                {% for s in group %}
-                                <div class="col-md-4 col-6 mb-2">
-                                    <a href="{% url 'service_view' s.slug %}" class="d-flex gap-3 p-2 border rounded h-100 align-items-center">
-                                        <img src="{{ s.thumbnail }}" alt="{{ s.title }}" width="150" height="100" class="rounded border" style="object-fit:cover;min-width:150px;min-height:100px;">
-                                        <div class="overflow-hidden">
-                                            <p class="text-muted mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
-                                            <div>
-                                                {% if customer %}<span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span>{% else %}<span class="badge bg-light-secondary text-uppercase" style="font-size:11px">Consultar valor</span>{% endif %}
-                                                <span class="badge bg-light-warning text-uppercase" style="font-size:11px">{{ s.delivery_time }}</span>
-                                            </div>
-                                        </div>
-                                    </a>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% if carousel_groups|length > 1 %}
-                    <button class="carousel-control-prev" type="button" data-bs-target="#unlockMethodsCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon bg-primary rounded-circle" aria-hidden="true"></span>
-                        <span class="visually-hidden">Anterior</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#unlockMethodsCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon bg-primary rounded-circle" aria-hidden="true"></span>
-                        <span class="visually-hidden">Próximo</span>
-                    </button>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
+        {% include 'frontend/include/product_carousel.html' with carousel_id='unlockCarousel' carousel_title='Métodos de Desbloqueio' groups=unlock_groups %}
 
         {% if customer %}
         <div class="card rounded-0 mt-4">

@@ -95,19 +95,22 @@ def _base_ctx(request):
     }
 
 
+def _carousel_groups(qs):
+    items = list(qs)
+    return [[_service_dict(s) for s in items[i:i + 3]] for i in range(0, len(items), 3)]
+
+
 def homepage(request):
     hot_services = _active_services().filter(recommended=1).order_by('-sells')
     trending_services = _active_services().order_by('-sells')
     recent_services = _active_services().order_by('-created_at')
-    carousel = list(_active_services().filter(home_carousel=True).order_by('-sells'))
-    carousel_groups = [carousel[i:i + 3] for i in range(0, len(carousel), 3)]
     ctx = {
         'hot_services': [_service_dict(s) for s in hot_services],
         'trending_services': [_service_dict(s) for s in trending_services],
         'recent_services': [_service_dict(s) for s in recent_services],
         'recent_top': [_service_dict(s) for s in recent_services[:12]],
-        'carousel_groups': [[_service_dict(s) for s in group] for group in carousel_groups],
-        'has_carousel': bool(carousel),
+        'promo_groups': _carousel_groups(_active_services().filter(carousel='promocoes').order_by('-sells')),
+        'unlock_groups': _carousel_groups(_active_services().filter(carousel='desbloqueios').order_by('-sells')),
         'total_services': ServiceList.objects.filter(status='Active').count(),
         'total_customers': Customer.objects.count(),
     }

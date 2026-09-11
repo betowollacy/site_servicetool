@@ -160,7 +160,11 @@ class ServiceList(models.Model):
     process_type = models.CharField(max_length=20, choices=PROCESS_TYPES, default='Manual')
     api = models.ForeignKey('Api', on_delete=models.SET_NULL, null=True, blank=True, related_name='services')
     referenceid = models.CharField(max_length=255, blank=True, null=True)
-    home_carousel = models.BooleanField(default=False)
+    CAROUSEL_CHOICES = [
+        ('promocoes', 'Promoções do Dia'),
+        ('desbloqueios', 'Métodos de Desbloqueio'),
+    ]
+    carousel = models.CharField(max_length=20, choices=CAROUSEL_CHOICES, blank=True, default='')
     sells = models.IntegerField(default=0)
     views = models.IntegerField(default=0)
     recommended = models.IntegerField(default=0)

@@ -238,7 +238,10 @@ def _apply_service_post(service, post):
             setattr(service, f, val)
     if post.get('status'):
         service.status = post['status']
-    service.home_carousel = bool(post.get('home_carousel'))
+    if post.get('carousel') in ('promocoes', 'desbloqueios'):
+        service.carousel = post['carousel']
+    else:
+        service.carousel = ''
     if post.get('process_type'):
         service.process_type = post['process_type']
     if post.get('price_type'):

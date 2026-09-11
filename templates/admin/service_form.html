@@ -45,11 +45,13 @@
                             </select>
                         </div>
                         <div class="col-12 mb-3"><label class="form-label">Artigo</label><textarea class="form-control" name="article" rows="6">{{ service.article|default:'' }}</textarea></div>
-                        <div class="col-12 mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="home_carousel" id="homeCarousel" value="1" {% if service.home_carousel %}checked{% endif %}>
-                                <label class="form-check-label" for="homeCarousel">Mostrar no carrossel "Métodos de Desbloqueio" da página inicial</label>
-                            </div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Carrossel da Página Inicial</label>
+                            <select class="form-select" name="carousel">
+                                <option value="" {% if not service.carousel %}selected{% endif %}>Nenhum</option>
+                                <option value="promocoes" {% if service.carousel == 'promocoes' %}selected{% endif %}>Promoções do Dia (topo da home)</option>
+                                <option value="desbloqueios" {% if service.carousel == 'desbloqueios' %}selected{% endif %}>Métodos de Desbloqueio</option>
+                            </select>
+                            <small class="text-muted">Escolha em qual carrossel este produto aparecerá.</small>
                         </div>
                     </div>
                 </div>
