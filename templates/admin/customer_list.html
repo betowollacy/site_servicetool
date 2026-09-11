@@ -37,6 +37,8 @@
                     </td>
                     <td>
                         <div class="d-flex flex-column gap-2">
+                            <button class="btn btn-xs btn-outline-primary rounded-2" data-bs-toggle="collapse" data-bs-target="#edit-customer-{{ c.id }}">Editar</button>
+                            <button class="btn btn-xs btn-outline-secondary rounded-2" data-bs-toggle="collapse" data-bs-target="#pass-customer-{{ c.id }}">Senha</button>
                             <form method="post" action="{% url 'admin_customer_api_toggle' c.id %}">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-xs btn-outline-{% if c.api_allow == 'on' %}danger{% else %}success{% endif %} rounded-2">{% if c.api_allow == 'on' %}Desativar{% else %}Ativar API{% endif %}</button>
@@ -51,6 +53,44 @@
                                 <button type="submit" class="btn btn-sm btn-light-danger"><i class="ti ti-trash"></i> Deletar</button>
                             </form>
                         </div>
+                    </td>
+                </tr>
+                <tr class="collapse" id="edit-customer-{{ c.id }}">
+                    <td colspan="10" class="bg-light">
+                        <form method="post" action="{% url 'admin_customer_edit' c.id %}" class="row g-2 py-2">
+                            {% csrf_token %}
+                            <div class="col-md-3"><label class="form-label mb-1">Nome</label><input type="text" name="name" class="form-control form-control-sm" value="{{ c.name }}" required></div>
+                            <div class="col-md-3"><label class="form-label mb-1">E-mail</label><input type="email" name="email" class="form-control form-control-sm" value="{{ c.email }}" required></div>
+                            <div class="col-md-2"><label class="form-label mb-1">Celular</label><input type="text" name="mobile" class="form-control form-control-sm" value="{{ c.mobile|default:'' }}"></div>
+                            <div class="col-md-2"><label class="form-label mb-1">CPF/CNPJ</label><input type="text" name="cpf_cnpj" class="form-control form-control-sm" value="{{ c.cpf_cnpj|default:'' }}"></div>
+                            <div class="col-md-1"><label class="form-label mb-1">Papel</label>
+                                <select name="role" class="form-select form-select-sm">
+                                    {% for r in roles %}
+                                    <option value="{{ r.0 }}" {% if c.role == r.0 %}selected{% endif %}>{{ r.0 }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-1"><label class="form-label mb-1">Status</label>
+                                <select name="status" class="form-select form-select-sm">
+                                    {% for s in statuses %}
+                                    <option value="{{ s.0 }}" {% if c.status == s.0 %}selected{% endif %}>{{ s.0 }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-12"><button class="btn btn-sm btn-primary">Salvar Cadastro</button></div>
+                        </form>
+                    </td>
+                </tr>
+                <tr class="collapse" id="pass-customer-{{ c.id }}">
+                    <td colspan="10" class="bg-light">
+                        <form method="post" action="{% url 'admin_customer_password' c.id %}" class="d-flex flex-wrap gap-2 align-items-end py-2" onsubmit="return confirm('Trocar a senha de {{ c.email }}?')">
+                            {% csrf_token %}
+                            <div>
+                                <label class="form-label mb-1">Nova senha para {{ c.email }}</label>
+                                <input type="text" name="new_password" class="form-control form-control-sm" style="min-width:220px" placeholder="Mínimo 6 caracteres" required>
+                            </div>
+                            <button class="btn btn-sm btn-primary">Trocar Senha</button>
+                        </form>
                     </td>
                 </tr>
                 {% empty %}

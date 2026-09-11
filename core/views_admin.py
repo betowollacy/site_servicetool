@@ -153,7 +153,50 @@ def admin_invoice_toggle_paid(request, invoice_id):
 
 @_staff
 def admin_customer_list(request):
-    return render(request, 'admin/customer_list.html', {'customers': Customer.objects.all()})
+    return render(request, 'admin/customer_list.html', {
+        'customers': Customer.objects.all(),
+        'roles': Customer.ROLES,
+        'statuses': Customer.STATUS,
+    })
+
+
+@_staff
+def admin_customer_edit(request, customer_id):
+    customer = Customer.objects.filter(id=customer_id).first()
+    if customer and request.method == 'POST':
+        post = request.POST
+        name = (post.get('name') or '').strip()
+        email = (post.get('email') or '').strip().lower()
+        if name:
+            customer.name = name
+        if email and email != customer.email:
+            if Customer.objects.filter(email=email).exclude(id=customer.id).exists():
+                messages.error(request, 'O e-mail {} já está em uso por outro cliente.'.format(email))
+                return redirect('admin_customer_list')
+            customer.email = email
+        customer.mobile = (post.get('mobile') or '').strip() or None
+        customer.cpf_cnpj = (post.get('cpf_cnpj') or '').strip() or None
+        if post.get('role') in dict(Customer.ROLES):
+            customer.role = post['role']
+        if post.get('status') in dict(Customer.STATUS):
+            customer.status = post['status']
+        customer.save()
+        messages.success(request, 'Cadastro de "{}" atualizado com sucesso.'.format(customer.name))
+    return redirect('admin_customer_list')
+
+
+@_staff
+def admin_customer_password(request, customer_id):
+    customer = Customer.objects.filter(id=customer_id).first()
+    if customer and request.method == 'POST':
+        new_password = (request.POST.get('new_password') or '').strip()
+        if len(new_password) < 6:
+            messages.error(request, 'A nova senha deve ter pelo menos 6 caracteres.')
+        else:
+            customer.password = Customer.make_password(new_password)
+            customer.save(update_fields=['password'])
+            messages.success(request, 'Senha de {} alterada com sucesso.'.format(customer.email))
+    return redirect('admin_customer_list')
 
 
 @_staff
