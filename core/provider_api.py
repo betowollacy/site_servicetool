@@ -197,7 +197,12 @@ def submit_local_order(order):
         return False, 'Provedor nao retornou numero do pedido.'
     order.trx_id = str(ref)
     order.process_type = 'Auto'
-    order.save(update_fields=['trx_id', 'process_type'])
+    code = (row.get('CODE', '') or '').strip()
+    updates = ['trx_id', 'process_type']
+    if code:
+        order.service_comments = code
+        updates.append('service_comments')
+    order.save(update_fields=updates)
     return True, str(ref)
 
 

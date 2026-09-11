@@ -46,8 +46,8 @@
                         <td>{{ order.service_qnt|default:"-" }}</td>
                         <td>R$ {{ order.service_price|floatformat:2 }}</td>
                         <td>{{ order.payment_methode|default:"-" }}</td>
-                        <td><span class="badge bg-light-primary">{{ order.service_status }}</span></td>
-                        <td>{{ order.replied_in|default:"-" }}</td>
+                        <td><span class="badge {% if order.service_status == 'Success' %}bg-light-success{% elif order.service_status == 'Rejected' %}bg-light-danger{% else %}bg-light-warning{% endif %}">{{ order.service_status }}</span></td>
+                        <td>{% if order.service_status == 'Success' %}{{ order.replied_in|default:order.service_comments|default:"-" }}{% else %}-{% endif %}</td>
                     </tr>
                     {% empty %}
                     <tr><td colspan="9" class="text-center">Nenhum pedido encontrado.</td></tr>
