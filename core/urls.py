@@ -1,7 +1,6 @@
 from django.urls import path
 
-from . import views
-from . import views_admin
+from . import public_api, views, views_admin
 
 urlpatterns = [
     path('admin-panel/', views_admin.admin_dashboard, name='admin_dashboard'),
@@ -9,6 +8,7 @@ urlpatterns = [
     path('admin-panel/orders/<int:order_id>/update/', views_admin.admin_order_update, name='admin_order_update'),
     path('admin-panel/invoices/', views_admin.admin_invoice_list, name='admin_invoice_list'),
     path('admin-panel/customers/', views_admin.admin_customer_list, name='admin_customer_list'),
+    path('admin-panel/customers/<int:customer_id>/api-toggle/', views_admin.admin_customer_api_toggle, name='admin_customer_api_toggle'),
     path('admin-panel/services/<str:svtype>/', views_admin.admin_service_list, name='admin_service_list'),
     path('admin-panel/services/<str:svtype>/new/', views_admin.admin_service_new, name='admin_service_new'),
     path('admin-panel/services/<str:svtype>/<int:service_id>/edit/', views_admin.admin_service_edit, name='admin_service_edit'),
@@ -32,6 +32,8 @@ urlpatterns = [
     path('admin-panel/pages/<int:page_id>/delete/', views_admin.admin_page_delete, name='admin_page_delete'),
 
     path('', views.homepage, name='homepage'),
+    path('public/api/index.php', public_api.public_api, name='public_api'),
+    path('public/api/', public_api.public_api, name='public_api_index'),
     path('category/<slug:slug>/', views.category, name='category'),
     path('change-theme-mode/', views.change_theme_mode, name='change_theme_mode'),
     path('service/<slug:slug>/', views.server_view, name='service_view'),

@@ -16,6 +16,8 @@
                     <th>Saldo</th>
                     <th>Papel</th>
                     <th>Status</th>
+                    <th>API</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -29,9 +31,19 @@
                     <td>R$ {{ c.balance|floatformat:2 }}</td>
                     <td>{{ c.role }}</td>
                     <td><span class="badge {% if c.status == 'Active' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ c.status }}</span></td>
+                    <td>
+                        <span class="badge {% if c.api_allow == 'on' %}bg-light-success{% else %}bg-light-secondary{% endif %}">{{ c.api_allow|default:"off" }}</span>
+                        <div class="small font-monospace text-truncate" style="max-width:140px" title="{% if c.api_key %}{{ c.api_key }}{% else %}sem chave{% endif %}">{% if c.api_key %}{{ c.api_key }}{% else %}-{% endif %}</div>
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'admin_customer_api_toggle' c.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-xs btn-outline-{% if c.api_allow == 'on' %}danger{% else %}success{% endif %} rounded-2">{% if c.api_allow == 'on' %}Desativar{% else %}Ativar API{% endif %}</button>
+                        </form>
+                    </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center">Nenhum cliente.</td></tr>
+                <tr><td colspan="10" class="text-center">Nenhum cliente.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

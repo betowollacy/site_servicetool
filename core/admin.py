@@ -10,9 +10,12 @@ from .models import (
 
 
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'email', 'mobile', 'role', 'balance', 'currency', 'status', 'created_at')
+    list_display = ('id', 'name', 'email', 'mobile', 'role', 'balance', 'currency', 'api_allow', 'status', 'created_at')
     search_fields = ('name', 'email', 'mobile')
-    list_filter = ('role', 'status')
+    list_filter = ('role', 'status', 'api_allow')
+    fields = ('name', 'email', 'mobile', 'cpf_cnpj', 'password', 'role', 'balance', 'currency',
+              'api_allow', 'api_key', 'api_ip', 'status', 'created_at', 'updated_at')
+    readonly_fields = ('created_at', 'updated_at')
 
 
 class ServiceListAdmin(admin.ModelAdmin):

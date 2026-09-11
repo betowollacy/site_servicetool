@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from . import asaas, binance
+from . import asaas, binance, public_api
 from .models import (
     Api, ApiLog, Currency, Customer, CustomerOrder, GatewayLog, Invoice,
     OrderInput, Page, PaymentDeposit, PaymentGateway, ServiceGroup, ServiceInput,
@@ -381,8 +381,25 @@ def customer_profile(request, customer):
             customer.password = Customer.make_password(new_pass)
             customer.save(update_fields=['password'])
             messages.success(request, 'Senha alterada com sucesso.')
+        elif action == 'generate_api_key':
+            customer.api_key = public_api.generate_api_key()
+            customer.api_allow = 'on'
+            customer.api_ip = request.POST.get('api_ip', '').strip() or None
+            customer.save(update_fields=['api_key', 'api_allow', 'api_ip'])
+            messages.success(request, 'Chave de API gerada com sucesso.')
+        elif action == 'disable_api':
+            customer.api_allow = ''
+            customer.save(update_fields=['api_allow'])
+            messages.success(request, 'Acesso à API desabilitado.')
+        elif action == 'enable_api':
+            if not customer.api_key:
+                customer.api_key = public_api.generate_api_key()
+            customer.api_allow = 'on'
+            customer.api_ip = request.POST.get('api_ip', '').strip() or None
+            customer.save(update_fields=['api_key', 'api_allow', 'api_ip'])
+            messages.success(request, 'Acesso à API habilitado.')
         return redirect('customer_profile')
-    ctx = {}
+    ctx = {'api_url': request.build_absolute_uri(reverse('public_api'))}
     ctx.update(_base_ctx(request))
     return render(request, 'customer/profile.html', ctx)
 

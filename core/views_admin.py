@@ -16,6 +16,7 @@ from .models import (
     Currency, Customer, CustomerOrder, Invoice, Page, PaymentGateway, ServiceGroup,
     ServiceInput, ServiceList, Slider, SystemSetting,
 )
+from . import public_api
 
 STATUS_MAP = {
     'waiting': ('Waiting Action', 'Aguardando Ação'),
@@ -82,6 +83,23 @@ def admin_invoice_list(request):
 @_staff
 def admin_customer_list(request):
     return render(request, 'admin/customer_list.html', {'customers': Customer.objects.all()})
+
+
+@_staff
+def admin_customer_api_toggle(request, customer_id):
+    customer = Customer.objects.filter(id=customer_id).first()
+    if customer and request.method == 'POST':
+        if str(customer.api_allow or '').strip().lower() in ('on', '1', 'true', 'yes'):
+            customer.api_allow = ''
+            status = 'desabilitado'
+        else:
+            if not customer.api_key:
+                customer.api_key = public_api.generate_api_key()
+            customer.api_allow = 'on'
+            status = 'habilitado'
+        customer.save(update_fields=['api_allow', 'api_key'])
+        messages.success(request, f'Acesso à API de {customer.email} {status} com sucesso.')
+    return redirect('admin_customer_list')
 
 
 @_staff

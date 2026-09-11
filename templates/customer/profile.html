@@ -93,6 +93,60 @@
                     </ul>
                 </div>
             </div>
+
+            <div class="card mt-4">
+                <div class="card-header"><h6 class="mb-0"><i class="bi bi-key"></i> Acesso via API</h6></div>
+                <div class="card-body">
+                    {% if customer.api_allow == 'on' %}
+                    {% if customer.api_key %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Username</label>
+                        <input type="text" class="form-control font-monospace" value="{{ customer.email }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Chave de API (apiaccesskey)</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace" id="apiKeyField" value="{{ customer.api_key }}" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('apiKeyField').value)">Copiar</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">IP permitido (opcional)</label>
+                        <input type="text" class="form-control font-monospace" value="{{ customer.api_ip|default:'' }}" readonly>
+                        <div class="form-text">Vazio = qualquer IP. Você ou o administrador pode restringir.</div>
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Endpoint da API</label>
+                        <input type="text" class="form-control font-monospace" value="{{ api_url }}" readonly>
+                        <div class="form-text">Use o action <code>accountinfo</code>, <code>imeiservicelist</code>, <code>placeimeiorder</code>, <code>placebulkorder</code>, <code>getimeiorder</code>, <code>getimeiorderbulk</code>.</div>
+                    </div>
+                    <div class="d-grid gap-2 d-sm-flex">
+                        <form method="post" action="{% url 'customer_profile' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="generate_api_key">
+                            <button type="submit" class="btn btn-primary rounded-2">Regenerar Chave</button>
+                        </form>
+                        <form method="post" action="{% url 'customer_profile' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="disable_api">
+                            <button type="submit" class="btn btn-outline-danger rounded-2">Desabilitar API</button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <p class="text-body-secondary">A API está desabilitada para sua conta. Habilite para usar bot/ferramentas de automação.</p>
+                    <form method="post" action="{% url 'customer_profile' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="enable_api">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">IP permitido (opcional)</label>
+                            <input type="text" name="api_ip" class="form-control font-monospace" placeholder="Ex.: 200.100.50.25 ou em branco para qualquer IP">
+                        </div>
+                        <button type="submit" class="btn btn-success rounded-2">Habilitar API</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
