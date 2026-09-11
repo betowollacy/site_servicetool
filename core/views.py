@@ -493,6 +493,26 @@ def customer_deposit(request, customer):
     return redirect('customer_add_balance')
 
 
+def _debit_and_forward_order(order, customer):
+    """Debita o saldo do cliente e envia o pedido ao provedor.
+
+    Se o envio falhar, estorna o valor e marca o pedido como Rejected."""
+    price = order.service_price
+    if customer.balance < price:
+        return
+    customer.balance = customer.balance - price
+    customer.save(update_fields=['balance'])
+    order.service_status = 'In Process'
+    order.save(update_fields=['service_status'])
+    Statement.objects.create(
+        customer=customer, description=f"Order #{order.id} - {order.service_title}",
+        type='Debit', amount=price, balance=customer.balance, order=order,
+    )
+    forwarded, msg = provider_api.submit_local_order(order)
+    if forwarded is False:
+        provider_api.refund_order(order, msg or 'Falha ao enviar para o provedor.')
+
+
 @_require_customer
 def submit_order(request, customer):
     if request.method != 'POST':
@@ -528,17 +548,7 @@ def submit_order(request, customer):
 
     price = service.original_price
     if customer.balance >= price:
-        customer.balance = customer.balance - price
-        customer.save(update_fields=['balance'])
-        order.service_status = 'In Process'
-        order.save(update_fields=['service_status'])
-        Statement.objects.create(
-            customer=customer, description=f"Order #{order.id} - {service.title}",
-            type='Debit', amount=price, balance=customer.balance, order=order,
-        )
-        forwarded, msg = provider_api.submit_local_order(order)
-        if forwarded is False:
-            provider_api.refund_order(order, msg or 'Falha ao enviar para o provedor.')
+        _debit_and_forward_order(order, customer)
         messages.success(request, 'Pedido realizado com sucesso.')
         return redirect('customer_order_history')
     else:
@@ -552,6 +562,7 @@ def submit_order(request, customer):
             invoice_status='Unpaid',
             customer_mobile=customer.mobile,
             customer_email=customer.email,
+            order=order,
         )
         return redirect('checkout', invoice_id=invoice.id)
 
@@ -700,6 +711,8 @@ def _mark_paid(deposit, payload=None):
         invoice_status='Paid',
         create_payment=json.dumps(payload, ensure_ascii=False)[:4000] if payload else '',
     )
+    if invoice.invoice_for == 'Order' and invoice.order_id and customer:
+        _debit_and_forward_order(invoice.order, customer)
 
 
 @_require_customer

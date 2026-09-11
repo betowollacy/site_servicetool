@@ -23,5 +23,6 @@ jobs:
             venv/bin/python manage.py collectstatic --noinput
             systemctl restart servicetool
             systemctl restart nginx
+            ( crontab -l 2>/dev/null | grep -v check_provider_orders ; echo "*/5 * * * * cd /opt/site_servicetool && venv/bin/python manage.py check_provider_orders >> /opt/site_servicetool/cron_provider.log 2>&1" ) | crontab -
             echo "=== DEPLOY OK ==="
             git log --oneline -1

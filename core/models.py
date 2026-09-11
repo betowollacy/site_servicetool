@@ -330,6 +330,7 @@ class Invoice(models.Model):
     payment_currency = models.CharField(max_length=10, blank=True, null=True)
     invoice_status = models.CharField(max_length=20, choices=STATUS, default='Unpaid')
     invoice_title = models.CharField(max_length=255, blank=True, null=True)
+    order = models.ForeignKey('CustomerOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     customer_mobile = models.CharField(max_length=30, blank=True, null=True)
     customer_email = models.EmailField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
