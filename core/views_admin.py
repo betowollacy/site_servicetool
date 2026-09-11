@@ -472,6 +472,46 @@ def _refresh_inventory_counts(inventory):
 
 
 @_staff
+def admin_inventory_quick_add(request):
+    """Formulario único: escolher o serviço e colar os logins/senhas.
+
+    Cria o estoque do serviço automaticamente se ainda não existir e adiciona
+    as credenciais. Elimina a necessidade de criar estoque e vincular depois."""
+    if request.method == 'POST':
+        service_id = request.POST.get('service_id')
+        service = ServiceList.objects.filter(id=service_id).first() if service_id else None
+        if not service:
+            messages.error(request, 'Selecione um serviço para receber os logins.')
+            return redirect('admin_inventory_list')
+        inv = service.inventory
+        if inv is None:
+            inv = Inventory.objects.create(name=service.title)
+            service.inventory = inv
+            service.save(update_fields=['inventory'])
+        creds = _parse_credentials(request.POST.get('codes', ''))
+        existing = {c.lower() for c in InventoryData.objects.filter(inventory=inv).values_list('code', flat=True)}
+        added = 0
+        skipped = 0
+        for cred in creds:
+            if cred.lower() in existing:
+                skipped += 1
+                continue
+            InventoryData.objects.create(inventory=inv, code=cred, status='Available')
+            existing.add(cred.lower())
+            added += 1
+        _refresh_inventory_counts(inv)
+        msg = '{} credencial(is) adicionada(s) ao estoque de "{}".'.format(added, service.title)
+        if skipped:
+            msg += ' {} já existia(m) e foi(ram) ignorada(s).'.format(skipped)
+        if added:
+            messages.success(request, msg)
+        else:
+            messages.error(request, msg if skipped else 'Nenhuma credencial válida informada.')
+        return redirect('admin_inventory_detail', inv.id)
+    return redirect('admin_inventory_list')
+
+
+@_staff
 def admin_inventory_list(request):
     _inventories = []
     for inv in Inventory.objects.all().order_by('name'):

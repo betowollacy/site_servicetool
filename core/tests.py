@@ -716,6 +716,32 @@ class InventoryDeliveryTests(TestCase):
         self.assertEqual(order.service_status, 'Success')
         self.assertIn('cron123', order.replied_in)
 
+    def test_quick_add_creates_service_inventory_and_saves_logins(self):
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',
+            original_price=Decimal('20.00'), status='Active', slug='amt-quick',
+        )
+        self.assertIsNone(self.service.inventory)
+        resp = self.client.post(reverse('admin_inventory_quick_add'), {
+            'service_id': self.service.id,
+            'codes': 'login1;senha1\nlogin2:senha2\nlogin1;senha1',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.service.refresh_from_db()
+        inv = self.service.inventory
+        self.assertIsNotNone(inv)
+        self.assertEqual(InventoryData.objects.filter(inventory=inv).count(), 2)
+        inv.refresh_from_db()
+        self.assertEqual(inv.availableCount, 2)
+
+    def test_quick_add_requires_service(self):
+        resp = self.client.post(reverse('admin_inventory_quick_add'), {
+            'service_id': '',
+            'codes': 'login1;senha1',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(Inventory.objects.count(), 0)
+
     def test_toggle_returns_credential_to_available(self):
         self.service = ServiceList.objects.create(
             service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',

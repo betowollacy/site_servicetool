@@ -18,6 +18,7 @@ urlpatterns = [
     path('admin-panel/customers/<int:customer_id>/password/', views_admin.admin_customer_password, name='admin_customer_password'),
     path('admin-panel/customers/<int:customer_id>/delete/', views_admin.admin_customer_delete, name='admin_customer_delete'),
     path('admin-panel/inventory/', views_admin.admin_inventory_list, name='admin_inventory_list'),
+    path('admin-panel/inventory/quick-add/', views_admin.admin_inventory_quick_add, name='admin_inventory_quick_add'),
     path('admin-panel/inventory/new/', views_admin.admin_inventory_new, name='admin_inventory_new'),
     path('admin-panel/inventory/<int:inventory_id>/', views_admin.admin_inventory_detail, name='admin_inventory_detail'),
     path('admin-panel/inventory/<int:inventory_id>/update/', views_admin.admin_inventory_update, name='admin_inventory_update'),
