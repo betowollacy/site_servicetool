@@ -28,6 +28,7 @@
                     <th>Entrega</th>
                     <th>Vendas</th>
                     <th>Status</th>
+                    <th>API</th>
                     <th>Ação</th>
                 </tr>
             </thead>
@@ -40,6 +41,16 @@
                     <td>{{ s.delivery_time|default:"-" }}</td>
                     <td>{{ s.sells }}</td>
                     <td><span class="badge {% if s.status == 'Active' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ s.status }}</span></td>
+                    <td>
+                        <form method="post" action="{% url 'admin_service_toggle_api' svtype s.id %}" onsubmit="return confirm('{% if s.api_enabled %}Desativar a API deste produto? Os pedidos passam a exigir entrega manual.{% else %}Ativar a API deste produto? Os pedidos voltam a ser enviados automaticamente ao provedor.{% endif %}')">
+                            {% csrf_token %}
+                            {% if s.api_enabled %}
+                            <button type="submit" class="btn btn-sm btn-light-success" title="API ativa - clique para desativar"><i class="ti ti-plug-connected"></i> Auto</button>
+                            {% else %}
+                            <button type="submit" class="btn btn-sm btn-light-warning" title="API desativada - clique para ativar"><i class="ti ti-plug-off"></i> Manual</button>
+                            {% endif %}
+                        </form>
+                    </td>
                     <td class="d-flex gap-1">
                         <a href="{% url 'admin_service_edit' svtype s.id %}" class="btn btn-sm btn-light-primary"><i class="ti ti-edit"></i> Editar</a>
                         <form method="post" action="{% url 'admin_service_delete' svtype s.id %}" onsubmit="return confirm('Excluir o serviço &quot;{{ s.title }}&quot;?');">
@@ -49,7 +60,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" class="text-center">Nenhum serviço.</td></tr>
+                <tr><td colspan="8" class="text-center">Nenhum serviço.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

@@ -53,6 +53,12 @@
                             </select>
                             <small class="text-muted">Escolha em qual carrossel este produto aparecerá.</small>
                         </div>
+                        <div class="col-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="api_enabled" id="apiEnabled" value="1" {% if not service or service.api_enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="apiEnabled">API ativa (entrega automática). Desative para entregar manualmente quando o provedor estiver com problemas.</label>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

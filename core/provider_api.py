@@ -158,6 +158,8 @@ def provider_for_order(order):
     service = order.service
     if not service:
         return None
+    if not service.api_enabled:
+        return None
     api = service.api
     if not api or api.status != 'Active':
         return None

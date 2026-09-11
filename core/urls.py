@@ -18,6 +18,7 @@ urlpatterns = [
     path('admin-panel/services/<str:svtype>/', views_admin.admin_service_list, name='admin_service_list'),
     path('admin-panel/services/<str:svtype>/new/', views_admin.admin_service_new, name='admin_service_new'),
     path('admin-panel/services/<str:svtype>/<int:service_id>/edit/', views_admin.admin_service_edit, name='admin_service_edit'),
+    path('admin-panel/services/<str:svtype>/<int:service_id>/toggle-api/', views_admin.admin_service_toggle_api, name='admin_service_toggle_api'),
     path('admin-panel/services/<str:svtype>/<int:service_id>/delete/', views_admin.admin_service_delete, name='admin_service_delete'),
     path('admin-panel/currencies/', views_admin.admin_currency_list, name='admin_currency_list'),
     path('admin-panel/currencies/<int:currency_id>/update/', views_admin.admin_currency_update, name='admin_currency_update'),

@@ -159,6 +159,7 @@ class ServiceList(models.Model):
 
     process_type = models.CharField(max_length=20, choices=PROCESS_TYPES, default='Manual')
     api = models.ForeignKey('Api', on_delete=models.SET_NULL, null=True, blank=True, related_name='services')
+    api_enabled = models.BooleanField(default=True, verbose_name='API ativa')
     referenceid = models.CharField(max_length=255, blank=True, null=True)
     CAROUSEL_CHOICES = [
         ('promocoes', 'Promoções do Dia'),
