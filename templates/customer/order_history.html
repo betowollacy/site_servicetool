@@ -48,6 +48,18 @@
         word-break: break-all; white-space: pre-wrap; padding-top: 4px;
     }
     .gsm-reply-text.muted { color: var(--bs-secondary-color); font-family: inherit; }
+    @media (max-width: 576px) {
+        .gsm-modal-header { padding: 13px 16px; font-size: 16px; }
+        .modal-body.p-4 { padding: 14px !important; }
+        .gsm-service-title { font-size: 15px; margin-bottom: 12px; }
+        .gsm-card { padding: 12px 13px; margin-bottom: 12px; }
+        .gsm-amount { font-size: 22px; }
+        .gsm-amount small { font-size: 13px; }
+        .gsm-badge { font-size: 12.5px; padding: 5px 11px; }
+        .gsm-timeline-val { font-size: 14px; }
+        .gsm-reply-text { font-size: 13.5px; }
+        .btn-copy { font-size: 12.5px; padding: 4px 13px; }
+    }
 </style>
 <div class="container">
     <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
@@ -83,16 +95,16 @@
                         <td><i class="ti ti-chevron-right"></i></td>
                     </tr>
                     <div class="modal fade gsm-modal" id="orderModal-{{ order.id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered">
+                        <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered modal-fullscreen-sm-down">
                             <div class="modal-content">
                                 <div class="gsm-modal-header d-flex justify-content-between align-items-center">
                                     <span>ORDER ID: #{{ order.id }}</span>
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
                                 </div>
-                                <div class="modal-body p-4">
+                                <div class="modal-body p-3 p-md-4">
                                     <p class="gsm-service-title">{{ order.service_title }}</p>
 
-                                    <div class="gsm-card gray d-flex justify-content-between align-items-center">
+                                    <div class="gsm-card gray d-flex justify-content-between align-items-center flex-wrap gap-2">
                                         <div>
                                             <div class="gsm-lbl">Amount</div>
                                             <div class="gsm-amount">{{ order.service_price|floatformat:2 }} <small>BRL</small></div>
