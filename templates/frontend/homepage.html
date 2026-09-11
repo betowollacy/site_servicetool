@@ -77,8 +77,8 @@
                             <div class="row">
                                 {% for s in group %}
                                 <div class="col-md-4 col-6 mb-2">
-                                    <a href="{% url 'service_view' s.slug %}" class="d-flex gap-3 p-2 border rounded h-100">
-                                        <img src="{{ s.thumbnail }}" alt="{{ s.title }}" width="105" height="70" class="rounded border">
+                                    <a href="{% url 'service_view' s.slug %}" class="d-flex gap-3 p-2 border rounded h-100 align-items-center">
+                                        <img src="{{ s.thumbnail }}" alt="{{ s.title }}" width="150" height="100" class="rounded border" style="object-fit:cover;min-width:150px;min-height:100px;">
                                         <div class="overflow-hidden">
                                             <p class="text-muted mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
                                             <div>
