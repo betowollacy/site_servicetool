@@ -484,6 +484,15 @@ def customer_deposit(request, customer):
         if amount <= 0:
             messages.error(request, 'Enter a valid amount.')
             return redirect('customer_add_balance')
+        if gateway_name.lower() == 'asaas':
+            gw = PaymentGateway.objects.filter(name__iexact='Asaas', status='Active').first()
+            try:
+                fee = float(gw.charge or 0)
+            except (TypeError, ValueError):
+                fee = 0.0
+            if float(amount) + fee < 5.0:
+                messages.error(request, 'O Asaas exige valor minimo de R$ 5,00 por cobranca PIX. Deposite um valor maior.')
+                return redirect('customer_add_balance')
         currency = Currency.objects.filter(code=customer.currency).first() or Currency.objects.first()
         invoice = Invoice.objects.create(
             customer=customer,
@@ -621,6 +630,13 @@ def _pay_with_asaas(request, customer, invoice):
         return redirect('checkout', invoice_id=invoice.id)
     if not (''.join(ch for ch in (customer.cpf_cnpj or '') if ch.isdigit())):
         messages.error(request, 'Informe seu CPF ou CNPJ para gerar o PIX.')
+        return redirect('checkout', invoice_id=invoice.id)
+    try:
+        fee = float(gateway.charge or 0)
+    except (TypeError, ValueError):
+        fee = 0.0
+    if float(invoice.invoice_amount) + fee < 5.0:
+        messages.error(request, 'O Asaas exige valor minimo de R$ 5,00 por cobranca PIX. Adicione saldo (deposito) para comprar produtos abaixo desse valor.')
         return redirect('checkout', invoice_id=invoice.id)
     try:
         payment = asaas.create_pix_payment(invoice, gateway)
