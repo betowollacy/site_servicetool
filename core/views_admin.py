@@ -636,28 +636,15 @@ def admin_order_deliver_credential(request, order_id):
     Preenche a resposta do pedido (visível ao cliente) sem precisar editar o
     status manualmente e marca a credencial como em uso.
     """
-    order = CustomerOrder.objects.filter(id=order_id).select_related('service').first()
+    order = CustomerOrder.objects.filter(id=order_id).select_related('service', 'service__inventory').first()
     referer = request.META.get('HTTP_REFERER') or reverse('admin_orders', args=['in_process'])
     if not order or request.method != 'POST':
         return redirect(referer)
-    service = order.service
-    inventory = service.inventory if service else None
-    if not inventory:
-        messages.error(request, 'Este serviço não possui estoque de logins configurado.')
-        return redirect(referer)
-    item = InventoryData.objects.filter(inventory=inventory, status='Available').order_by('id').first()
-    if not item:
-        messages.error(request, 'Nenhum login disponível no estoque. Adicione no estoque e tente novamente.')
-        return redirect(referer)
-    item.status = 'Sold out'
-    item.order = order
-    item.save(update_fields=['status', 'order'])
-    order.replied_in = (item.code or '')[:500]
-    order.service_status = 'Success'
-    order.service_comments = (order.service_comments or '') + ' Login/senha entregues do estoque #{}.'.format(item.id)
-    order.save(update_fields=['replied_in', 'service_status', 'service_comments'])
-    _refresh_inventory_counts(inventory)
-    messages.success(request, 'Login/senha entregue ao pedido #{} e resposta preenchida automaticamente.'.format(order.id))
+    delivered, code = provider_api.deliver_from_inventory(order)
+    if delivered:
+        messages.success(request, 'Login/senha entregue ao pedido #{} e resposta preenchida automaticamente.'.format(order.id))
+    else:
+        messages.error(request, code)
     return redirect(referer)
 
 

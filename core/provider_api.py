@@ -4,7 +4,7 @@ import logging
 import urllib.parse
 import urllib.request
 
-from .models import Api, ApiLog, CustomerOrder, Statement
+from .models import Api, ApiLog, CustomerOrder, InventoryData, Statement
 
 logger = logging.getLogger(__name__)
 
@@ -192,12 +192,43 @@ def provider_for_order(order):
     return api
 
 
+def deliver_from_inventory(order):
+    """Entrega automaticamente o próximo login/senha disponível do estoque do serviço.
+
+    Retorna (True, código) se entregou, (False, motivo) se não foi possível.
+    Preenche a resposta do pedido, marca como Success e consome a credencial.
+    """
+    service = order.service
+    if not service:
+        return False, 'Serviço não vinculado ao pedido.'
+    inventory = service.inventory
+    if not inventory:
+        return False, 'Serviço sem estoque vinculado.'
+    item = InventoryData.objects.filter(inventory=inventory, status='Available').order_by('id').first()
+    if not item:
+        return False, 'Nenhuma credencial disponível no estoque.'
+    item.status = 'Sold out'
+    item.order = order
+    item.save(update_fields=['status', 'order'])
+    order.replied_in = (item.code or '')[:500]
+    order.service_status = 'Success'
+    order.service_comments = (order.service_comments or '') + ' Login/senha entregues do estoque #{}.'.format(item.id)
+    order.save(update_fields=['replied_in', 'service_status', 'service_comments'])
+    try:
+        from .views_admin import _refresh_inventory_counts
+        _refresh_inventory_counts(inventory)
+    except Exception:
+        pass
+    return True, item.code
+
+
 def submit_local_order(order):
     """Envia o pedido local ao provedor. Retorna (None, '') se não automático,
     (False, erro) se falhou, (True, ref) se enviado."""
     api = provider_for_order(order)
     if api is None:
-        return None, ''
+        delivered, code = deliver_from_inventory(order)
+        return (True, code) if delivered else (None, '')
     service = order.service
     actions = PROVIDER_ACTIONS.get(service.service_type, PROVIDER_ACTIONS['IMEI Service'])
     fields = _fields_dict(order)

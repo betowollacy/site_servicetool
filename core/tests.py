@@ -656,6 +656,66 @@ class InventoryDeliveryTests(TestCase):
         order.refresh_from_db()
         self.assertEqual(order.service_status, 'In Process')
 
+    def test_submit_local_order_delivers_from_inventory_when_api_off(self):
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',
+            original_price=Decimal('20.00'), status='Active', slug='amt-auto', api_enabled=False,
+        )
+        inv = Inventory.objects.create(name='AMT Auto')
+        self.service.inventory = inv
+        self.service.save(update_fields=['inventory'])
+        InventoryData.objects.create(inventory=inv, code='Usuario: auto | Senha: auto123', status='Available')
+
+        order = self._order(status='In Process')
+        ok, code = provider_api.submit_local_order(order)
+        order.refresh_from_db()
+        self.assertTrue(ok)
+        self.assertIn('auto123', code)
+        self.assertEqual(order.service_status, 'Success')
+        self.assertIn('auto123', order.replied_in)
+        item = InventoryData.objects.get(inventory=inv)
+        self.assertEqual(item.status, 'Sold out')
+        self.assertEqual(item.order_id, order.id)
+        inv.refresh_from_db()
+        self.assertEqual(inv.availableCount, 0)
+        self.assertEqual(inv.soldOutCount, 1)
+
+    def test_submit_local_order_with_api_off_keeps_waiting_when_no_stock(self):
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',
+            original_price=Decimal('20.00'), status='Active', slug='amt-semstock', api_enabled=False,
+        )
+        inv = Inventory.objects.create(name='AMT Vazio')
+        self.service.inventory = inv
+        self.service.save(update_fields=['inventory'])
+
+        order = self._order(status='In Process')
+        ok, code = provider_api.submit_local_order(order)
+        order.refresh_from_db()
+        self.assertIsNone(ok)
+        self.assertEqual(order.service_status, 'In Process')
+
+    def test_cron_delivers_from_inventory_when_stock_added_later(self):
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',
+            original_price=Decimal('20.00'), status='Active', slug='amt-cron', api_enabled=False,
+        )
+        inv = Inventory.objects.create(name='AMT Cron')
+        self.service.inventory = inv
+        self.service.save(update_fields=['inventory'])
+
+        order = self._order(status='In Process')
+        ok, _ = provider_api.submit_local_order(order)
+        self.assertIsNone(ok)
+
+        InventoryData.objects.create(inventory=inv, code='Usuario: cron | Senha: cron123', status='Available')
+        from django.core.management import call_command
+        call_command('check_provider_orders')
+
+        order.refresh_from_db()
+        self.assertEqual(order.service_status, 'Success')
+        self.assertIn('cron123', order.replied_in)
+
     def test_toggle_returns_credential_to_available(self):
         self.service = ServiceList.objects.create(
             service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',

@@ -27,9 +27,7 @@ class Command(BaseCommand):
                 'Conectado. Conta: {} | Saldo: {}'.format(info['mail'], info['credit'])))
             return
 
-        qs = CustomerOrder.objects.filter(
-            service_status='In Process',
-        ).exclude(trx_id__isnull=True).exclude(trx_id='')
+        qs = CustomerOrder.objects.filter(service_status='In Process').select_related('service__inventory')
         if options.get('api'):
             qs = qs.filter(service__api_id=options['api'])
 
@@ -37,8 +35,13 @@ class Command(BaseCommand):
         for order in qs:
             total += 1
             try:
-                if provider_api.sync_local_order(order):
-                    ok += 1
+                if (order.trx_id or '').strip():
+                    if provider_api.sync_local_order(order):
+                        ok += 1
+                else:
+                    delivered, _ = provider_api.deliver_from_inventory(order)
+                    if delivered:
+                        ok += 1
             except Exception as exc:
                 self.stderr.write('Erro no pedido #{}: {}'.format(order.id, exc))
         self.stdout.write('Sincronizados {} de {} pedidos.'.format(ok, total))
