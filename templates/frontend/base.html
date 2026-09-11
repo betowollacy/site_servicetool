@@ -85,6 +85,7 @@
                 <div class="dropdown d-none d-lg-block customer-nav-menu">
                     <button class="btn btn-primary rounded-2 d-flex align-items-center gap-1 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-person-fill"></i> {{ customer.name }}
+                        <span class="badge rounded-pill ms-1" style="background:var(--off);color:var(--ink);border:1px solid var(--border);"><i class="bi bi-wallet2 me-1"></i>R$ {{ customer.balance|floatformat:2 }}</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end customer-nav-dropdown">
                         <li><a class="dropdown-item" href="{% url 'customer_dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>

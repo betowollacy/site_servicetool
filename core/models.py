@@ -46,7 +46,7 @@ class Customer(models.Model):
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     currency = models.CharField(max_length=10, default='USD')
     over_due = models.CharField(max_length=10, default='off')  # allow / off
-    api_allow = models.CharField(max_length=10, default='')  # on / ''
+    api_allow = models.CharField(max_length=10, default='on')  # on / ''
     api_key = models.CharField(max_length=255, blank=True, null=True)
     api_ip = models.CharField(max_length=255, blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS, default='Active')

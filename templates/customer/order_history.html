@@ -3,6 +3,13 @@
 <title>Histórico de Pedidos - {{ siteTitle }}</title>
 {% endblock %}
 {% block content %}
+<style>
+    .order-history-card .card-header,
+    .order-history-card .card-body,
+    .order-history-card .table,
+    .order-history-card .table > :not(caption) > * > *,
+    .order-history-card .table thead th { color: #ffffff; }
+</style>
 <div class="container">
     <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
         <ol class="breadcrumb">
@@ -12,7 +19,7 @@
         </ol>
     </nav>
 
-    <div class="card">
+    <div class="card order-history-card">
         <div class="card-header"><h5>Meu Histórico de Pedidos</h5></div>
         <div class="card-body table-responsive">
             <table class="table table-striped table-hover" id="orderTable">
