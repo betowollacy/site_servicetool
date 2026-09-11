@@ -8,9 +8,9 @@ from django.urls import reverse
 
 from core import asaas, provider_api
 from core.models import (
-    Api, Currency, Customer, CustomerOrder, Invoice, OrderInput, PaymentDeposit,
-    PaymentGateway, RemoteServiceInput, RemoteServiceList, ServiceGroup, ServiceInput,
-    ServiceList, Statement, User,
+    Api, Currency, Customer, CustomerOrder, Inventory, InventoryData, Invoice, OrderInput,
+    PaymentDeposit, PaymentGateway, RemoteServiceInput, RemoteServiceList, ServiceGroup,
+    ServiceInput, ServiceList, Statement, User,
 )
 
 
@@ -552,6 +552,142 @@ class AdminRefundTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(Customer.objects.filter(id=self.customer.id).count(), 0)
         self.assertEqual(CustomerOrder.objects.filter(id=order.id).count(), 0)
+
+
+class InventoryDeliveryTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='admininv', password='senha123', is_staff=True)
+        self.customer = Customer.objects.create(
+            name='Cliente', email='cliente@teste.com', password=Customer.make_password('senha123'),
+            currency='BRL', balance=Decimal('50.00'),
+        )
+        Currency.objects.create(code='BRL', name='Brazilian Real', icon='R$', rate=Decimal('1.0000'), status='Active')
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
+        self.client.force_login(self.staff)
+
+    def _order(self, status='In Process'):
+        return CustomerOrder.objects.create(
+            customer=self.customer, service=self.service, service_status=status,
+            service_type='server_service', service_qnt='1', service_price=Decimal('20.00'),
+            service_title=self.service.title, payment_methode='Balance',
+        )
+
+    def test_parse_credentials(self):
+        from core.views_admin import _parse_credentials
+        creds = _parse_credentials('user1;senha1\nuser2:senha2\nuser3|senha3\n  \nvazio')
+        self.assertEqual(creds, [
+            'Usuario: user1 | Senha: senha1',
+            'Usuario: user2 | Senha: senha2',
+            'Usuario: user3 | Senha: senha3',
+            'vazio',
+        ])
+
+    def test_create_inventory_links_service_and_adds_bulk(self):
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',
+            original_price=Decimal('20.00'), status='Active', slug='amt-6h',
+        )
+        resp = self.client.post(reverse('admin_inventory_new'), {
+            'name': 'AMT Aluguel 6h',
+            'service_id': str(self.service.id),
+        })
+        self.assertEqual(resp.status_code, 302)
+        inv = Inventory.objects.get(name='AMT Aluguel 6h')
+        self.service.refresh_from_db()
+        self.assertEqual(self.service.inventory_id, inv.id)
+
+        resp = self.client.post(reverse('admin_inventory_add', args=[inv.id]), {
+            'codes': 'login1;senha1\nlogin2:senha2\nlogin1;senha1',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(InventoryData.objects.filter(inventory=inv).count(), 2)
+        inv.refresh_from_db()
+        self.assertEqual(inv.availableCount, 2)
+        self.assertEqual(inv.available_code, 2)
+        self.assertEqual(inv.soldOutCount, 0)
+
+    def test_deliver_credential_sets_replied_in_and_success(self):
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',
+            original_price=Decimal('20.00'), status='Active', slug='amt-6h',
+        )
+        inv = Inventory.objects.create(name='AMT')
+        self.service.inventory = inv
+        self.service.save(update_fields=['inventory'])
+        item = InventoryData.objects.create(inventory=inv, code='Usuario: login1 | Senha: senha1', status='Available')
+        order = self._order()
+
+        resp = self.client.post(reverse('admin_order_deliver_credential', args=[order.id]))
+        self.assertEqual(resp.status_code, 302)
+        order.refresh_from_db()
+        item.refresh_from_db()
+        inv.refresh_from_db()
+        self.assertEqual(order.service_status, 'Success')
+        self.assertEqual(order.replied_in, 'Usuario: login1 | Senha: senha1')
+        self.assertEqual(item.status, 'Sold out')
+        self.assertEqual(item.order_id, order.id)
+        self.assertEqual(inv.availableCount, 0)
+        self.assertEqual(inv.soldOutCount, 1)
+
+    def test_deliver_no_stock_keeps_order_unchanged(self):
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',
+            original_price=Decimal('20.00'), status='Active', slug='amt-6h',
+        )
+        inv = Inventory.objects.create(name='AMT')
+        self.service.inventory = inv
+        self.service.save(update_fields=['inventory'])
+        order = self._order()
+
+        resp = self.client.post(reverse('admin_order_deliver_credential', args=[order.id]))
+        self.assertEqual(resp.status_code, 302)
+        order.refresh_from_db()
+        self.assertEqual(order.service_status, 'In Process')
+        self.assertIn(order.replied_in or '', ['', None])
+
+    def test_deliver_requires_service_inventory(self):
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='Sem estoque',
+            original_price=Decimal('20.00'), status='Active', slug='sem-estoque',
+        )
+        order = self._order()
+        resp = self.client.post(reverse('admin_order_deliver_credential', args=[order.id]))
+        self.assertEqual(resp.status_code, 302)
+        order.refresh_from_db()
+        self.assertEqual(order.service_status, 'In Process')
+
+    def test_toggle_returns_credential_to_available(self):
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',
+            original_price=Decimal('20.00'), status='Active', slug='amt-6h',
+        )
+        inv = Inventory.objects.create(name='AMT')
+        self.service.inventory = inv
+        self.service.save(update_fields=['inventory'])
+        item = InventoryData.objects.create(inventory=inv, code='Usuario: login1 | Senha: senha1', status='Available')
+        order = self._order()
+        self.client.post(reverse('admin_order_deliver_credential', args=[order.id]))
+        item.refresh_from_db()
+        self.assertEqual(item.status, 'Sold out')
+
+        resp = self.client.post(reverse('admin_inventory_toggle', args=[item.id]))
+        self.assertEqual(resp.status_code, 302)
+        item.refresh_from_db()
+        inv.refresh_from_db()
+        self.assertEqual(item.status, 'Available')
+        self.assertIsNone(item.order_id)
+        self.assertEqual(inv.availableCount, 1)
+        self.assertEqual(inv.soldOutCount, 0)
+
+    def test_edit_credential_updates_code(self):
+        inv = Inventory.objects.create(name='AMT')
+        item = InventoryData.objects.create(inventory=inv, code='Usuario: login1 | Senha: senha1', status='Available')
+        resp = self.client.post(reverse('admin_inventory_edit', args=[item.id]), {
+            'code': 'Usuario: login1 | Senha: novaSenha',
+        })
+        self.assertEqual(resp.status_code, 302)
+        item.refresh_from_db()
+        self.assertEqual(item.code, 'Usuario: login1 | Senha: novaSenha')
 
 
 class CreditServiceFormTests(TestCase):

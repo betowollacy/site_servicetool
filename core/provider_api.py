@@ -153,6 +153,28 @@ def _fields_dict(order):
     return {i.field_name: i.field_value for i in OrderInput.objects.filter(order=order)}
 
 
+def _extract_credentials(row):
+    """Extrai credenciais (email/usuario e senha) devolvidas pelo provedor."""
+    pairs = []
+    for k, v in (row or {}).items():
+        low = str(k).lower().replace('_', '')
+        text = str(v or '').strip()
+        if not text or text in ('0', 'None', ''):
+            continue
+        if 'pass' in low or 'senha' in low or 'credential' in low:
+            pairs.append(('Senha', text))
+        elif 'mail' in low or 'email' in low or 'user' in low or 'login' in low or 'account' in low:
+            label = 'Email' if ('mail' in low or 'email' in low) else 'Usuario'
+            pairs.append((label, text))
+    seen = set()
+    result = []
+    for label, value in pairs:
+        if value.lower() not in seen:
+            seen.add(value.lower())
+            result.append('{}: {}'.format(label, value))
+    return ' | '.join(result)
+
+
 def provider_for_order(order):
     """Retorna a Api vinculada ao servico do pedido, ou None se nao for automático."""
     service = order.service
@@ -188,21 +210,28 @@ def submit_local_order(order):
     try:
         data = _request(api, actions['place'], params)
         row = _success_rows(data)[0]
-        ref = row.get('REFERENCEID') or row.get('referenceid')
     except ProviderError as exc:
         _log(api, 'place fail order #{}: {}'.format(order.id, exc))
         return False, str(exc)
+    ref = row.get('REFERENCEID') or row.get('referenceid')
     if not str(ref or '').strip():
-        _log(api, 'place empty ref order #{}'.format(order.id))
+        _log(api, 'place empty ref order #{}: {}'.format(order.id, row))
         return False, 'Provedor nao retornou numero do pedido.'
+    code = (row.get('CODE', '') or row.get('code', '') or '').strip()
+    status = row.get('STATUS') or row.get('status') or ''
     order.trx_id = str(ref)
     order.process_type = 'Auto'
-    code = (row.get('CODE', '') or '').strip()
     updates = ['trx_id', 'process_type']
     if code:
         order.service_comments = code
-        updates.append('service_comments')
+        order.replied_in = code
+        updates += ['service_comments', 'replied_in']
     order.save(update_fields=updates)
+    try:
+        _log(api, 'place OK order #{} status={} ref={}: {}'.format(
+            order.id, status, ref, json.dumps(row, ensure_ascii=False)[:1800]))
+    except Exception:
+        pass
     return True, str(ref)
 
 

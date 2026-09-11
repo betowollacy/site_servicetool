@@ -44,6 +44,15 @@
                                 <option value="Auto" {% if service.process_type == 'Auto' %}selected{% endif %}>Automático</option>
                             </select>
                         </div>
+                        <div class="col-12 mb-3"><label class="form-label">Estoque de Logins (entrega manual quando a API estiver desligada)</label>
+                            <select class="form-select" name="inventory_id">
+                                <option value="0">-- Nenhum --</option>
+                                {% for inv in inventories %}
+                                <option value="{{ inv.id }}" {% if service.inventory_id == inv.id %}selected{% endif %}>{{ inv.name }} ({{ inv.availableCount }} disponíveis)</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">O botão "Entregar login e senha" aparecerá nos pedidos deste serviço. <a href="{% url 'admin_inventory_list' %}">Gerenciar estoques</a></small>
+                        </div>
                         <div class="col-12 mb-3"><label class="form-label">Artigo</label><textarea class="form-control" name="article" rows="6">{{ service.article|default:'' }}</textarea></div>
                         <div class="col-md-6 mb-3"><label class="form-label">Carrossel da Página Inicial</label>
                             <select class="form-select" name="carousel">

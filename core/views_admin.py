@@ -8,15 +8,16 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import logout
 from django.db import transaction
+from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.text import slugify
 
 from .models import (
-    Api, CREDIT_SERVICE_EXTRA_FIELDS, Currency, Customer, CustomerOrder, Invoice, Page,
-    PaymentGateway, RemoteServiceInput, RemoteServiceList, ServiceGroup, ServiceInput,
-    ServiceList, Slider, Statement, SystemSetting,
+    Api, CREDIT_SERVICE_EXTRA_FIELDS, Currency, Customer, CustomerOrder, Inventory,
+    InventoryData, Invoice, Page, PaymentGateway, RemoteServiceInput, RemoteServiceList,
+    ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting,
 )
 from . import provider_api, public_api
 
@@ -54,7 +55,17 @@ def admin_dashboard(request):
 @_staff
 def admin_orders(request, status):
     db_status, label = STATUS_MAP.get(status, ('Waiting Action', 'Aguardando Ação'))
-    orders = CustomerOrder.objects.filter(service_status=db_status)
+    orders = list(CustomerOrder.objects.filter(service_status=db_status)
+                  .select_related('customer', 'service__inventory'))
+    inv_ids = {o.service.inventory_id for o in orders if o.service and o.service.inventory_id}
+    avail = dict(
+        InventoryData.objects.filter(inventory_id__in=inv_ids, status='Available')
+        .values('inventory_id').annotate(c=Count('id')).values_list('inventory_id', 'c')
+    )
+    for order in orders:
+        inv = order.service.inventory if order.service else None
+        order.inventory_id_for_delivery = inv.id if inv else None
+        order.available_count = avail.get(inv.id, 0) if inv else 0
     ctx = {
         'status': status,
         'status_label': label,
@@ -291,6 +302,12 @@ def _apply_service_post(service, post):
         service.process_type = post['process_type']
     if post.get('price_type'):
         service.price_type = post['price_type']
+    inv_value = post.get('inventory_id')
+    if inv_value is not None:
+        if inv_value == '0' or inv_value == '':
+            service.inventory = None
+        else:
+            service.inventory = Inventory.objects.filter(id=inv_value).first()
     for f in ['original_price', 'customer_profit_amount', 'reseller_profit_amount',
               'distributor_profit_amount', 'webowner_profit_amount']:
         val = post.get(f)
@@ -355,6 +372,7 @@ def admin_service_new(request, svtype):
         'svtype': svtype,
         'type_label': label,
         'service_fields': [],
+        'inventories': Inventory.objects.all().order_by('name'),
     })
 
 
@@ -376,6 +394,7 @@ def admin_service_edit(request, svtype, service_id):
         'svtype': svtype,
         'type_label': label,
         'service_fields': service.service_fields.all(),
+        'inventories': Inventory.objects.all().order_by('name'),
     })
 
 
@@ -408,6 +427,236 @@ def admin_service_delete(request, svtype, service_id):
         service.delete()
         messages.success(request, f'Serviço "{title}" excluído com sucesso.')
     return redirect('admin_service_list', svtype)
+
+
+# --------------------------------------------------------------------------- #
+# Inventário de logins/senhas (entrega manual quando a API está desligada)
+# --------------------------------------------------------------------------- #
+
+def _parse_credentials(text):
+    """Converte a lista de credenciais em linhas prontas para o estoque.
+
+    Cada linha: "usuario;senha", "usuario|senha" ou "usuario:senha".
+    """
+    creds = []
+    for line in (text or '').splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        for sep in (';', '|'):
+            if sep in line:
+                user, passwd = line.split(sep, 1)
+                break
+        else:
+            if line.count(':') == 1 and '://' not in line:
+                user, passwd = line.split(':', 1)
+            else:
+                user, passwd = line, ''
+        user, passwd = user.strip(), passwd.strip()
+        if not user and not passwd:
+            continue
+        if user and passwd:
+            creds.append('Usuario: {} | Senha: {}'.format(user, passwd))
+        else:
+            creds.append(user or passwd)
+    return creds
+
+
+def _refresh_inventory_counts(inventory):
+    available = InventoryData.objects.filter(inventory=inventory, status='Available').count()
+    sold = InventoryData.objects.filter(inventory=inventory, status='Sold out').count()
+    inventory.available_code = available
+    inventory.availableCount = available
+    inventory.soldOutCount = sold
+    inventory.save(update_fields=['available_code', 'availableCount', 'soldOutCount'])
+
+
+@_staff
+def admin_inventory_list(request):
+    _inventories = []
+    for inv in Inventory.objects.all().order_by('name'):
+        _inventories.append({
+            'inventory': inv,
+            'service': ServiceList.objects.filter(inventory=inv).first(),
+            'available': InventoryData.objects.filter(inventory=inv, status='Available').count(),
+            'total': InventoryData.objects.filter(inventory=inv).count(),
+        })
+    services = ServiceList.objects.filter(status='Active').order_by('service_type', 'title')
+    return render(request, 'admin/inventory_list.html', {
+        'inventories': _inventories,
+        'services': services,
+    })
+
+
+@_staff
+def admin_inventory_new(request):
+    if request.method == 'POST':
+        name = (request.POST.get('name') or '').strip()
+        if not name:
+            messages.error(request, 'O nome do estoque é obrigatório.')
+            return redirect('admin_inventory_list')
+        inv = Inventory.objects.create(name=name)
+        _refresh_inventory_counts(inv)
+        service_id = request.POST.get('service_id') or None
+        if service_id and service_id != '0':
+            service = ServiceList.objects.filter(id=service_id).first()
+            if service:
+                service.inventory = inv
+                service.save(update_fields=['inventory'])
+        messages.success(request, 'Estoque "{}" criado. Agora adicione os logins e senhas.'.format(name))
+        return redirect('admin_inventory_detail', inv.id)
+    return render(request, 'admin/inventory_form.html', {
+        'inventory': None,
+        'linked_service': None,
+        'services': ServiceList.objects.filter(status='Active').order_by('service_type', 'title'),
+    })
+
+
+@_staff
+def admin_inventory_detail(request, inventory_id):
+    inv = Inventory.objects.filter(id=inventory_id).first()
+    if inv is None:
+        return redirect('admin_inventory_list')
+    data_items = InventoryData.objects.filter(inventory=inv).select_related('order').order_by('-status', 'id')
+    return render(request, 'admin/inventory_detail.html', {
+        'inventory': inv,
+        'linked_service': ServiceList.objects.filter(inventory=inv).first(),
+        'services': ServiceList.objects.filter(status='Active').order_by('service_type', 'title'),
+        'data_items': data_items,
+        'available': InventoryData.objects.filter(inventory=inv, status='Available').count(),
+        'in_use': InventoryData.objects.filter(inventory=inv, status='Sold out').count(),
+    })
+
+
+@_staff
+def admin_inventory_update(request, inventory_id):
+    inv = Inventory.objects.filter(id=inventory_id).first()
+    if inv and request.method == 'POST':
+        name = (request.POST.get('name') or '').strip()
+        if name:
+            inv.name = name
+            inv.save(update_fields=['name'])
+        service_id = request.POST.get('service_id') or None
+        ServiceList.objects.filter(inventory=inv).update(inventory=None)
+        if service_id and service_id != '0':
+            service = ServiceList.objects.filter(id=service_id).first()
+            if service:
+                service.inventory = inv
+                service.save(update_fields=['inventory'])
+        messages.success(request, 'Estoque atualizado com sucesso.')
+    return redirect('admin_inventory_detail', inventory_id)
+
+
+@_staff
+def admin_inventory_delete(request, inventory_id):
+    inv = Inventory.objects.filter(id=inventory_id).first()
+    if inv and request.method == 'POST':
+        ServiceList.objects.filter(inventory=inv).update(inventory=None)
+        name = inv.name
+        inv.delete()
+        messages.success(request, 'Estoque "{}" excluído com sucesso.'.format(name))
+    return redirect('admin_inventory_list')
+
+
+@_staff
+def admin_inventory_add(request, inventory_id):
+    inv = Inventory.objects.filter(id=inventory_id).first()
+    if inv and request.method == 'POST':
+        creds = _parse_credentials(request.POST.get('codes', ''))
+        existing = {c.lower() for c in InventoryData.objects.filter(inventory=inv).values_list('code', flat=True)}
+        added = 0
+        skipped = 0
+        for cred in creds:
+            if cred.lower() in existing:
+                skipped += 1
+                continue
+            InventoryData.objects.create(inventory=inv, code=cred, status='Available')
+            existing.add(cred.lower())
+            added += 1
+        _refresh_inventory_counts(inv)
+        msg = '{} credencial(is) adicionada(s) ao estoque.'.format(added)
+        if skipped:
+            msg += ' {} já existia(m) e foi(ram) ignorada(s).'.format(skipped)
+        if added:
+            messages.success(request, msg)
+        else:
+            messages.error(request, msg if skipped else 'Nenhuma credencial válida informada.')
+    return redirect('admin_inventory_detail', inventory_id)
+
+
+@_staff
+def admin_inventory_edit(request, data_id):
+    item = InventoryData.objects.filter(id=data_id).first()
+    if item and request.method == 'POST':
+        new_code = (request.POST.get('code') or '').strip()
+        if new_code:
+            item.code = new_code
+            item.save(update_fields=['code'])
+        messages.success(request, 'Credencial salva. Caso tenha trocado a senha na ferramenta, disponibilize-a novamente.')
+    if item:
+        return redirect('admin_inventory_detail', item.inventory_id)
+    return redirect('admin_inventory_list')
+
+
+@_staff
+def admin_inventory_toggle(request, data_id):
+    item = InventoryData.objects.filter(id=data_id).first()
+    if item and request.method == 'POST':
+        if item.status == 'Available':
+            item.status = 'Sold out'
+            messages.success(request, 'Credencial marcada como em uso (indisponível).')
+        else:
+            item.status = 'Available'
+            item.order = None
+            messages.success(request, 'Credencial disponibilizada novamente para o próximo pedido.')
+        item.save()
+        _refresh_inventory_counts(item.inventory)
+        return redirect('admin_inventory_detail', item.inventory_id)
+    return redirect('admin_inventory_list')
+
+
+@_staff
+def admin_inventory_data_delete(request, data_id):
+    item = InventoryData.objects.filter(id=data_id).first()
+    if item and request.method == 'POST':
+        inv = item.inventory
+        item.delete()
+        _refresh_inventory_counts(inv)
+        messages.success(request, 'Credencial removida do estoque.')
+        return redirect('admin_inventory_detail', inv.id)
+    return redirect('admin_inventory_list')
+
+
+@_staff
+def admin_order_deliver_credential(request, order_id):
+    """Entrega ao pedido o próximo login/senha disponível no estoque do serviço.
+
+    Preenche a resposta do pedido (visível ao cliente) sem precisar editar o
+    status manualmente e marca a credencial como em uso.
+    """
+    order = CustomerOrder.objects.filter(id=order_id).select_related('service').first()
+    referer = request.META.get('HTTP_REFERER') or reverse('admin_orders', args=['in_process'])
+    if not order or request.method != 'POST':
+        return redirect(referer)
+    service = order.service
+    inventory = service.inventory if service else None
+    if not inventory:
+        messages.error(request, 'Este serviço não possui estoque de logins configurado.')
+        return redirect(referer)
+    item = InventoryData.objects.filter(inventory=inventory, status='Available').order_by('id').first()
+    if not item:
+        messages.error(request, 'Nenhum login disponível no estoque. Adicione no estoque e tente novamente.')
+        return redirect(referer)
+    item.status = 'Sold out'
+    item.order = order
+    item.save(update_fields=['status', 'order'])
+    order.replied_in = (item.code or '')[:500]
+    order.service_status = 'Success'
+    order.service_comments = (order.service_comments or '') + ' Login/senha entregues do estoque #{}.'.format(item.id)
+    order.save(update_fields=['replied_in', 'service_status', 'service_comments'])
+    _refresh_inventory_counts(inventory)
+    messages.success(request, 'Login/senha entregue ao pedido #{} e resposta preenchida automaticamente.'.format(order.id))
+    return redirect(referer)
 
 
 @_staff

@@ -45,6 +45,12 @@
                     <td>
                         <div class="d-flex flex-wrap gap-2 align-items-start">
                             <button class="btn btn-sm btn-light-primary" data-bs-toggle="collapse" data-bs-target="#order-{{ order.id }}"><i class="ti ti-edit"></i> Atualizar</button>
+                            {% if order.inventory_id_for_delivery and order.service_status != 'Success' and order.service_status != 'Rejected' %}
+                            <form method="post" action="{% url 'admin_order_deliver_credential' order.id %}" onsubmit="return confirm('Entregar o próximo login/senha disponível do estoque e marcar como entregue (Sucesso)?')">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-light-success" title="Usa o próximo login disponível do estoque e preenche a resposta automaticamente"><i class="ti ti-key"></i> Entregar login{% if order.available_count %} ({{ order.available_count }}){% endif %}</button>
+                            </form>
+                            {% endif %}
                             {% if order.service_status != 'Rejected' %}
                             <form method="post" action="{% url 'admin_order_refund' order.id %}" onsubmit="return confirm('Estornar este pedido? Devolverá R$ {{ order.service_price|floatformat:2 }} ao saldo do cliente.')">
                                 {% csrf_token %}

@@ -1,0 +1,150 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h4 class="mb-0">Estoque: {{ inventory.name }}</h4>
+        <div class="d-flex flex-wrap gap-2 mt-2">
+            <span class="badge bg-light-success">{{ available }} disponível(is)</span>
+            <span class="badge bg-light-warning">{{ in_use }} em uso</span>
+            <span class="badge bg-light-primary">{{ data_items|length }} total</span>
+            {% if linked_service %}<span class="badge bg-light-info">Serviço: {{ linked_service.title }}</span>{% endif %}
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+<div class="row g-3 mb-3">
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><i class="ti ti-settings me-1"></i> Dados do estoque</h6></div>
+            <div class="card-body">
+                <form method="post" action="{% url 'admin_inventory_update' inventory.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Nome</label>
+                        <input type="text" name="name" class="form-control" value="{{ inventory.name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Serviço vinculado</label>
+                        <select name="service_id" class="form-select">
+                            <option value="0">-- Nenhum --</option>
+                            {% for s in services %}
+                            <option value="{{ s.id }}" {% if linked_service and linked_service.id == s.id %}selected{% endif %}>[{{ s.service_type }}] {{ s.title }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Botão "Entregar login e senha" aparece nos pedidos deste serviço.</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="ti ti-device-floppy me-1"></i> Salvar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="mb-0"><i class="ti ti-plus me-1"></i> Adicionar logins ao estoque</h6></div>
+            <div class="card-body">
+                <form method="post" action="{% url 'admin_inventory_add' inventory.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Uma credencial por linha: <code>usuario;senha</code> <code>usuario|senha</code> ou <code>usuario:senha</code></label>
+                        <textarea name="codes" class="form-control" rows="6" placeholder="tool@amg.com;senha123&#10;tool2@amg.com|outrasenha&#10;usuario3:senha3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm"><i class="ti ti-plus me-1"></i> Adicionar ao estoque</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">Credenciais</h6>
+        <div class="input-group" style="max-width: 300px;">
+            <span class="input-group-text"><i class="ti ti-search"></i></span>
+            <input type="text" id="credsSearch" class="form-control" placeholder="Buscar login...">
+        </div>
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-hover align-middle" id="credsTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Credencial</th>
+                    <th>Status</th>
+                    <th>Em uso por</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in data_items %}
+                <tr>
+                    <td>#{{ item.id }}</td>
+                    <td>
+                        <code>{{ item.code }}</code>
+                        <form method="post" action="{% url 'admin_inventory_edit' item.id %}" class="mt-2 d-flex gap-2">
+                            {% csrf_token %}
+                            <input type="text" name="code" class="form-control form-control-sm" style="max-width: 320px" value="{{ item.code }}" placeholder="usuario;senha (nova senha)">
+                            <button type="submit" class="btn btn-sm btn-light-primary"><i class="ti ti-edit"></i> Salvar</button>
+                        </form>
+                    </td>
+                    <td>
+                        {% if item.status == 'Available' %}
+                        <span class="badge bg-light-success">Disponível</span>
+                        {% else %}
+                        <span class="badge bg-light-warning">Em uso</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.order %}
+                        Pedido #{{ item.order.id }}<br><small class="text-muted">{{ item.order.customer.name }}</small>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if item.status == 'Available' %}
+                            <form method="post" action="{% url 'admin_inventory_toggle' item.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-light-warning" title="Marcar como em uso (indisponível)"><i class="ti ti-lock"></i> Marcar em uso</button>
+                            </form>
+                            {% else %}
+                            <form method="post" action="{% url 'admin_inventory_toggle' item.id %}" onsubmit="return confirm('Disponibilizar esta credencial novamente? Ela voltará para o fim da fila de pedidos.')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-light-success"><i class="ti ti-unlock"></i> Disponibilizar</button>
+                            </form>
+                            {% endif %}
+                            <form method="post" action="{% url 'admin_inventory_data_delete' item.id %}" onsubmit="return confirm('Remover esta credencial do estoque?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-light-danger"><i class="ti ti-trash"></i> Excluir</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center">Estoque vazio. Adicione logins/senhas no formulário acima.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer_script %}
+<script>
+    $(function () {
+        var $rows = $("#credsTable tbody tr");
+        $("#credsSearch").on("keyup", function () {
+            var q = this.value.toLowerCase().trim();
+            $rows.each(function () {
+                $(this).toggle($(this).text().toLowerCase().indexOf(q) > -1);
+            });
+        });
+    });
+</script>
+{% endblock %}

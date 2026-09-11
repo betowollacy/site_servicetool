@@ -160,6 +160,7 @@ class ServiceList(models.Model):
     process_type = models.CharField(max_length=20, choices=PROCESS_TYPES, default='Manual')
     api = models.ForeignKey('Api', on_delete=models.SET_NULL, null=True, blank=True, related_name='services')
     api_enabled = models.BooleanField(default=True, verbose_name='API ativa')
+    inventory = models.ForeignKey('Inventory', on_delete=models.SET_NULL, null=True, blank=True, related_name='services')
     referenceid = models.CharField(max_length=255, blank=True, null=True)
     CAROUSEL_CHOICES = [
         ('promocoes', 'Promoções do Dia'),
@@ -584,6 +585,7 @@ class InventoryData(models.Model):
     inventory = models.ForeignKey(Inventory, on_delete=models.CASCADE, related_name='data')
     code = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS, default='Available')
+    order = models.ForeignKey('CustomerOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='inventory_uses')
 
     class Meta:
         db_table = 'inventory_data'

@@ -1,0 +1,42 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h4 class="mb-0">Novo Estoque de Logins</h4>
+        <small class="text-muted">Um estoque guarda os logins/senhas de uma ferramenta. Vincule ao serviço de aluguel correspondente.</small>
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" action="{% url 'admin_inventory_new' %}">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nome do estoque (ex.: AMT Aluguel 6h)</label>
+                    <input type="text" name="name" class="form-control" required placeholder="Ex.: AMT Aluguel 6h">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Serviço vinculado</label>
+                    <select name="service_id" class="form-select">
+                        <option value="0">-- Nenhum / vincular depois --</option>
+                        {% for s in services %}
+                        <option value="{{ s.id }}">[{{ s.service_type }}] {{ s.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-plus me-2"></i> Criar Estoque</button>
+                    <a href="{% url 'admin_inventory_list' %}" class="btn btn-light">Voltar</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

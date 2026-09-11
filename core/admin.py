@@ -66,7 +66,36 @@ admin.site.register(MailData)
 admin.site.register(ApiLog)
 admin.site.register(GatewayLog)
 admin.site.register(PaymentDeposit)
-admin.site.register(Inventory)
-admin.site.register(InventoryData)
+class InventoryDataInline(admin.TabularInline):
+    model = InventoryData
+    extra = 0
+    fields = ('code', 'status', 'order')
+    list_select_related = ('order',)
+
+
+class InventoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'availableCount', 'soldOutCount', 'linked_service')
+    search_fields = ('name', 'services__title')
+    inlines = [InventoryDataInline]
+
+    def linked_service(self, obj):
+        svc = obj.services.first()
+        return svc.title if svc else '-'
+    linked_service.short_description = 'Serviço'
+
+
+class InventoryDataAdmin(admin.ModelAdmin):
+    list_display = ('id', 'inventory', 'code', 'status', 'order', 'order_customer')
+    list_filter = ('status', 'inventory')
+    search_fields = ('code', 'inventory__name', 'order__service_title')
+    list_select_related = ('inventory', 'order')
+
+    def order_customer(self, obj):
+        return obj.order.customer.name if obj.order and obj.order.customer else '-'
+    order_customer.short_description = 'Cliente do pedido'
+
+
+admin.site.register(Inventory, InventoryAdmin)
+admin.site.register(InventoryData, InventoryDataAdmin)
 admin.site.register(Media)
 admin.site.register(Page)

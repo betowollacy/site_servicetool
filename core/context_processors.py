@@ -2,7 +2,7 @@ from django.conf import settings
 
 from .models import (
     SystemSetting, Currency, Customer, ServiceList, CustomerOrder, Api,
-    RemoteServiceList, User,
+    RemoteServiceList, User, Inventory,
 )
 
 
@@ -69,6 +69,7 @@ def admin_context(request):
         'coustomerCount': Customer.objects.count(),
         'userCount': User.objects.filter(is_staff=True).count(),
         'apiCount': Api.objects.count(),
+        'inventoryCount': Inventory.objects.count(),
         'apis': list(Api.objects.all().order_by('-id')),
         'buildinApiCount': RemoteServiceList.objects.count(),
         'is_admin_panel': True,
