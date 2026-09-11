@@ -105,7 +105,7 @@ def homepage(request):
         'hot_services': [_service_dict(s) for s in hot_services],
         'trending_services': [_service_dict(s) for s in trending_services],
         'recent_services': [_service_dict(s) for s in recent_services],
-        'recent_top': [_service_dict(s) for s in recent_services[:4]],
+        'recent_top': [_service_dict(s) for s in recent_services[:12]],
         'carousel_groups': [[_service_dict(s) for s in group] for group in carousel_groups],
         'has_carousel': bool(carousel),
         'total_services': ServiceList.objects.filter(status='Active').count(),
