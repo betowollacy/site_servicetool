@@ -24,12 +24,14 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Serviço vinculado</label>
-                    <select name="service_id" class="form-select">
+                    <input type="text" class="form-control mb-2" id="serviceSearch" placeholder="Buscar serviço..." autocomplete="off">
+                    <select name="service_id" class="form-select" id="serviceSelect">
                         <option value="0">-- Nenhum / vincular depois --</option>
                         {% for s in services %}
                         <option value="{{ s.id }}">[{{ s.service_type }}] {{ s.title }}</option>
                         {% endfor %}
                     </select>
+                    <small class="text-muted">Digite para filtrar. As credenciais deste estoque serão entregues nos pedidos do serviço escolhido.</small>
                 </div>
                 <div class="col-12">
                     <button type="submit" class="btn btn-primary"><i class="fas fa-plus me-2"></i> Criar Estoque</button>
@@ -39,4 +41,18 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block footer_script %}
+<script>
+    $(function () {
+        var $select = $("#serviceSelect");
+        $("#serviceSearch").on("keyup", function () {
+            var q = this.value.toLowerCase().trim();
+            $select.find("option").each(function () {
+                $(this).toggle($(this).text().toLowerCase().indexOf(q) > -1);
+            });
+        });
+    });
+</script>
 {% endblock %}

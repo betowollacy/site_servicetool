@@ -574,7 +574,9 @@ def admin_inventory_add(request, inventory_id):
             existing.add(cred.lower())
             added += 1
         _refresh_inventory_counts(inv)
-        msg = '{} credencial(is) adicionada(s) ao estoque.'.format(added)
+        linked = ServiceList.objects.filter(inventory=inv).first()
+        service_name = linked.title if linked else 'nenhum serviço vinculado'
+        msg = '{} credencial(is) adicionada(s) ao estoque "{}" (serviço vinculado: {}).'.format(added, inv.name, service_name)
         if skipped:
             msg += ' {} já existia(m) e foi(ram) ignorada(s).'.format(skipped)
         if added:

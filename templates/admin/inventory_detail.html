@@ -31,13 +31,14 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Serviço vinculado</label>
-                        <select name="service_id" class="form-select">
+                        <input type="text" class="form-control mb-2" id="serviceSearch" placeholder="Buscar serviço..." autocomplete="off">
+                        <select name="service_id" class="form-select" id="serviceSelect">
                             <option value="0">-- Nenhum --</option>
                             {% for s in services %}
                             <option value="{{ s.id }}" {% if linked_service and linked_service.id == s.id %}selected{% endif %}>[{{ s.service_type }}] {{ s.title }}</option>
                             {% endfor %}
                         </select>
-                        <small class="text-muted">Botão "Entregar login e senha" aparece nos pedidos deste serviço.</small>
+                        <small class="text-muted">Digite para filtrar. Botão "Entregar login e senha" aparece nos pedidos deste serviço.</small>
                     </div>
                     <button type="submit" class="btn btn-primary btn-sm"><i class="ti ti-device-floppy me-1"></i> Salvar</button>
                 </form>
@@ -48,6 +49,11 @@
         <div class="card h-100">
             <div class="card-header"><h6 class="mb-0"><i class="ti ti-plus me-1"></i> Adicionar logins ao estoque</h6></div>
             <div class="card-body">
+                <div class="alert alert-light-info mb-3">
+                    <i class="ti ti-link me-1"></i>
+                    <strong>Estoque vinculado a:{% if linked_service %} {{ linked_service.title }}{% else %} nenhum serviço ainda{% endif %}</strong>
+                    {% if linked_service %} — essas credenciais serão entregues nos pedidos deste serviço.{% else %} — vincule um serviço no formulário ao lado para que essas credenciais sejam entregues aos pedidos.{% endif %}
+                </div>
                 <form method="post" action="{% url 'admin_inventory_add' inventory.id %}">
                     {% csrf_token %}
                     <div class="mb-3">
@@ -142,6 +148,13 @@
         $("#credsSearch").on("keyup", function () {
             var q = this.value.toLowerCase().trim();
             $rows.each(function () {
+                $(this).toggle($(this).text().toLowerCase().indexOf(q) > -1);
+            });
+        });
+        var $select = $("#serviceSelect");
+        $("#serviceSearch").on("keyup", function () {
+            var q = this.value.toLowerCase().trim();
+            $select.find("option").each(function () {
                 $(this).toggle($(this).text().toLowerCase().indexOf(q) > -1);
             });
         });
