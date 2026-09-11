@@ -366,6 +366,14 @@ def admin_api_list(request):
 
 
 @_staff
+def admin_api_detail(request, api_id):
+    api = Api.objects.filter(id=api_id).first()
+    if api is None:
+        return redirect('admin_api_list')
+    return render(request, 'admin/api_detail.html', {'api': api})
+
+
+@_staff
 def admin_api_new(request):
     if request.method == 'POST':
         name = (request.POST.get('api_name') or '').strip()

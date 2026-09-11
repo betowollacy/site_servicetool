@@ -1,0 +1,73 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12 d-flex flex-wrap align-items-center gap-2">
+        <h4 class="mb-0"><i class="ti ti-plug-connected me-2"></i>API EXPERT</h4>
+        <div class="ms-auto d-flex gap-2">
+            {% if api %}
+            <form method="post" action="{% url 'admin_api_test' api.id %}">{% csrf_token %}
+                <button class="btn btn-sm btn-outline-secondary"><i class="ti ti-device-desktop-analytics me-1"></i> Testar conexão</button>
+            </form>
+            <form method="post" action="{% url 'admin_api_import' api.id %}" onsubmit="return confirm('Importar/atualizar os serviços do provedor?')">{% csrf_token %}
+                <button class="btn btn-sm btn-outline-primary"><i class="ti ti-download me-1"></i> Importar serviços</button>
+            </form>
+            <a href="{% url 'admin_api_list' %}" class="btn btn-sm btn-outline-secondary"><i class="ti ti-link me-1"></i> Vincular serviços no catálogo</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+
+{% if not api %}
+<div class="card"><div class="card-body text-center text-muted py-5">Nenhuma API cadastrada. <a href="{% url 'admin_api_new' %}">Cadastrar nova API</a>.</div></div>
+{% else %}
+<div class="card mb-3">
+    <div class="card-header">
+        <h6 class="mb-0">Dados da API</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-borderless mb-0">
+                <tr>
+                    <th style="width:200px">Nome</th><td>{{ api.api_name }}
+                        <span class="badge bg-{% if api.status == 'Active' %}success{% else %}secondary{% endif %} ms-1">{{ api.status }}</span></td>
+                </tr>
+                <tr><th>Tipo</th><td>{{ api.api_type|default:'-' }}</td></tr>
+                <tr><th>URL da API</th><td><code>{{ api.api_url|default:'-' }}</code></td></tr>
+                <tr><th>Usuário (username)</th><td><code>{{ api.api_username|default:'-' }}</code></td></tr>
+                <tr><th>Chave da API (apiaccesskey)</th><td><code>{{ api.api_key|default:'-' }}</code></td></tr>
+                <tr><th>Serviços importados</th><td>{{ api.remote_services.count }} serviço(s) do provedor</td></tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h6 class="mb-0">Editar API</h6></div>
+    <form method="post" action="{% url 'admin_api_update' api.id %}">
+        {% csrf_token %}
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3"><label class="form-label">Nome</label><input type="text" name="api_name" class="form-control" value="{{ api.api_name }}" required></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="Active" {% if api.status == 'Active' %}selected{% endif %}>Ativo</option>
+                        <option value="Inactive" {% if api.status == 'Inactive' %}selected{% endif %}>Inativo</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3"><label class="form-label">Tipo (opcional)</label><input type="text" name="api_type" class="form-control" value="{{ api.api_type|default:'' }}"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">URL da API</label><input type="text" name="api_url" class="form-control font-monospace" value="{{ api.api_url|default:'' }}"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Usuário (username)</label><input type="text" name="api_username" class="form-control font-monospace" value="{{ api.api_username|default:'' }}"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Chave da API (apiaccesskey)</label><input type="text" name="api_key" class="form-control font-monospace" value="{{ api.api_key|default:'' }}"></div>
+            </div>
+        </div>
+        <div class="card-footer"><button class="btn btn-primary"><i class="ti ti-device-floppy me-2"></i> Salvar</button></div>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

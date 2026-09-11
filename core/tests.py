@@ -470,6 +470,18 @@ class ProviderApiAdminTests(TestCase):
         resp = self.client.get(reverse('admin_api_list'))
         self.assertEqual(resp.status_code, 200)
 
+    def test_admin_api_detail_shows_only_selected(self):
+        other = Api.objects.create(
+            api_name='Outro Provedor', api_url='https://x.com/public',
+            api_username='outro@x.com', api_key='KEY2', status='Active')
+        self._login()
+        resp = self.client.get(reverse('admin_api_detail', args=[other.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Outro Provedor')
+        self.assertContains(resp, 'KEY2')
+        resp = self.client.get(reverse('admin_api_detail', args=[99999]))
+        self.assertEqual(resp.status_code, 302)
+
 
 class AdminRefundTests(TestCase):
     def setUp(self):

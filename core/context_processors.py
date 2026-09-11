@@ -69,6 +69,7 @@ def admin_context(request):
         'coustomerCount': Customer.objects.count(),
         'userCount': User.objects.filter(is_staff=True).count(),
         'apiCount': Api.objects.count(),
+        'apis': list(Api.objects.all().order_by('-id')),
         'buildinApiCount': RemoteServiceList.objects.count(),
         'is_admin_panel': True,
     }

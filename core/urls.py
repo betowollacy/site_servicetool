@@ -19,6 +19,7 @@ urlpatterns = [
     path('admin-panel/currencies/<int:currency_id>/update/', views_admin.admin_currency_update, name='admin_currency_update'),
     path('admin-panel/gateways/', views_admin.admin_gateway_list, name='admin_gateway_list'),
     path('admin-panel/gateways/<int:gateway_id>/update/', views_admin.admin_gateway_update, name='admin_gateway_update'),
+    path('admin-panel/api/<int:api_id>/', views_admin.admin_api_detail, name='admin_api_detail'),
     path('admin-panel/apis/', views_admin.admin_api_list, name='admin_api_list'),
     path('admin-panel/apis/new/', views_admin.admin_api_new, name='admin_api_new'),
     path('admin-panel/apis/<int:api_id>/update/', views_admin.admin_api_update, name='admin_api_update'),

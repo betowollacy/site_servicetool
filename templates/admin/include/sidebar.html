@@ -67,6 +67,19 @@
 
                 <li class="pc-item pc-hasmenu">
                     <div class="pc-link" style="cursor: pointer">
+                        <span class="pc-micon"><i class="ti ti-plug-connected"></i></span>
+                        <span class="pc-mtext">APIs do Provedor</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
+                    </div>
+                    <ul class="pc-submenu">
+                        {% for api in apis %}
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_api_detail' api.id %}">{% if api.api_name %}{{ api.api_name }}{% else %}API #{{ api.id }}{% endif %} <span class="pc-submenu-count">{% if api.status == 'Active' %}Ativa{% else %}Inativa{% endif %}</span></a></li>
+                        {% endfor %}
+                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_api_list' %}">Gerenciar APIs <span class="pc-submenu-count">{{ apiCount }}</span></a></li>
+                    </ul>
+                </li>
+
+                <li class="pc-item pc-hasmenu">
+                    <div class="pc-link" style="cursor: pointer">
                         <span class="pc-micon"><i class="ti ti-settings"></i></span>
                         <span class="pc-mtext">Configurações</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
                     </div>
@@ -74,7 +87,6 @@
                         <li class="pc-item"><a class="pc-link" href="{% url 'admin_setting' %}">Configurações do Site</a></li>
                         <li class="pc-item"><a class="pc-link" href="{% url 'admin_currency_list' %}">Moedas</a></li>
                         <li class="pc-item"><a class="pc-link" href="{% url 'admin_gateway_list' %}">Gateways de Pagamento</a></li>
-                        <li class="pc-item"><a class="pc-link" href="{% url 'admin_api_list' %}">APIs do Provedor <span class="pc-submenu-count">{{ apiCount }}</span></a></li>
                     </ul>
                 </li>
             </ul>
