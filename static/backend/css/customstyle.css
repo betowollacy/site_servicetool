@@ -4,6 +4,14 @@
     display: flex;
     gap: 5px;
 }
+.btn-xs,
+.btn-group-xs > .btn {
+    --bs-btn-padding-y: 0.14rem;
+    --bs-btn-padding-x: 0.4rem;
+    --bs-btn-font-size: 0.72rem;
+    --bs-btn-border-radius: 0.45rem;
+    line-height: 1.4;
+}
 .offcanvas-order-details-list:last-child{
     border-bottom: 0;
 }
