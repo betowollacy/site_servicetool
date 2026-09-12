@@ -40,7 +40,8 @@ class Command(BaseCommand):
                 rdur = _detect_duration(remote.SERVICENAME)
                 kind = _detect_kind(s.title)
                 rkind = _detect_kind(remote.SERVICENAME)
-                if not _match_acceptable(score, overlap, dur, rdur, kind, rkind):
+                if not _match_acceptable(score, overlap, dur, rdur, kind, rkind,
+                                         s.title, remote.SERVICENAME):
                     remote = None
             if remote is not None:
                 if not dry:
