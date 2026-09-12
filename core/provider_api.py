@@ -99,7 +99,7 @@ _BRAND_STOPWORDS = {
     'servico', 'servicos', 'digital', 'conta', 'aparelho', 'ano', 'mes',
     'meses', 'renovacao', 'ativacao', 'licenca', 'aluguel', 'fonte', 'api',
     'auto', 'horas', 'hora', 'hrs', 'hr', 'hour', 'hours', 'dias', 'dia',
-    'day', 'days', 'tool', 'pro', 'premium', 'basic', 'professional',
+    'day', 'days', 'pro', 'premium', 'basic', 'professional',
     'profissional', 'rent', 'credits', 'credit', 'license', 'activation',
     'activate', 'new', 'existing', 'users', 'user', 'month', 'months', 'year',
     'years', 'week', 'repair', 'read', 'instant', 'insta', 'online', 'pkg',
