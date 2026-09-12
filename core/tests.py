@@ -1196,17 +1196,22 @@ class AdminPromoteTests(TestCase):
         self.staff = User.objects.create_user(username='owner', password='senha123', is_staff=True, is_superuser=True)
         self.client.force_login(self.staff)
 
+    def _edit(self, customer_id, extra=None):
+        data = {'name': 'Novo Admin', 'email': 'novoadmin@teste.com'}
+        if extra:
+            data.update(extra)
+        return self.client.post(reverse('admin_customer_edit', args=[customer_id]), data)
+
     def test_promote_creates_staff_user_with_customer_password(self):
         customer = Customer.objects.create(
             name='Novo Admin', email='novoadmin@teste.com',
             password=Customer.make_password('minhasenha'), currency='BRL',
         )
-        resp = self.client.post(reverse('admin_customer_promote', args=[customer.id]))
+        resp = self._edit(customer.id, {'promote_to_admin': '1'})
         self.assertEqual(resp.status_code, 302)
         user = User.objects.get(username=customer.email)
         self.assertTrue(user.is_staff)
         self.assertTrue(user.is_superuser)
-        self.assertEqual(user.password, customer.password)
         self.assertTrue(user.check_password('minhasenha'))
 
     def test_promote_existing_staff_account_is_kept(self):
@@ -1215,12 +1220,35 @@ class AdminPromoteTests(TestCase):
             password=Customer.make_password('minhasenha'), currency='BRL',
         )
         user = User.objects.create_user(username='jaadmin@teste.com', email='jaadmin@teste.com', password='outra', is_staff=True)
-        resp = self.client.post(reverse('admin_customer_promote', args=[customer.id]))
+        data = {'name': 'Ja Admin', 'email': 'jaadmin@teste.com', 'promote_to_admin': '1'}
+        resp = self.client.post(reverse('admin_customer_edit', args=[customer.id]), data)
         self.assertEqual(resp.status_code, 302)
         user.refresh_from_db()
         self.assertTrue(user.is_staff)
         self.assertEqual(user.username, 'jaadmin@teste.com')
         self.assertTrue(user.check_password('outra'))
+
+    def test_edit_changes_password_when_filled(self):
+        customer = Customer.objects.create(
+            name='Cli', email='cli@teste.com',
+            password=Customer.make_password('antiga'), currency='BRL',
+        )
+        data = {'name': 'Cli', 'email': 'cli@teste.com', 'new_password': 'novasenha'}
+        resp = self.client.post(reverse('admin_customer_edit', args=[customer.id]), data)
+        self.assertEqual(resp.status_code, 302)
+        customer.refresh_from_db()
+        self.assertTrue(customer.check_password('novasenha'))
+
+    def test_edit_rejects_short_password(self):
+        customer = Customer.objects.create(
+            name='Cli', email='cli@teste.com',
+            password=Customer.make_password('antiga'), currency='BRL',
+        )
+        data = {'name': 'Cli', 'email': 'cli@teste.com', 'new_password': '123'}
+        resp = self.client.post(reverse('admin_customer_edit', args=[customer.id]), data)
+        self.assertEqual(resp.status_code, 302)
+        customer.refresh_from_db()
+        self.assertTrue(customer.check_password('antiga'))
 
     def test_list_shows_admin_badge_for_promoted(self):
         customer = Customer.objects.create(

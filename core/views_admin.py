@@ -237,7 +237,29 @@ def admin_customer_edit(request, customer_id):
             customer.role = post['role']
         if post.get('status') in dict(Customer.STATUS):
             customer.status = post['status']
+        changed_pass = False
+        if post.get('new_password'):
+            new_password = post['new_password']
+            if len(new_password) < 6:
+                messages.error(request, 'A nova senha deve ter pelo menos 6 caracteres.')
+                return redirect('admin_customer_list')
+            customer.password = Customer.make_password(new_password)
+            changed_pass = True
         customer.save()
+        if post.get('promote_to_admin') == '1':
+            username = (customer.email or '').strip().lower() or 'admin_{}'.format(customer.id)
+            user = User.objects.filter(username=username).first() or User.objects.filter(email=customer.email).first()
+            if user and user.is_staff and user.is_superuser:
+                messages.info(request, '"{}" já é administrador.'.format(customer.name))
+            else:
+                if not user:
+                    user = User(username=username, email=customer.email or username, password=customer.password)
+                user.is_staff = True
+                user.is_superuser = True
+                user.save()
+                messages.info(request, '"{}" agora é administrador — entra no painel com o mesmo e-mail/senha do site.'.format(customer.name))
+        if changed_pass:
+            messages.info(request, 'Senha de {} alterada com sucesso.'.format(customer.email))
         messages.success(request, 'Cadastro de "{}" atualizado com sucesso.'.format(customer.name))
     return redirect('admin_customer_list')
 

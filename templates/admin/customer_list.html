@@ -43,7 +43,6 @@
                     </td>
                     <td>
                         <div class="d-flex flex-column gap-2">
-                            <button class="btn btn-xs btn-outline-secondary rounded-2" data-bs-toggle="modal" data-bs-target="#passCustomer{{ c.id }}">Senha</button>
                             <form method="post" action="{% url 'admin_customer_api_toggle' c.id %}">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-xs btn-outline-{% if c.api_allow == 'on' %}danger{% else %}success{% endif %} rounded-2">{% if c.api_allow == 'on' %}Desativar{% else %}Ativar API{% endif %}</button>
@@ -57,12 +56,7 @@
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-xs btn-light-danger"><i class="ti ti-trash"></i> Deletar</button>
                             </form>
-                            {% if c.email not in admin_usernames %}
-                            <form method="post" action="{% url 'admin_customer_promote' c.id %}" onsubmit="return confirm('Tornar &quot;{{ c.name }}&quot; administrador do painel? Ele vai acessar o painel com o mesmo e-mail e senha do site.')">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-xs btn-outline-dark rounded-2" title="Cria a conta de administrador do painel a partir deste cliente"><i class="ti ti-shield"></i> Tornar Admin</button>
-                            </form>
-                            {% else %}
+                            {% if c.email in admin_usernames %}
                             <span class="badge bg-light-success text-nowrap"><i class="ti ti-shield me-1"></i>Administrador</span>
                             {% endif %}
                         </div>
@@ -105,31 +99,21 @@
                             {% endfor %}
                         </select>
                     </div>
+                    <div class="col-12"><label class="form-label mb-1">Nova senha</label>
+                        <input type="password" name="new_password" class="form-control form-control-sm" placeholder="Deixe em branco para não alterar" autocomplete="new-password">
+                    </div>
+                    {% if c.email not in admin_usernames %}
+                    <div class="col-12 form-check">
+                        <input type="checkbox" class="form-check-input" id="promote{{ c.id }}" name="promote_to_admin" value="1">
+                        <label class="form-check-label" for="promote{{ c.id }}"><i class="ti ti-shield me-1"></i>Tornar administrador do painel (mesmo e-mail/senha do site)</label>
+                    </div>
+                    {% else %}
+                    <div class="col-12"><span class="badge bg-light-success text-nowrap"><i class="ti ti-shield me-1"></i>Já é administrador do painel</span></div>
+                    {% endif %}
                 </div>
                 <div class="modal-footer pb-0 pt-2">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button class="btn btn-primary btn-sm">Salvar Cadastro</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-<div class="modal fade" id="passCustomer{{ c.id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form method="post" action="{% url 'admin_customer_password' c.id %}" onsubmit="return confirm('Trocar a senha de {{ c.email }}?')">
-                {% csrf_token %}
-                <div class="modal-header pb-2">
-                    <h6 class="modal-title">Trocar Senha — {{ c.email }}</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <label class="form-label mb-1">Nova senha</label>
-                    <input type="password" name="new_password" class="form-control" placeholder="Mínimo 6 caracteres" required>
-                </div>
-                <div class="modal-footer pb-0 pt-2">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button class="btn btn-primary btn-sm">Trocar Senha</button>
+                    <button class="btn btn-primary btn-sm">Salvar</button>
                 </div>
             </form>
         </div>
