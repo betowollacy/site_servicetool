@@ -31,7 +31,7 @@
                     <th>Vendas</th>
                     <th>Status</th>
                     <th>API</th>
-                    <th class="text-nowrap" style="position:sticky; right:0; background:var(--bs-body-bg,#ffffff); box-shadow:-2px 0 6px rgba(0,0,0,.08);">Ação</th>
+                    <th class="text-nowrap">Ação</th>
                 </tr>
             </thead>
             <tbody>
@@ -53,7 +53,7 @@
                             {% endif %}
                         </form>
                     </td>
-                    <td class="text-nowrap" style="position:sticky; right:0; background:var(--bs-body-bg,#ffffff); box-shadow:-2px 0 6px rgba(0,0,0,.08);">
+                    <td class="text-nowrap">
                         <div class="d-flex gap-1">
                         <form method="post" action="{% url 'admin_service_delete' svtype s.id %}" onsubmit="return confirm('Excluir o serviço &quot;{{ s.title }}&quot;?');">
                             {% csrf_token %}
