@@ -7,46 +7,109 @@
 <meta name="keywords" content="{{ keyWord }}">
 {% endblock %}
 {% block content %}
+<style>
+    .pd-price { font-size: 2rem; font-weight: 700; line-height: 1; }
+    .pd-chip {
+        display: inline-flex; align-items: center; gap: .35rem;
+        padding: .3rem .7rem; border-radius: 2rem; font-size: .8rem; font-weight: 600;
+        border: 1px solid var(--bs-border-color);
+    }
+    .pd-sticky { position: sticky; top: 90px; }
+    .pd-trust { display: flex; align-items: center; gap: .6rem; font-size: .85rem; }
+    .pd-trust i { font-size: 1.05rem; }
+    .pd-article img { max-width: 100%; height: auto; }
+    @media (max-width: 991.98px) { .pd-sticky { position: static; } }
+</style>
 <div class="my-4">
     <div class="container">
-        <div class="row g-3 align-items-start">
-            <div class="col-lg-8 d-flex flex-column gap-3">
-                <div class="card rounded-0 medium-height">
+        <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
+            <ol class="breadcrumb mb-3 small">
+                <li class="breadcrumb-item"><a href="{% url 'homepage' %}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'category' item_catslug %}">Serviços</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ serviceData.title|truncatechars:60 }}</li>
+            </ol>
+        </nav>
+
+        <div class="row g-4 align-items-start">
+            <!-- ==================== COLUNA PRODUTO ==================== -->
+            <div class="col-lg-7 d-flex flex-column gap-3">
+                <div class="card rounded-0">
                     <div class="p-4">
-                        <div class="service-top-section align-items-start gap-4">
-                            <div class="service-img">
-                                <img src="{{ serviceData.thumbnail }}" alt="{{ serviceData.title }}" height="267" width="400" class="img-fluid rounded-1 border" id="service-thumbnail">
+                        <div class="row g-4 align-items-center">
+                            <div class="col-md-5">
+                                <img src="{{ serviceData.thumbnail }}" alt="{{ serviceData.title }}"
+                                     class="img-fluid rounded border w-100" id="service-thumbnail">
                             </div>
-                            <div class="flex-grow-1 service-title">
-                                <small>
-                                    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
-                                        <ol class="breadcrumb mb-1 pb-0">
-                                            <li class="breadcrumb-item"><a href="{% url 'homepage' %}" class="breadcrumb-item active">Home</a></li>
-                                            <li class="breadcrumb-item"><a href="{% url 'category' item_catslug %}" class="breadcrumb-item active">Serviços</a></li>
-                                            <li class="breadcrumb-item active" aria-current="page">Fazer um pedido</li>
-                                        </ol>
-                                    </nav>
-                                </small>
-                                <h1 class="fs-4 fw-medium">{{ serviceData.title }}</h1>
+                            <div class="col-md-7">
+                                <h1 class="fs-4 fw-medium mb-2">{{ serviceData.title }}</h1>
+                                <div class="d-flex flex-wrap gap-2 mb-3">
+                                    {% if serviceData.process_type == 'Auto' %}
+                                    <span class="pd-chip text-success"><i class="bi bi-lightning-charge-fill"></i> Entrega automática</span>
+                                    {% else %}
+                                    <span class="pd-chip text-warning"><i class="bi bi-person-check-fill"></i> Processado pela equipe</span>
+                                    {% endif %}
+                                    {% if serviceData.duration %}
+                                    <span class="pd-chip text-primary"><i class="bi bi-clock-history"></i> {{ serviceData.duration }}</span>
+                                    {% endif %}
+                                    {% if serviceData.delivery_time %}
+                                    <span class="pd-chip text-secondary"><i class="bi bi-stopwatch"></i> {{ serviceData.delivery_time }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="pd-trust text-body-secondary mb-1"><i class="bi bi-shield-check text-success"></i> Pagamento pelo saldo da carteira</div>
+                                <div class="pd-trust text-body-secondary mb-1"><i class="bi bi-arrow-repeat text-primary"></i> Falha no envio = reembolso automático</div>
+                                <div class="pd-trust text-body-secondary"><i class="bi bi-headset text-warning"></i> Suporte para acompanhar o pedido</div>
                             </div>
                         </div>
                     </div>
-                    <div class="d-flex gap-2 border-top border-bottom px-4">
-                        {% if customer %}<div class="stat-cell">
-                            <div class="stat-lbl">Preço</div>
-                            <div class="stat-val text-primary">R$ {{ Price|floatformat:2 }}</div>
-                        </div>{% endif %}
-                        {% if customer %}<div class="stat-cell">
-                            <div class="stat-lbl">Entrega</div>
-                            <div class="stat-val text-warning">{{ serviceData.delivery_time }}</div>
-                        </div>{% endif %}
-                        {% if serviceData.duration %}
-                        <div class="stat-cell">
-                            <div class="stat-lbl">Duração</div>
-                            <div class="stat-val text-success">{{ serviceData.duration }}</div>
+
+                    {% if serviceData.article %}
+                    <div class="border-top p-4">
+                        <h2 class="fs-5 fw-medium mb-3">Sobre o serviço</h2>
+                        <div class="pd-article text-body" style="white-space: pre-line;">
+                            {{ serviceData.article|richtext }}
                         </div>
-                        {% endif %}
                     </div>
+                    {% endif %}
+
+                    {% if serviceData.tool_download or serviceData.login_url or serviceData.register_url %}
+                    <div class="p-4 border-top">
+                        <h2 class="fs-5 fw-medium mb-3">Recursos da Ferramenta</h2>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if serviceData.tool_download %}
+                            <a class="btn btn-light-success rounded" href="{{ serviceData.tool_download }}" target="_blank"><i class="bi bi-cloud-download"></i> Baixar Ferramenta</a>
+                            {% endif %}
+                            {% if serviceData.login_url %}
+                            <a class="btn btn-light-primary rounded" href="{{ serviceData.login_url }}" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Login</a>
+                            {% endif %}
+                            {% if serviceData.register_url %}
+                            <a class="btn btn-light-warning rounded" href="{{ serviceData.register_url }}" target="_blank"><i class="bi bi-person-plus"></i> Cadastrar</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ==================== COLUNA COMPRA ==================== -->
+            <div class="col-lg-5">
+                <div class="card rounded-0 pd-sticky">
+                    <div class="p-4 border-bottom d-flex align-items-center justify-content-between">
+                        <div>
+                            <small class="text-body-secondary d-block mb-1">Preço</small>
+                            <span class="pd-price text-primary">R$ {{ Price|floatformat:2 }}</span>
+                        </div>
+                        <div class="text-end">
+                            {% if serviceData.process_type == 'Auto' %}
+                            <span class="badge bg-light-success text-uppercase">Entrega automática</span>
+                            {% else %}
+                            <span class="badge bg-light-warning text-uppercase">Entrega manual</span>
+                            {% endif %}
+                            {% if serviceData.delivery_time %}
+                            <div class="small text-body-secondary mt-2"><i class="bi bi-stopwatch"></i> {{ serviceData.delivery_time }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
                     <div class="p-4">
                         <div class="show-error-message"></div>
 
@@ -65,7 +128,7 @@
                             <input type="hidden" name="serviceID" value="{{ serviceData.id }}">
 
                             {% if serviceInputs %}
-                            <div>
+                            <div class="mb-3">
                                 {% for serviceInput in serviceInputs %}
                                 {% if serviceData.service_type == 'Method Service' and serviceInput.name == 'Instruções' %}
                                 <div class="mb-3">
@@ -102,92 +165,61 @@
                             {% endif %}
 
                             {% if serviceTags %}
-                            <div class="mb-4 mt-4 d-flex flex-wrap gap-2">
+                            <div class="mb-3 d-flex flex-wrap gap-2">
                                 {% for tag in serviceTags %}
                                 {% if tag == 'Process by' %}
-                                <span class="badge bg-light-secondary pt-2 mt-2 border">Processado por {% if serviceData.process_type == 'Auto' %}API{% else %}Administrador{% endif %}</span>
+                                <span class="badge bg-light-secondary pt-2 border">Processado por {% if serviceData.process_type == 'Auto' %}API{% else %}Administrador{% endif %}</span>
                                 {% else %}
-                                <span class="badge bg-light-secondary pt-2 mt-2 border">{{ tag }}</span>
+                                <span class="badge bg-light-secondary pt-2 border">{{ tag }}</span>
                                 {% endif %}
                                 {% endfor %}
                             </div>
                             {% endif %}
 
-                            <div class="mb-4">
+                            <div class="mb-3">
                                 <div class="form-check">
                                     <input class="form-check-input" id="form-check-input" type="checkbox" value="" checked required />
                                     <label class="form-check-label" for="form-check-input">Eu concordo com os <a href="#">termos e condições</a></label>
                                     <div class="invalid-feedback">Você deve concordar antes de enviar.</div>
                                 </div>
                             </div>
-                            <div class="mb-1">
-                                <button type="submit" class="btn btn-primary rounded place-order w-100" id="placeOrderBtn">FAZER UM PEDIDO</button>
-                            </div>
-                            {% if serviceData.article %}
-                            <div class="mt-3 p-3 bg-light rounded-2 border-start border-primary border-4" style="white-space: pre-line; font-size: 1rem; color: #1f2937; background-color: #ffffff;" id="service-article">
-                                {{ serviceData.article|richtext }}
-                            </div>
-                            {% endif %}
+                            <button type="submit" class="btn btn-primary rounded place-order w-100 btn-lg" id="placeOrderBtn">FAZER UM PEDIDO</button>
                         </form>
                         {% else %}
-                        <div class="text-center py-4">
-                                <p class="mb-3 text-muted">Por favor, faça login para fazer um pedido.</p>
-                            <button class="btn btn-primary rounded" data-bs-toggle="modal" data-bs-target="#servicetoolAuthModal" data-auth-view="login">Entrar / Cadastrar</button>
+                        <div class="text-center py-3">
+                            <p class="mb-3 text-muted">Entre na sua conta para ver o preço e fazer o pedido.</p>
+                            <button class="btn btn-primary rounded w-100 btn-lg" data-bs-toggle="modal" data-bs-target="#servicetoolAuthModal" data-auth-view="login">Entrar / Cadastrar</button>
                         </div>
                         {% endif %}
                     </div>
-
-                    {% if serviceData.tool_download or serviceData.login_url or serviceData.register_url %}
-                    <div class="p-4 border-top">
-                        <h2 class="fs-5 fw-medium mb-3">Recursos da Ferramenta</h2>
-                        <div class="d-flex flex-wrap gap-2">
-                            {% if serviceData.tool_download %}
-                            <a class="btn btn-light-success rounded" href="{{ serviceData.tool_download }}" target="_blank"><i class="bi bi-cloud-download"></i> Baixar Ferramenta</a>
-                            {% endif %}
-                            {% if serviceData.login_url %}
-                            <a class="btn btn-light-primary rounded" href="{{ serviceData.login_url }}" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Login</a>
-                            {% endif %}
-                            {% if serviceData.register_url %}
-                            <a class="btn btn-light-warning rounded" href="{{ serviceData.register_url }}" target="_blank"><i class="bi bi-person-plus"></i> Cadastrar</a>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endif %}
-
-                </div>
-            </div>
-
-            <div class="col-lg-4">
-                <div class="card rounded-0">
-                    {% if hot_services %}
-                    <div class="card-header pb-0 pt-2 border-0">
-                        <ul class="nav nav-tabs analytics-tab" id="myTab" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active fw-semibold px-0 mb-2 pb-2" id="related-tab" data-bs-toggle="tab" data-bs-target="#related-tab-pane" type="button" role="tab" aria-controls="related-tab-pane" aria-selected="true">SERVIÇOS RELACIONADOS</button>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="card-body px-4 py-0">
-                        <ul class="list-group list-group-flush" id="related-services">
-                            {% for s in hot_services %}
-                            <li class="list-group-item px-0 pb-4 bg-transparent">
-                                <a href="{% url 'service_view' s.slug %}" class="d-flex gap-3">
-                                    <img src="{{ s.thumbnail }}" alt="{{ s.title }}" width="105" height="70" class="rounded border">
-                                    <div>
-                                        <p class="text-muted mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
-                                        <div>
-                                            {% if customer %}<span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span><span class="badge bg-light-warning text-uppercase" style="font-size:11px">{{ s.delivery_time }}</span>{% endif %}
-                                        </div>
-                                    </div>
-                                </a>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
+
+        <!-- ==================== RELACIONADOS ==================== -->
+        {% if hot_services %}
+        <div class="mt-4">
+            <h2 class="fs-5 fw-medium mb-3">Serviços Relacionados</h2>
+            <div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xxl-5">
+                {% for s in hot_services %}
+                <div class="col">
+                    <a href="{% url 'service_view' s.slug %}" class="card rounded-0 h-100 text-decoration-none text-body">
+                        <img src="{{ s.thumbnail }}" alt="{{ s.title }}" class="card-img-top border-bottom" style="height:120px; object-fit:cover;">
+                        <div class="card-body p-3">
+                            <p class="mb-2 fw-medium text-truncate-2" style="min-height:2.6rem;">{{ s.title }}</p>
+                            {% if customer %}
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span>
+                                <span class="badge bg-light-warning text-uppercase" style="font-size:11px">{{ s.delivery_time }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
