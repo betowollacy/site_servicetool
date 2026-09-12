@@ -5,6 +5,7 @@ import re
 import unicodedata
 import urllib.parse
 import urllib.request
+from xml.sax.saxutils import escape
 
 from .models import Api, ApiLog, CustomerOrder, InventoryData, RemoteServiceList, ServiceInput, Statement
 
@@ -13,15 +14,18 @@ logger = logging.getLogger(__name__)
 TIMEOUT = 30
 
 PROVIDER_ACTIONS = {
+    # Painel GSM Theme: um unico conjunto de acoes para TODOS os tipos.
+    # Documentacao oficial (gsmtheme/GSM-Theme-Api-Standards):
+    #   accountinfo | imeiservicelist | placeimeiorder | getimeiorder
     'Server Service': {
-        'list': 'serverservicelist',
-        'place': 'placeserverorder',
-        'get': 'getserverorder',
+        'list': 'imeiservicelist',
+        'place': 'placeimeiorder',
+        'get': 'getimeiorder',
     },
     'Credit Service': {
-        'list': 'creditservicelist',
-        'place': 'placecreditorder',
-        'get': 'getcreditorder',
+        'list': 'imeiservicelist',
+        'place': 'placeimeiorder',
+        'get': 'getimeiorder',
     },
     'IMEI Service': {
         'list': 'imeiservicelist',
@@ -363,6 +367,37 @@ def _fields_dict(order):
     return {i.field_name: i.field_value for i in OrderInput.objects.filter(order=order)}
 
 
+def _params_xml(service, fields, qnt, order_id=None):
+    """Monta o XML de 'parameters' no padrao do painel GSM Theme.
+
+    O controller do painel faz simplexml_load_string($request->parameters)
+    e le $params->ID / $params->QNT / $params->IMEI / $params->CUSTOMFIELD,
+    entao o XML precisa de um elemento raiz de wrapper. CUSTOMFIELD vai em
+    base64 de JSON (mesma convencao do nosso public_api). Servicos IMEI
+    enviam o IMEI no elemento <IMEI> e o resto em CUSTOMFIELD.
+    """
+    parts = ['<parameters>']
+    if order_id is not None:
+        parts.append('<ID>{}</ID>'.format(escape(str(order_id))))
+    else:
+        parts.append('<ID>{}</ID>'.format(escape(str((service.referenceid or '').strip()))))
+        parts.append('<QNT>{}</QNT>'.format(escape(str(qnt or 1))))
+        imei = ''
+        rest = {}
+        for k, v in (fields or {}).items():
+            if str(k).strip().lower() in ('imei', 'imei1', 'imeis', 'imei2'):
+                imei = str(v).strip() or imei
+            else:
+                rest[k] = v
+        if imei:
+            parts.append('<IMEI>{}</IMEI>'.format(escape(imei)))
+        if rest:
+            custom = base64.b64encode(json.dumps(rest).encode('utf-8')).decode('utf-8')
+            parts.append('<CUSTOMFIELD>{}</CUSTOMFIELD>'.format(escape(custom)))
+    parts.append('</parameters>')
+    return ''.join(parts)
+
+
 def _extract_credentials(row):
     """Extrai credenciais (email/usuario e senha) devolvidas pelo provedor."""
     pairs = []
@@ -442,12 +477,7 @@ def submit_local_order(order):
     service = order.service
     actions = actions_for(service)
     fields = _fields_dict(order)
-    custom = base64.b64encode(json.dumps(fields).encode('utf-8')).decode('utf-8') if fields else ''
-    params = json.dumps({
-        'ID': (service.referenceid or '').strip(),
-        'QNT': str(order.service_qnt or 1),
-        'CUSTOMFIELD': custom,
-    })
+    params = _params_xml(service, fields, order.service_qnt or 1)
     try:
         data = _request(api, actions['place'], params)
         row = _success_rows(data)[0]
@@ -498,7 +528,7 @@ def sync_local_order(order):
         return False
     service = order.service
     actions = actions_for(service)
-    params = json.dumps({'ID': (order.trx_id or '').strip()})
+    params = _params_xml(service, None, 1, order_id=(order.trx_id or '').strip())
     try:
         data = _request(api, actions['get'], params)
         row = _success_rows(data)[0]
