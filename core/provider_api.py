@@ -168,7 +168,9 @@ def _brand_overlap(a_tokens, b_tokens):
 
 def find_remote_match(title, api=None):
     """Procura o produto do provedor que equivale ao titulo local.
-    Retorna (RemoteServiceList, score) do melhor candidato ou (None, 0)."""
+    Retorna (RemoteServiceList, score, brand_overlap) do melhor candidato
+    ou (None, 0.0, 0.0). Marca reconhecida + qualquer reforco (duracao ou
+    tipo iguais) ja valida o vinculo; sem reforco nenhum, rejeita."""
     qs = RemoteServiceList.objects.all()
     if api is not None:
         qs = qs.filter(api=api)
@@ -178,8 +180,8 @@ def find_remote_match(title, api=None):
     dur = _detect_duration(title)
     kind = _detect_kind(title)
     if not brand:
-        return None, 0.0
-    best, best_score = None, 0.0
+        return None, 0.0, 0.0
+    best, best_score, best_overlap = None, 0.0, 0.0
     for r in qs:
         rbrand = _brand_tokens(r.SERVICENAME)
         overlap = _brand_overlap(brand, rbrand)
@@ -193,8 +195,20 @@ def find_remote_match(title, api=None):
         if kind and rkind:
             score += 0.8 if kind == rkind else -0.6
         if score > best_score:
-            best, best_score = r, score
-    return best, best_score
+            best, best_score, best_overlap = r, score, overlap
+    return best, best_score, best_overlap
+
+
+def _match_acceptable(score, overlap, dur, rdur, kind, rkind):
+    if score >= 2.2:
+        return True
+    if overlap < 0.5:
+        return False
+    if dur and rdur and dur == rdur:
+        return True
+    if kind and rkind and kind == rkind:
+        return True
+    return False
 
 
 def auto_link_service(service, min_score=2.2):
@@ -202,8 +216,14 @@ def auto_link_service(service, min_score=2.2):
     Nao sobrescreve vinculos existentes. Retorna (remote|None, score)."""
     if service.api_id and str(service.referenceid or '').strip():
         return None, 0.0
-    remote, score = find_remote_match(service.title)
-    if remote is None or score < min_score:
+    remote, score, overlap = find_remote_match(service.title)
+    if remote is None:
+        return None, score
+    dur = _detect_duration(service.title)
+    rdur = _detect_duration(remote.SERVICENAME)
+    kind = _detect_kind(service.title)
+    rkind = _detect_kind(remote.SERVICENAME)
+    if not _match_acceptable(score, overlap, dur, rdur, kind, rkind):
         return None, score
     service.api = remote.api
     service.referenceid = str(remote.referenceid)

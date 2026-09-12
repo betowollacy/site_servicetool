@@ -31,15 +31,23 @@ class Command(BaseCommand):
             t = norm(s.title)
             if 'fonte' in t:
                 continue  # rota manual declarada
-            remote, score = auto_link_service(s) if not dry else (None, 0)
-            if not dry:
-                from core.provider_api import find_remote_match
-                remote, score = find_remote_match(s.title)
-            if remote is not None and score >= 2.2:
-                linked.append((s.id, s.title, remote.referenceid, remote.SERVICENAME, score))
+            from core.provider_api import (
+                _detect_duration, _detect_kind, _match_acceptable, find_remote_match,
+            )
+            remote, score, overlap = find_remote_match(s.title)
+            if remote is not None:
+                dur = _detect_duration(s.title)
+                rdur = _detect_duration(remote.SERVICENAME)
+                kind = _detect_kind(s.title)
+                rkind = _detect_kind(remote.SERVICENAME)
+                if not _match_acceptable(score, overlap, dur, rdur, kind, rkind):
+                    remote = None
+            if remote is not None:
                 if not dry:
-                    self.stdout.write('LINKED id={} -> ref={} ({}) score={:.2f}'.format(
-                        s.id, remote.referenceid, remote.SERVICENAME[:50], score))
+                    auto_link_service(s)
+                linked.append((s.id, s.title, remote.referenceid, remote.SERVICENAME, score))
+                self.stdout.write('LINKED id={} -> ref={} ({}) score={:.2f}'.format(
+                    s.id, remote.referenceid, remote.SERVICENAME[:50], score))
             else:
                 unmatched.append((s.id, s.title, score))
         self.stdout.write('--- RESUMO ---')
