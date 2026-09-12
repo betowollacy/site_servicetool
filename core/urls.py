@@ -4,6 +4,7 @@ from . import public_api, views, views_admin
 
 urlpatterns = [
     path('admin-panel/', views_admin.admin_dashboard, name='admin_dashboard'),
+    path('admin-panel/orders/pending/', views_admin.admin_orders_unseen, name='admin_orders_unseen'),
     path('admin-panel/orders/<str:status>/', views_admin.admin_orders, name='admin_orders'),
     path('admin-panel/orders/<int:order_id>/update/', views_admin.admin_order_update, name='admin_order_update'),
     path('admin-panel/orders/<int:order_id>/refund/', views_admin.admin_order_refund, name='admin_order_refund'),

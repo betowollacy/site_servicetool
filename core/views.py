@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from . import asaas, binance, provider_api, public_api
+from . import asaas, binance, notify, provider_api, public_api
 from .models import (
     Api, ApiLog, ACTIVATION_SERVICE_EXTRA_FIELDS, CREDIT_SERVICE_EXTRA_FIELDS,
     Currency, Customer, CustomerOrder, GatewayLog, Invoice, METHOD_SERVICE_EXTRA_FIELDS,
@@ -625,6 +625,7 @@ def submit_order(request, customer):
     price = service.original_price
     if customer.balance >= price:
         _debit_and_forward_order(order, customer)
+        notify.send_telegram(notify.new_order_message(order, paid=True))
         messages.success(request, 'Pedido realizado com sucesso.')
         return redirect('customer_order_history')
     else:
@@ -640,6 +641,7 @@ def submit_order(request, customer):
             customer_email=customer.email,
             order=order,
         )
+        notify.send_telegram(notify.new_order_message(order, paid=False))
         return redirect('checkout', invoice_id=invoice.id)
 
 

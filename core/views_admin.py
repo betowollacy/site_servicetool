@@ -60,6 +60,7 @@ def admin_orders(request, status):
     db_status, label = STATUS_MAP.get(status, ('Waiting Action', 'Aguardando Ação'))
     orders = list(CustomerOrder.objects.filter(service_status=db_status)
                   .select_related('customer', 'service__inventory'))
+    CustomerOrder.objects.filter(service_status=db_status, seen='false').update(seen='true')
     inv_ids = {o.service.inventory_id for o in orders if o.service and o.service.inventory_id}
     avail = dict(
         InventoryData.objects.filter(inventory_id__in=inv_ids, status='Available')
@@ -81,6 +82,21 @@ def admin_orders(request, status):
         'status_choices': SERVICE_STATUS_CHOICES,
     }
     return render(request, 'admin/orders.html', ctx)
+
+
+@_staff
+def admin_orders_unseen(request):
+    qs = CustomerOrder.objects.filter(seen='false').select_related('customer').order_by('-id')
+    return JsonResponse({
+        'count': qs.count(),
+        'orders': [{
+            'id': o.id,
+            'customer': o.customer.name,
+            'service': o.service_title,
+            'price': '{}'.format(o.service_price),
+            'status': o.service_status,
+        } for o in qs[:5]],
+    })
 
 
 @_staff
@@ -264,6 +280,7 @@ def admin_setting(request):
         'siteTitle', 'siteMetaTitle', 'siteMetaDes', 'siteKeyword', 'siteLogo', 'siteFav',
         'siteEmailAddress', 'sitePhoneNumber', 'siteAddress',
         'siteWhatsappUrl', 'siteTelegramUrl', 'siteFacebookUrl', 'siteTwitterUrl',
+        'tgBotToken', 'tgChatId',
     ]
     settings = {k: SystemSetting.get(k, '') for k in keys}
     if request.method == 'POST':

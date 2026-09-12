@@ -10,7 +10,7 @@ from core import asaas, provider_api
 from core.models import (
     Api, Currency, Customer, CustomerOrder, Inventory, InventoryData, Invoice, OrderInput,
     PaymentDeposit, PaymentGateway, RemoteServiceInput, RemoteServiceList, ServiceGroup,
-    ServiceInput, ServiceList, Statement, User,
+    ServiceInput, ServiceList, Statement, SystemSetting, User,
 )
 
 
@@ -1021,6 +1021,46 @@ class ImeiOrderFlowTests(TestCase):
         self.assertIn('356938035643809', html)
         self.assertIn('tela de hello', html)
         self.assertIn('Descrição do Serviço', html)
+
+    def test_submit_order_pokes_telegram(self):
+        SystemSetting.objects.create(key='tgBotToken', value='123:abc')
+        SystemSetting.objects.create(key='tgChatId', value='-100')
+        self._customer_login()
+        with patch('core.notify.send_telegram') as send:
+            resp = self.client.post(reverse('submit_order'), {
+                'serviceID': self.service.id,
+                'IMEI': '356938035643809',
+                'Descreva o serviço': 'tela de hello',
+            })
+        self.assertEqual(resp.status_code, 302)
+        send.assert_called_once()
+        text = send.call_args.args[0]
+        self.assertIn('NOVO PEDIDO', text)
+        self.assertIn('Consulta IMEI', text)
+        self.assertIn('tela de hello', text)
+        self.assertIn('Pago via saldo', text)
+        order = CustomerOrder.objects.latest('id')
+        self.assertEqual(order.seen, 'false')
+
+    def test_admin_pending_bell_and_seen(self):
+        self._customer_login()
+        self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+            'IMEI': '356938035643809',
+            'Descreva o serviço': 'tela de hello',
+        })
+        self.client.logout()
+        self.client.force_login(self.staff)
+        resp = self.client.get(reverse('admin_orders_unseen'))
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertEqual(data['count'], 1)
+        self.assertEqual(data['orders'][0]['customer'], 'Cliente IMEI')
+        self.assertEqual(data['orders'][0]['service'], 'Consulta IMEI')
+        page = self.client.get(reverse('admin_orders', args=['waiting']))
+        self.assertEqual(page.status_code, 200)
+        resp2 = self.client.get(reverse('admin_orders_unseen'))
+        self.assertEqual(json.loads(resp2.content)['count'], 0)
 
 
 class MethodServiceTests(TestCase):
