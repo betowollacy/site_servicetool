@@ -837,6 +837,17 @@ class CreditServiceFormTests(TestCase):
         self.assertIn('IMEI ou Serial', html)
         self.assertNotIn('Quantidade de Créditos', html)
 
+    def test_imei_service_without_fields_still_requires_imei_or_serial(self):
+        self._login()
+        imei = ServiceList.objects.create(
+            service_type='IMEI Service', service_group=self.group,
+            title='Sem Campos', original_price=Decimal('4.00'), status='Active', slug='sem-campos',
+        )
+        resp = self.client.get(reverse('service_view', args=[imei.slug]))
+        html = resp.content.decode()
+        self.assertIn('name="IMEI"', html)
+        self.assertIn('IMEI ou Serial', html)
+
     def test_submit_order_requires_user_and_email(self):
         self._login()
         resp = self.client.post(reverse('submit_order'), {
