@@ -365,7 +365,8 @@ def _apply_service_post(service, post):
         service.status = post['status']
     service.api_enabled = bool(post.get('api_enabled'))
     service.collect_login = bool(post.get('collect_login'))
-    service.collect_email = bool(post.get('collect_email'))
+    if post.get('collect_fields') in ('user', 'email', 'both'):
+        service.collect_fields = post['collect_fields']
     if post.get('carousel') in ('promocoes', 'desbloqueios'):
         service.carousel = post['carousel']
     else:
@@ -498,26 +499,24 @@ def admin_service_toggle_login(request, svtype, service_id):
         service.collect_login = not service.collect_login
         service.save(update_fields=['collect_login'])
         if service.collect_login:
-            messages.success(request, f'"{service.title}" agora pede usuário e e-mail do cliente na compra.')
+            messages.success(request, f'"{service.title}" agora pede usuário/e-mail do cliente na compra.')
         else:
             messages.warning(request, f'"{service.title}" não pede mais usuário/e-mail do cliente na compra.')
     return redirect('admin_service_list', svtype)
 
 
 @_staff
-def admin_service_toggle_email(request, svtype, service_id):
+def admin_service_set_fields(request, svtype, service_id):
     db_type, _label = _service_type_from(svtype)
     service = ServiceList.objects.filter(id=service_id, service_type=db_type).first()
     if not service:
         messages.error(request, 'Serviço não encontrado.')
         return redirect('admin_service_list', svtype)
-    if request.method == 'POST':
-        service.collect_email = not service.collect_email
-        service.save(update_fields=['collect_email'])
-        if service.collect_email:
-            messages.success(request, f'"{service.title}" agora pede também o e-mail da ferramenta na compra.')
-        else:
-            messages.warning(request, f'"{service.title}" agora pede somente o usuário na compra.')
+    if request.method == 'POST' and request.POST.get('collect_fields') in ('user', 'email', 'both'):
+        service.collect_fields = request.POST['collect_fields']
+        service.save(update_fields=['collect_fields'])
+        labels = {'user': 'somente o usuário', 'email': 'somente o e-mail da ferramenta', 'both': 'usuário e e-mail da ferramenta'}
+        messages.success(request, f'"{service.title}" agora solicita {labels[service.collect_fields]}.')
     return redirect('admin_service_list', svtype)
 
 

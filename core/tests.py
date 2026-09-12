@@ -996,19 +996,19 @@ class ActivationServiceTests(TestCase):
         self.assertNotIn('E-mail da Ferramenta', html)
         self.assertNotIn('o cliente precisa estar cadastrado na ferramenta', html)
 
-    def test_service_view_offers_only_username_when_collect_email_off(self):
+    def test_service_view_offers_only_username_when_collect_fields_user(self):
         self._login()
-        self.service.collect_email = False
-        self.service.save(update_fields=['collect_email'])
+        self.service.collect_fields = 'user'
+        self.service.save(update_fields=['collect_fields'])
         resp = self.client.get(reverse('service_view', args=[self.service.slug]))
         html = resp.content.decode()
         self.assertIn('name="Usuário"', html)
         self.assertNotIn('E-mail da Ferramenta', html)
 
-    def test_submit_order_requires_only_username_when_email_off(self):
+    def test_submit_order_requires_only_username_when_collect_fields_user(self):
         self._login()
-        self.service.collect_email = False
-        self.service.save(update_fields=['collect_email'])
+        self.service.collect_fields = 'user'
+        self.service.save(update_fields=['collect_fields'])
         resp = self.client.post(reverse('submit_order'), {'serviceID': self.service.id})
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(CustomerOrder.objects.count(), 0)
@@ -1022,16 +1022,28 @@ class ActivationServiceTests(TestCase):
         self.assertIn('Usuário', inputs)
         self.assertNotIn('E-mail da Ferramenta', inputs)
 
-    def test_admin_toggle_email(self):
-        staff = User.objects.create_user(username='adminemail', password='senha123', is_staff=True)
+    def test_submit_order_requires_email_only_when_collect_fields_email(self):
+        self._login()
+        self.service.collect_fields = 'email'
+        self.service.save(update_fields=['collect_fields'])
+        resp = self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+            'E-mail da Ferramenta': 'conta@ferramenta.com',
+        })
+        self.assertEqual(resp.status_code, 302)
+        order = CustomerOrder.objects.latest('id')
+        inputs = {i.field_name for i in order.order_inputs.all()}
+        self.assertIn('E-mail da Ferramenta', inputs)
+        self.assertNotIn('Usuário', inputs)
+
+    def test_admin_set_fields(self):
+        staff = User.objects.create_user(username='adminfields', password='senha123', is_staff=True)
         self.client.force_login(staff)
-        resp = self.client.post(reverse('admin_service_toggle_email', args=['activation', self.service.id]))
+        resp = self.client.post(reverse('admin_service_set_fields', args=['activation', self.service.id]),
+                                {'collect_fields': 'user'})
         self.assertEqual(resp.status_code, 302)
         self.service.refresh_from_db()
-        self.assertFalse(self.service.collect_email)
-        resp = self.client.post(reverse('admin_service_toggle_email', args=['activation', self.service.id]))
-        self.service.refresh_from_db()
-        self.assertTrue(self.service.collect_email)
+        self.assertEqual(self.service.collect_fields, 'user')
 
     def test_submit_order_without_login_when_collect_login_off(self):
         self._login()

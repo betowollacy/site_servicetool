@@ -162,14 +162,17 @@ def category(request, slug):
 
 def _service_input_fields(service):
     """Campos de entrada do servico. Credit pede quantidade + usuario + email;
-    Activation pede usuario + email para cadastro/ativacao. collect_login pede o
-    usuario e collect_email pede tambem o e-mail da ferramenta."""
+    Activation pede usuario + email para cadastro/ativacao. collect_login liga a
+    solicitacao e collect_fields escolhe usuario, email ou ambos."""
     names = list(service.service_fields.values_list('name', flat=True))
     requested = []
     if service.collect_login:
-        requested.append('Usuário')
-        if service.collect_email:
+        if service.collect_fields == 'email':
             requested.append('E-mail da Ferramenta')
+        elif service.collect_fields == 'user':
+            requested.append('Usuário')
+        else:
+            requested += ['Usuário', 'E-mail da Ferramenta']
     if service.service_type == 'Credit Service':
         if 'Quantidade de Créditos' not in names:
             names.append('Quantidade de Créditos')
@@ -596,9 +599,12 @@ def submit_order(request, customer):
     required_fields = []
     requested = []
     if service.collect_login:
-        requested.append('Usuário')
-        if service.collect_email:
+        if service.collect_fields == 'email':
             requested.append('E-mail da Ferramenta')
+        elif service.collect_fields == 'user':
+            requested.append('Usuário')
+        else:
+            requested += ['Usuário', 'E-mail da Ferramenta']
     if service.service_type == 'Credit Service':
         required_fields = ['Quantidade de Créditos'] + requested
     elif service.service_type == 'Activation Service':

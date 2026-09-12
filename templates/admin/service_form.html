@@ -71,14 +71,16 @@
                         <div class="col-12 mb-3">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" name="collect_login" id="collectLogin" value="1" {% if not service or service.collect_login %}checked{% endif %}>
-                                <label class="form-check-label" for="collectLogin">Pedir usuário do cliente na compra (Ativações e Créditos). Desmarque para vender sem solicitar esses dados.</label>
+                                <label class="form-check-label" for="collectLogin">Pedir usuário/e-mail do cliente na compra (Ativações e Créditos). Desmarque para vender sem solicitar esses dados.</label>
                             </div>
                         </div>
-                        <div class="col-12 mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="collect_email" id="collectEmail" value="1" {% if not service or service.collect_email %}checked{% endif %}>
-                                <label class="form-check-label" for="collectEmail">Pedir também o e-mail da ferramenta na compra. Desmarque para solicitar somente o usuário.</label>
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Quais dados solicitar na compra</label>
+                            <select class="form-select" name="collect_fields">
+                                <option value="both" {% if not service or service.collect_fields == 'both' %}selected{% endif %}>Usuário e e-mail</option>
+                                <option value="user" {% if service.collect_fields == 'user' %}selected{% endif %}>Somente usuário</option>
+                                <option value="email" {% if service.collect_fields == 'email' %}selected{% endif %}>Somente e-mail</option>
+                            </select>
                         </div>
                     </div>
                 </div>
