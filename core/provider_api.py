@@ -4,7 +4,7 @@ import logging
 import urllib.parse
 import urllib.request
 
-from .models import Api, ApiLog, CustomerOrder, InventoryData, Statement
+from .models import Api, ApiLog, CustomerOrder, InventoryData, RemoteServiceList, Statement
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,24 @@ PROVIDER_TO_LOCAL_STATUS = {v: k for k, v in LOCAL_TO_PROVIDER_STATUS.items()}
 
 class ProviderError(Exception):
     pass
+
+
+def actions_for(service):
+    """Acoes do provedor para o servico. Decide primeiro pelo SERVICETYPE do
+    produto remoto vinculado (fonte da verdade), depois pelo tipo local."""
+    if service.api_id and str(service.referenceid or '').strip():
+        remote = RemoteServiceList.objects.filter(
+            api_id=service.api, referenceid=str(service.referenceid).strip(),
+        ).first()
+        if remote:
+            rtype = (remote.SERVICETYPE or '').strip().upper()
+            if rtype == 'REMOTE':
+                return PROVIDER_ACTIONS['Credit Service']
+            if rtype == 'IMEI':
+                return PROVIDER_ACTIONS['IMEI Service']
+            if rtype == 'SERVER':
+                return PROVIDER_ACTIONS['Server Service']
+    return PROVIDER_ACTIONS.get(service.service_type, PROVIDER_ACTIONS['Server Service'])
 
 
 def endpoint_for(api):
@@ -230,7 +248,7 @@ def submit_local_order(order):
         delivered, code = deliver_from_inventory(order)
         return (True, code) if delivered else (None, '')
     service = order.service
-    actions = PROVIDER_ACTIONS.get(service.service_type, PROVIDER_ACTIONS['IMEI Service'])
+    actions = actions_for(service)
     fields = _fields_dict(order)
     custom = base64.b64encode(json.dumps(fields).encode('utf-8')).decode('utf-8') if fields else ''
     params = json.dumps({
@@ -287,7 +305,7 @@ def sync_local_order(order):
     if api is None or not (order.trx_id or '').strip():
         return False
     service = order.service
-    actions = PROVIDER_ACTIONS.get(service.service_type, PROVIDER_ACTIONS['IMEI Service'])
+    actions = actions_for(service)
     params = json.dumps({'ID': (order.trx_id or '').strip()})
     try:
         data = _request(api, actions['get'], params)
