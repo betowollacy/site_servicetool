@@ -30,7 +30,7 @@
                 {% for c in customers %}
                 <tr>
                     <td>#{{ c.id }}</td>
-                    <td>{{ c.name }}</td>
+                    <td><a href="#" class="fw-semibold text-primary" data-bs-toggle="modal" data-bs-target="#editCustomer{{ c.id }}">{{ c.name }}</a></td>
                     <td>{{ c.email }}</td>
                     <td>{{ c.mobile|default:"-" }}</td>
                     <td>BRL</td>
@@ -43,7 +43,6 @@
                     </td>
                     <td>
                         <div class="d-flex flex-column gap-2">
-                            <button class="btn btn-xs btn-outline-primary rounded-2" data-bs-toggle="modal" data-bs-target="#editCustomer{{ c.id }}">Editar</button>
                             <button class="btn btn-xs btn-outline-secondary rounded-2" data-bs-toggle="modal" data-bs-target="#passCustomer{{ c.id }}">Senha</button>
                             <form method="post" action="{% url 'admin_customer_api_toggle' c.id %}">
                                 {% csrf_token %}
