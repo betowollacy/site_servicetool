@@ -52,6 +52,14 @@
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-sm btn-light-danger"><i class="ti ti-trash"></i> Deletar</button>
                             </form>
+                            {% if c.email not in admin_usernames %}
+                            <form method="post" action="{% url 'admin_customer_promote' c.id %}" onsubmit="return confirm('Tornar &quot;{{ c.name }}&quot; administrador do painel? Ele vai acessar o painel com o mesmo e-mail e senha do site.')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-xs btn-outline-dark rounded-2" title="Cria a conta de administrador do painel a partir deste cliente"><i class="ti ti-shield"></i> Tornar Admin</button>
+                            </form>
+                            {% else %}
+                            <span class="badge bg-light-success text-nowrap"><i class="ti ti-shield me-1"></i>Administrador</span>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

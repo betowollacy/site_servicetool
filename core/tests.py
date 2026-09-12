@@ -1190,3 +1190,44 @@ class MethodServiceTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.service.refresh_from_db()
         self.assertEqual(self.service.service_type, 'Server Service')
+
+class AdminPromoteTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='owner', password='senha123', is_staff=True, is_superuser=True)
+        self.client.force_login(self.staff)
+
+    def test_promote_creates_staff_user_with_customer_password(self):
+        customer = Customer.objects.create(
+            name='Novo Admin', email='novoadmin@teste.com',
+            password=Customer.make_password('minhasenha'), currency='BRL',
+        )
+        resp = self.client.post(reverse('admin_customer_promote', args=[customer.id]))
+        self.assertEqual(resp.status_code, 302)
+        user = User.objects.get(username=customer.email)
+        self.assertTrue(user.is_staff)
+        self.assertTrue(user.is_superuser)
+        self.assertEqual(user.password, customer.password)
+        self.assertTrue(user.check_password('minhasenha'))
+
+    def test_promote_existing_staff_account_is_kept(self):
+        customer = Customer.objects.create(
+            name='Ja Admin', email='jaadmin@teste.com',
+            password=Customer.make_password('minhasenha'), currency='BRL',
+        )
+        user = User.objects.create_user(username='jaadmin@teste.com', email='jaadmin@teste.com', password='outra', is_staff=True)
+        resp = self.client.post(reverse('admin_customer_promote', args=[customer.id]))
+        self.assertEqual(resp.status_code, 302)
+        user.refresh_from_db()
+        self.assertTrue(user.is_staff)
+        self.assertEqual(user.username, 'jaadmin@teste.com')
+        self.assertTrue(user.check_password('outra'))
+
+    def test_list_shows_admin_badge_for_promoted(self):
+        customer = Customer.objects.create(
+            name='Com Conta', email='comconta@teste.com',
+            password=Customer.make_password('minhasenha'), currency='BRL',
+        )
+        User.objects.create_user(username='comconta@teste.com', email='comconta@teste.com', password='x', is_staff=True)
+        resp = self.client.get(reverse('admin_customer_list'))
+        self.assertContains(resp, 'comconta@teste.com')
+        self.assertContains(resp, 'Administrador')

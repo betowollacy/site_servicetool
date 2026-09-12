@@ -18,7 +18,7 @@ from .models import (
     Api, ACTIVATION_SERVICE_EXTRA_FIELDS, CREDIT_SERVICE_EXTRA_FIELDS,
     Currency, Customer, CustomerOrder, Inventory,
     InventoryData, Invoice, OrderInput, Page, PaymentGateway, RemoteServiceInput, RemoteServiceList,
-    ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting,
+    ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting, User,
 )
 from . import provider_api, public_api
 
@@ -192,7 +192,29 @@ def admin_customer_list(request):
         'customers': Customer.objects.all(),
         'roles': Customer.ROLES,
         'statuses': Customer.STATUS,
+        'admin_usernames': set(User.objects.filter(is_staff=True).values_list('username', flat=True)),
     })
+
+
+@_staff
+def admin_customer_promote(request, customer_id):
+    customer = Customer.objects.filter(id=customer_id).first()
+    if not customer:
+        messages.error(request, 'Cliente não encontrado.')
+        return redirect('admin_customer_list')
+    if request.method == 'POST':
+        username = (customer.email or '').strip().lower() or 'admin_{}'.format(customer.id)
+        user = User.objects.filter(username=username).first() or User.objects.filter(email=customer.email).first()
+        if user and user.is_staff and user.is_superuser:
+            messages.info(request, '"{}" já é administrador.'.format(customer.name))
+        else:
+            if not user:
+                user = User(username=username, email=customer.email or username, password=customer.password)
+            user.is_staff = True
+            user.is_superuser = True
+            user.save()
+            messages.success(request, '"{}" agora é administrador — entra no painel com o mesmo e-mail/senha do site.'.format(customer.name))
+    return redirect('admin_customer_list')
 
 
 @_staff
