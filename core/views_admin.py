@@ -910,6 +910,47 @@ def admin_api_import(request, api_id):
 
 
 @_staff
+def admin_api_search(request, api_id):
+    """Busca na API do provedor por nome ou ID e adiciona os produtos encontrados
+    à lista de vínculos (mesmo comportamento do import, mas só para o que casar)."""
+    api = Api.objects.filter(id=api_id).first()
+    if not api or request.method != 'POST':
+        return redirect('admin_api_list')
+    q = (request.POST.get('q') or '').strip()
+    if not q:
+        return redirect('admin_api_list')
+    try:
+        catalog = provider_api.fetch_catalog(api)
+    except provider_api.ProviderError as exc:
+        messages.error(request, 'Falha ao buscar na API: {}'.format(exc))
+        return redirect('admin_api_list')
+    term = q.lower()
+    matches = [item for item in catalog
+               if term in (item['name'] or '').lower() or term in str(item['referenceid'] or '').lower()]
+    if not matches:
+        messages.info(request, 'Nenhum produto encontrado no provedor para "{}".'.format(q))
+        return redirect('admin_api_list')
+    for item in matches:
+        remote, _ = RemoteServiceList.objects.update_or_create(
+            api=api,
+            referenceid=item['referenceid'],
+            defaults={
+                'SERVICENAME': item['name'],
+                'SERVICETYPE': item['servicetype'],
+                'CREDIT': Decimal(str(item['credit']) or '0'),
+                'added': True,
+            },
+        )
+        fields = list(dict.fromkeys(item['fields']))
+        RemoteServiceInput.objects.filter(remote_service=remote).exclude(name__in=fields).delete()
+        for fname in fields:
+            RemoteServiceInput.objects.get_or_create(remote_service=remote, name=fname)
+    messages.success(request, '{} produto(s) encontrado(s) para "{}" e adicionado(s) à lista de vínculos.'.format(
+        len(matches), q))
+    return redirect('admin_api_list')
+
+
+@_staff
 def admin_api_link(request):
     if request.method == 'POST':
         remote_id = request.POST.get('remote_id')

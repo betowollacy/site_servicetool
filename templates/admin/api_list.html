@@ -32,6 +32,11 @@
             <form method="post" action="{% url 'admin_api_test' api.id %}">{% csrf_token %}
                 <button class="btn btn-sm btn-outline-secondary"><i class="ti ti-device-desktop-analytics me-1"></i> Testar conexão</button>
             </form>
+            <form method="post" action="{% url 'admin_api_search' api.id %}" class="d-flex align-items-center gap-2 ms-lg-auto">
+                {% csrf_token %}
+                <input type="text" name="q" class="form-control form-control-sm font-monospace" style="min-width:260px" placeholder="Buscar na API (nome ou ID)" required>
+                <button class="btn btn-sm btn-primary" type="submit"><i class="ti ti-search me-1"></i> Buscar na API</button>
+            </form>
             <form method="post" action="{% url 'admin_api_import' api.id %}" onsubmit="return confirm('Importar/atualizar os serviços do provedor?')">{% csrf_token %}
                 <button class="btn btn-sm btn-outline-primary"><i class="ti ti-download me-1"></i> Importar serviços</button>
             </form>
