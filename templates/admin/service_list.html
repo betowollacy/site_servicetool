@@ -30,7 +30,7 @@
                     <th>Vendas</th>
                     <th>Status</th>
                     <th>API</th>
-                    <th>Ação</th>
+                    <th class="text-nowrap" style="position:sticky; right:0; background:var(--bs-body-bg,#ffffff); box-shadow:-2px 0 6px rgba(0,0,0,.08);">Ação</th>
                 </tr>
             </thead>
             <tbody>
@@ -52,7 +52,8 @@
                             {% endif %}
                         </form>
                     </td>
-                    <td class="d-flex gap-1">
+                    <td class="text-nowrap" style="position:sticky; right:0; background:var(--bs-body-bg,#ffffff); box-shadow:-2px 0 6px rgba(0,0,0,.08);">
+                        <div class="d-flex gap-1">
                         <a href="{% url 'admin_service_edit' svtype s.id %}" class="btn btn-sm btn-light-primary"><i class="ti ti-edit"></i> Editar</a>
                         <form method="post" action="{% url 'admin_service_delete' svtype s.id %}" onsubmit="return confirm('Excluir o serviço &quot;{{ s.title }}&quot;?');">
                             {% csrf_token %}
@@ -69,6 +70,7 @@
                             </select>
                             <button type="submit" class="btn btn-sm btn-light-warning" title="Mover para categoria selecionada"><i class="ti ti-arrow-right"></i></button>
                         </form>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
