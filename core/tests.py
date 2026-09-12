@@ -835,6 +835,8 @@ class CreditServiceFormTests(TestCase):
         html = resp.content.decode()
         self.assertIn('name="IMEI"', html)
         self.assertIn('IMEI ou Serial', html)
+        self.assertIn('Descreva o serviço', html)
+        self.assertIn('tela de hello, tela passcode', html)
         self.assertNotIn('Quantidade de Créditos', html)
 
     def test_imei_service_without_fields_still_requires_imei_or_serial(self):
@@ -847,6 +849,8 @@ class CreditServiceFormTests(TestCase):
         html = resp.content.decode()
         self.assertIn('name="IMEI"', html)
         self.assertIn('IMEI ou Serial', html)
+        self.assertIn('Descreva o serviço', html)
+        self.assertIn('tela de hello, tela passcode', html)
 
     def test_submit_order_requires_user_and_email(self):
         self._login()

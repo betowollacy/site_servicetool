@@ -79,6 +79,12 @@
                                     <input type="text" class="form-control" name="{{ serviceInput.name }}" id="fields.{{ forloop.counter0 }}" placeholder="IMEI ou Serial" maxlength="300" required>
                                     <small class="text-muted">Envie o IMEI ou o número de série (SN) do aparelho.</small>
                                 </div>
+                                {% elif serviceData.service_type == 'IMEI Service' and serviceInput.name == 'Descreva o serviço' %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="fields.{{ forloop.counter0 }}">Descreva o serviço</label>
+                                    <textarea class="form-control" name="{{ serviceInput.name }}" id="fields.{{ forloop.counter0 }}" rows="3" placeholder="Ex.: tela de hello, tela passcode"></textarea>
+                                    <small class="text-muted">Ex.: tela de hello, tela passcode. Detalhe o problema do aparelho para o vendedor.</small>
+                                </div>
                                 {% else %}
                                 <div class="mb-3">
                                     <label class="form-label" for="fields.{{ forloop.counter0 }}">Informe <b>{{ serviceInput.name }}</b></label>

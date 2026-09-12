@@ -174,8 +174,11 @@ def _service_input_fields(service):
     for extra in extras:
         if extra not in names:
             names.append(extra)
-    if service.service_type == 'IMEI Service' and not names:
-        names.append('IMEI')
+    if service.service_type == 'IMEI Service':
+        if not names:
+            names.append('IMEI')
+        if 'Descreva o serviço' not in names:
+            names.append('Descreva o serviço')
     if service.service_type == 'Method Service':
         for extra in METHOD_SERVICE_EXTRA_FIELDS:
             if extra not in names:
