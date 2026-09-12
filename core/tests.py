@@ -976,6 +976,51 @@ class ActivationServiceTests(TestCase):
         self.assertEqual(inputs.get('E-mail da Ferramenta'), 'conta@ferramenta.com')
         self.assertNotIn('Senha', inputs)
 
+    def test_service_view_hides_user_email_when_collect_login_off(self):
+        self._login()
+        self.service.collect_login = False
+        self.service.save(update_fields=['collect_login'])
+        resp = self.client.get(reverse('service_view', args=[self.service.slug]))
+        html = resp.content.decode()
+        self.assertNotIn('name="Usuário"', html)
+        self.assertNotIn('E-mail da Ferramenta', html)
+
+    def test_submit_order_without_login_when_collect_login_off(self):
+        self._login()
+        self.service.collect_login = False
+        self.service.save(update_fields=['collect_login'])
+        resp = self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+        })
+        self.assertEqual(resp.status_code, 302)
+        order = CustomerOrder.objects.latest('id')
+        inputs = {i.field_name for i in order.order_inputs.all()}
+        self.assertNotIn('Usuário', inputs)
+        self.assertNotIn('E-mail da Ferramenta', inputs)
+
+    def test_admin_toggle_login(self):
+        staff = User.objects.create_user(username='adminlogin', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        resp = self.client.post(reverse('admin_service_toggle_login', args=['activation', self.service.id]))
+        self.assertEqual(resp.status_code, 302)
+        self.service.refresh_from_db()
+        self.assertFalse(self.service.collect_login)
+        resp = self.client.post(reverse('admin_service_toggle_login', args=['activation', self.service.id]))
+        self.service.refresh_from_db()
+        self.assertTrue(self.service.collect_login)
+
+    def test_service_form_saves_collect_login_off(self):
+        staff = User.objects.create_user(username='adminform', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        resp = self.client.post(reverse('admin_service_new', args=['activation']), {
+            'title': 'Ativação Sem Login',
+            'original_price': '10.00',
+            'fake': '1',
+        })
+        self.assertEqual(resp.status_code, 302)
+        service = ServiceList.objects.get(title='Ativação Sem Login')
+        self.assertFalse(service.collect_login)
+
 
 class ImeiOrderFlowTests(TestCase):
     def setUp(self):

@@ -31,6 +31,7 @@
                     <th>Vendas</th>
                     <th>Status</th>
                     <th>API</th>
+                    <th>Pedir Login</th>
                     <th class="text-nowrap">Ação</th>
                 </tr>
             </thead>
@@ -53,6 +54,18 @@
                             {% endif %}
                         </form>
                     </td>
+                    <td>
+                        {% if s.service_type == 'Activation Service' or s.service_type == 'Credit Service' %}
+                        <form method="post" action="{% url 'admin_service_toggle_login' svtype s.id %}">
+                            {% csrf_token %}
+                            <div class="form-check form-switch m-0 d-inline-block" title="{% if s.collect_login %}Pedindo usuário e e-mail na compra - clique para desligar{% else %}Sem pedir usuário e e-mail - clique para ligar{% endif %}">
+                                <input class="form-check-input" type="checkbox" {% if s.collect_login %}checked{% endif %} onchange="this.form.submit()">
+                            </div>
+                        </form>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
                     <td class="text-nowrap">
                         <div class="d-flex gap-1">
                         <form method="post" action="{% url 'admin_service_delete' svtype s.id %}" onsubmit="return confirm('Excluir o serviço &quot;{{ s.title }}&quot;?');">
@@ -74,7 +87,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center">Nenhum serviço.</td></tr>
+                <tr><td colspan="9" class="text-center">Nenhum serviço.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

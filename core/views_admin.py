@@ -364,6 +364,7 @@ def _apply_service_post(service, post):
     if post.get('status'):
         service.status = post['status']
     service.api_enabled = bool(post.get('api_enabled'))
+    service.collect_login = bool(post.get('collect_login'))
     if post.get('carousel') in ('promocoes', 'desbloqueios'):
         service.carousel = post['carousel']
     else:
@@ -482,6 +483,23 @@ def admin_service_toggle_api(request, svtype, service_id):
             messages.success(request, 'API reativada para "{}" - pedidos voltam a ser enviados ao provedor.'.format(service.title))
         else:
             messages.warning(request, 'API desativada para "{}" - os pedidos agora exigem entrega manual.'.format(service.title))
+    return redirect('admin_service_list', svtype)
+
+
+@_staff
+def admin_service_toggle_login(request, svtype, service_id):
+    db_type, _label = _service_type_from(svtype)
+    service = ServiceList.objects.filter(id=service_id, service_type=db_type).first()
+    if not service:
+        messages.error(request, 'Serviço não encontrado.')
+        return redirect('admin_service_list', svtype)
+    if request.method == 'POST':
+        service.collect_login = not service.collect_login
+        service.save(update_fields=['collect_login'])
+        if service.collect_login:
+            messages.success(request, f'"{service.title}" agora pede usuário e e-mail do cliente na compra.')
+        else:
+            messages.warning(request, f'"{service.title}" não pede mais usuário/e-mail do cliente na compra.')
     return redirect('admin_service_list', svtype)
 
 

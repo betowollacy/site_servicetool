@@ -163,17 +163,21 @@ def category(request, slug):
 
 def _service_input_fields(service):
     """Campos de entrada do servico. Credit pede quantidade + usuario + email;
-    Activation pede usuario + email para cadastro/ativacao."""
+    Activation pede usuario + email para cadastro/ativacao. Os campos de login
+    saem do pedido quando collect_login esta desativado no produto."""
     names = list(service.service_fields.values_list('name', flat=True))
     if service.service_type == 'Credit Service':
-        extras = CREDIT_SERVICE_EXTRA_FIELDS
+        if 'Quantidade de Créditos' not in names:
+            names.append('Quantidade de Créditos')
+        if service.collect_login:
+            for extra in ('Usuário', 'E-mail da Ferramenta'):
+                if extra not in names:
+                    names.append(extra)
     elif service.service_type == 'Activation Service':
-        extras = ACTIVATION_SERVICE_EXTRA_FIELDS
-    else:
-        extras = ()
-    for extra in extras:
-        if extra not in names:
-            names.append(extra)
+        if service.collect_login:
+            for extra in ACTIVATION_SERVICE_EXTRA_FIELDS:
+                if extra not in names:
+                    names.append(extra)
     if service.service_type == 'IMEI Service':
         if not names:
             names.append('IMEI')
@@ -591,9 +595,12 @@ def submit_order(request, customer):
 
     required_fields = []
     if service.service_type == 'Credit Service':
-        required_fields = list(CREDIT_SERVICE_EXTRA_FIELDS)
+        required_fields = ['Quantidade de Créditos']
+        if service.collect_login:
+            required_fields += ['Usuário', 'E-mail da Ferramenta']
     elif service.service_type == 'Activation Service':
-        required_fields = list(ACTIVATION_SERVICE_EXTRA_FIELDS)
+        if service.collect_login:
+            required_fields = list(ACTIVATION_SERVICE_EXTRA_FIELDS)
     errors = [f'Informe {field_name}.' for field_name in required_fields
               if not request.POST.get(field_name, '').strip()]
     if errors:

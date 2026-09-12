@@ -34,6 +34,7 @@ urlpatterns = [
     path('admin-panel/services/<str:svtype>/new/', views_admin.admin_service_new, name='admin_service_new'),
     path('admin-panel/services/<str:svtype>/<int:service_id>/edit/', views_admin.admin_service_edit, name='admin_service_edit'),
     path('admin-panel/services/<str:svtype>/<int:service_id>/toggle-api/', views_admin.admin_service_toggle_api, name='admin_service_toggle_api'),
+    path('admin-panel/services/<str:svtype>/<int:service_id>/toggle-login/', views_admin.admin_service_toggle_login, name='admin_service_toggle_login'),
     path('admin-panel/services/<str:svtype>/<int:service_id>/delete/', views_admin.admin_service_delete, name='admin_service_delete'),
     path('admin-panel/services/<str:svtype>/<int:service_id>/move/', views_admin.admin_service_move, name='admin_service_move'),
     path('admin-panel/currencies/', views_admin.admin_currency_list, name='admin_currency_list'),
