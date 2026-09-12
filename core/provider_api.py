@@ -134,20 +134,41 @@ def _detect_kind(text):
 
 
 def _brand_tokens(text):
-    return [w for w in _slug_words(text) if w not in _BRAND_STOPWORDS and not w.isdigit()][:5]
+    toks = []
+    for w in _slug_words(text):
+        if w in _BRAND_STOPWORDS or w.isdigit():
+            continue
+        if re.fullmatch(r'\d+h?', w):
+            continue  # duracao ja tratada por _detect_duration
+        toks.append(w)
+        if len(w) > 3 and w.endswith('s'):
+            toks.append(w[:-1])
+    return toks[:6]
 
 
-def _jaccard(a, b):
-    sa, sb = set(a), set(b)
-    if not sa or not sb:
+def _merged_tokens(tokens):
+    """Tokens + uniao de pares adjacentes (ex.: ['unlock','tool'] -> 'unlocktool')."""
+    out = set(tokens)
+    for a, b in zip(tokens, tokens[1:]):
+        out.add(a + b)
+    return out
+
+
+def _brand_overlap(a_tokens, b_tokens):
+    """Similaridade entre marcas: max entre jaccard e contencao (p/ marcas
+    escritas juntas ou separadas, ex.: 'UnlockTool' vs 'UNLOCK TOOL')."""
+    a, b = _merged_tokens(a_tokens), _merged_tokens(b_tokens)
+    if not a or not b:
         return 0.0
-    return len(sa & sb) / len(sa | sb)
+    inter = len(a & b)
+    jac = inter / len(a | b)
+    cont = inter / min(len(a), len(b))
+    return max(jac, cont)
 
 
 def find_remote_match(title, api=None):
     """Procura o produto do provedor que equivale ao titulo local.
     Retorna (RemoteServiceList, score) do melhor candidato ou (None, 0)."""
-    from .models import Api as ApiModel
     qs = RemoteServiceList.objects.all()
     if api is not None:
         qs = qs.filter(api=api)
@@ -161,7 +182,7 @@ def find_remote_match(title, api=None):
     best, best_score = None, 0.0
     for r in qs:
         rbrand = _brand_tokens(r.SERVICENAME)
-        overlap = _jaccard(brand, rbrand)
+        overlap = _brand_overlap(brand, rbrand)
         if overlap < 0.34:
             continue
         rdur = _detect_duration(r.SERVICENAME)
