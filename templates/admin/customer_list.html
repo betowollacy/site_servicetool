@@ -4,8 +4,14 @@
     <div class="col-12"><h4 class="mb-0">Clientes</h4></div>
 </div>
 <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="input-group" style="max-width: 320px;">
+            <span class="input-group-text"><i class="ti ti-search"></i></span>
+            <input type="text" id="customerSearch" class="form-control" placeholder="Buscar cliente..." data-st-persist>
+        </div>
+    </div>
     <div class="card-body table-responsive">
-        <table class="table table-hover dataTable">
+        <table class="table table-hover dataTable" id="customersTable">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -46,11 +52,11 @@
                             <form method="post" action="{% url 'admin_customer_refund' c.id %}" class="d-flex gap-1" onsubmit="return confirm('Creditar este valor ao saldo do cliente?')">
                                 {% csrf_token %}
                                 <input type="text" name="amount" class="form-control form-control-sm" style="max-width:90px" placeholder="R$" required>
-                                <button type="submit" class="btn btn-sm btn-light-danger" title="Estornar/creditar valor"><i class="ti ti-rotate-2"></i></button>
+                                <button type="submit" class="btn btn-xs btn-light-danger" title="Estornar/creditar valor"><i class="ti ti-rotate-2"></i></button>
                             </form>
                             <form method="post" action="{% url 'admin_customer_delete' c.id %}" onsubmit="return confirm('Excluir o cliente &quot;{{ c.name }}&quot; e todos os dados relacionados? Esta ação não pode ser desfeita.')">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-light-danger"><i class="ti ti-trash"></i> Deletar</button>
+                                <button type="submit" class="btn btn-xs btn-light-danger"><i class="ti ti-trash"></i> Deletar</button>
                             </form>
                             {% if c.email not in admin_usernames %}
                             <form method="post" action="{% url 'admin_customer_promote' c.id %}" onsubmit="return confirm('Tornar &quot;{{ c.name }}&quot; administrador do painel? Ele vai acessar o painel com o mesmo e-mail e senha do site.')">
@@ -108,4 +114,16 @@
         </table>
     </div>
 </div>
+{% endblock %}
+
+{% block footer_script %}
+<script>
+    $(function () {
+        var dt = $('#customersTable').DataTable();
+        $('#customerSearch').on('keyup', function () {
+            dt.search(this.value.trim()).draw();
+        });
+        dt.search($('#customerSearch').val().trim()).draw();
+    });
+</script>
 {% endblock %}
