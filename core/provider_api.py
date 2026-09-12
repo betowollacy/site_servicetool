@@ -1,10 +1,12 @@
 import base64
 import json
 import logging
+import re
+import unicodedata
 import urllib.parse
 import urllib.request
 
-from .models import Api, ApiLog, CustomerOrder, InventoryData, RemoteServiceList, Statement
+from .models import Api, ApiLog, CustomerOrder, InventoryData, RemoteServiceList, ServiceInput, Statement
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +60,139 @@ def actions_for(service):
             if rtype == 'SERVER':
                 return PROVIDER_ACTIONS['Server Service']
     return PROVIDER_ACTIONS.get(service.service_type, PROVIDER_ACTIONS['Server Service'])
+
+
+# --------------------------------------------------------------------------- #
+# Auto-integracao por palavra-chave
+# --------------------------------------------------------------------------- #
+
+_DURATION_RULES = [
+    ('2h', ['2h', '2 horas', '2 hrs', '2 hour', '2 hours']),
+    ('3h', ['3h', '3 horas', '3 hrs', '3 hour', '3 hours']),
+    ('4h', ['4h', '4 horas', '4 hrs', '4 hour', '4 hours']),
+    ('5h', ['5h', '5 horas', '5 hour', '5 hours']),
+    ('6h', ['6h', '6 horas', '6 hrs', '6 hour', '6 hours']),
+    ('7d', ['7 dias', '7 dias', '7 day', '7 days', '1 semana', 'week']),
+    ('10h', ['10h', '10 horas', '10 hour', '10 hours']),
+    ('12h', ['12h', '12 horas', '12 hour', '12 hours']),
+    ('24h', ['24h', '24 horas', '24 hour', '24 hours']),
+    ('36h', ['36h', '36 horas', '36 hour', '36 hours']),
+    ('48h', ['48h', '48 horas', '48 hour', '48 hours']),
+    ('1m', ['1 mes', '1 mês', '1 month', '1 months']),
+    ('3m', ['3 meses', '3 months', '3 month']),
+    ('6m', ['6 meses', '6 months', '6 month']),
+    ('12m', ['1 ano', '1 year', '12 meses', '12 months', '12 month', '1 yr']),
+    ('2y', ['2 anos', '2 years', '2 year']),
+]
+
+_KIND_RULES = [
+    ('rent', ['aluguel', 'rent', 'rental']),
+    ('credits', ['credito', 'creditos', 'credit', 'credits']),
+    ('renew', ['renovacao', 'renew', 'renewal', 'transfer']),
+    ('activation', ['ativacao', 'licenca', 'activation', 'license', 'activate']),
+]
+
+_BRAND_STOPWORDS = {
+    'de', 'da', 'do', 'para', 'com', 'em', 'the', 'a', 'o', 'e',
+    'login', 'senha', 'usuario', 'user', 'password', 'email', 'novo', 'nova',
+    'novos', 'novas', 'existente', 'existentes', 'credito', 'creditos',
+    'servico', 'servicos', 'digital', 'conta', 'aparelho', 'ano', 'mes',
+    'meses', 'renovacao', 'ativacao', 'licenca', 'aluguel', 'fonte', 'api',
+    'auto', 'horas', 'hora', 'hrs', 'hr', 'hour', 'hours', 'dias', 'dia',
+    'day', 'days', 'tool', 'pro', 'premium', 'basic', 'professional',
+    'profissional', 'rent', 'credits', 'credit', 'license', 'activation',
+    'activate', 'new', 'existing', 'users', 'user', 'month', 'months', 'year',
+    'years', 'week', 'repair', 'read', 'instant', 'insta', 'online', 'pkg',
+}
+
+
+def _slug_words(text):
+    text = unicodedata.normalize('NFKD', text or '').encode('ascii', 'ignore').decode().lower()
+    return [w for w in re.split(r'[^a-z0-9]+', text) if w]
+
+
+def _norm_title(text):
+    return ' '.join(_slug_words(text))
+
+
+def _detect_duration(text):
+    words = ' ' + _norm_title(text) + ' '
+    for canon, variants in _DURATION_RULES:
+        for v in variants:
+            if ' {} '.format(v) in words or words.strip().startswith(v + ' ') or words.strip().endswith(' ' + v):
+                return canon
+    return None
+
+
+def _detect_kind(text):
+    words = _slug_words(text)
+    for canon, variants in _KIND_RULES:
+        for v in variants:
+            if v in words:
+                return canon
+    return None
+
+
+def _brand_tokens(text):
+    return [w for w in _slug_words(text) if w not in _BRAND_STOPWORDS and not w.isdigit()][:5]
+
+
+def _jaccard(a, b):
+    sa, sb = set(a), set(b)
+    if not sa or not sb:
+        return 0.0
+    return len(sa & sb) / len(sa | sb)
+
+
+def find_remote_match(title, api=None):
+    """Procura o produto do provedor que equivale ao titulo local.
+    Retorna (RemoteServiceList, score) do melhor candidato ou (None, 0)."""
+    from .models import Api as ApiModel
+    qs = RemoteServiceList.objects.all()
+    if api is not None:
+        qs = qs.filter(api=api)
+    else:
+        qs = qs.filter(api__status='Active')
+    brand = _brand_tokens(title)
+    dur = _detect_duration(title)
+    kind = _detect_kind(title)
+    if not brand:
+        return None, 0.0
+    best, best_score = None, 0.0
+    for r in qs:
+        rbrand = _brand_tokens(r.SERVICENAME)
+        overlap = _jaccard(brand, rbrand)
+        if overlap < 0.34:
+            continue
+        rdur = _detect_duration(r.SERVICENAME)
+        rkind = _detect_kind(r.SERVICENAME)
+        score = overlap * 2.0
+        if dur and rdur:
+            score += 1.0 if dur == rdur else -0.8
+        if kind and rkind:
+            score += 0.8 if kind == rkind else -0.6
+        if score > best_score:
+            best, best_score = r, score
+    return best, best_score
+
+
+def auto_link_service(service, min_score=2.2):
+    """Tenta vincular o servico ao provedor por palavra-chave.
+    Nao sobrescreve vinculos existentes. Retorna (remote|None, score)."""
+    if service.api_id and str(service.referenceid or '').strip():
+        return None, 0.0
+    remote, score = find_remote_match(service.title)
+    if remote is None or score < min_score:
+        return None, score
+    service.api = remote.api
+    service.referenceid = str(remote.referenceid)
+    service.process_type = 'Auto'
+    service.api_enabled = True
+    service.save(update_fields=['api', 'referenceid', 'process_type', 'api_enabled'])
+    ServiceInput.objects.filter(service=service).delete()
+    for rf in remote.service_fields.all():
+        ServiceInput.objects.create(service=service, name=rf.name)
+    return remote, score
 
 
 def endpoint_for(api):

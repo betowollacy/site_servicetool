@@ -438,7 +438,12 @@ def admin_service_new(request, svtype):
         _apply_service_post(service, request.POST)
         _save_fields(service, request.POST.get('fields', ''))
         _save_uploaded_thumbnail(service, request.FILES, request)
-        messages.success(request, 'Serviço criado com sucesso.')
+        auto_remote, auto_score = provider_api.auto_link_service(service)
+        if auto_remote:
+            messages.success(request, 'Serviço criado e integrado automaticamente ao provedor: "{}" (referência {}).'.format(
+                auto_remote.SERVICENAME, auto_remote.referenceid))
+        else:
+            messages.success(request, 'Serviço criado com sucesso.')
         return redirect('admin_service_list', svtype)
     return render(request, 'admin/service_form.html', {
         'service': None,
@@ -460,7 +465,12 @@ def admin_service_edit(request, svtype, service_id):
         _apply_service_post(service, request.POST)
         _save_fields(service, request.POST.get('fields', ''))
         _save_uploaded_thumbnail(service, request.FILES, request)
-        messages.success(request, 'Serviço atualizado com sucesso.')
+        auto_remote, auto_score = provider_api.auto_link_service(service)
+        if auto_remote:
+            messages.success(request, 'Serviço atualizado e integrado automaticamente ao provedor: "{}" (referência {}).'.format(
+                auto_remote.SERVICENAME, auto_remote.referenceid))
+        else:
+            messages.success(request, 'Serviço atualizado com sucesso.')
         return redirect('admin_service_list', svtype)
     return render(request, 'admin/service_form.html', {
         'service': service,
