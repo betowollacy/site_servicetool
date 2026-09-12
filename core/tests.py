@@ -1062,6 +1062,35 @@ class ImeiOrderFlowTests(TestCase):
         resp2 = self.client.get(reverse('admin_orders_unseen'))
         self.assertEqual(json.loads(resp2.content)['count'], 0)
 
+    def test_unpaid_order_notifies_only_after_payment(self):
+        SystemSetting.objects.create(key='tgBotToken', value='123:abc')
+        SystemSetting.objects.create(key='tgChatId', value='-100')
+        self.customer.balance = Decimal('2.00')
+        self.customer.save(update_fields=['balance'])
+        self._customer_login()
+        with patch('core.notify.send_telegram') as send:
+            resp = self.client.post(reverse('submit_order'), {
+                'serviceID': self.service.id,
+                'IMEI': '356938035643809',
+                'Descreva o serviço': 'tela de hello',
+            })
+        self.assertEqual(resp.status_code, 302)
+        send.assert_not_called()
+        order = CustomerOrder.objects.latest('id')
+        self.assertEqual(order.service_status, 'Waiting Action')
+        invoice = Invoice.objects.get(order=order)
+        deposit = PaymentDeposit.objects.create(
+            name='Asaas - PIX', gateway_amount=invoice.invoice_amount,
+            gateway_payment_id='pay_002', status='Pending', invoice=invoice,
+        )
+        from core.views import _mark_paid
+        with patch('core.notify.send_telegram') as send:
+            _mark_paid(deposit, {'payment': {'id': 'pay_002', 'status': 'CONFIRMED'}})
+        send.assert_called_once()
+        text = send.call_args.args[0]
+        self.assertIn('NOVO PEDIDO', text)
+        self.assertIn('Pago via saldo', text)
+
 
 class MethodServiceTests(TestCase):
     def setUp(self):

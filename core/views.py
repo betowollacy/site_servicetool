@@ -576,6 +576,7 @@ def _debit_and_forward_order(order, customer):
     forwarded, msg = provider_api.submit_local_order(order)
     if forwarded is False:
         provider_api.refund_order(order, msg or 'Falha ao enviar para o provedor.')
+    notify.send_telegram(notify.new_order_message(order, paid=True))
 
 
 @_require_customer
@@ -625,7 +626,6 @@ def submit_order(request, customer):
     price = service.original_price
     if customer.balance >= price:
         _debit_and_forward_order(order, customer)
-        notify.send_telegram(notify.new_order_message(order, paid=True))
         messages.success(request, 'Pedido realizado com sucesso.')
         return redirect('customer_order_history')
     else:
@@ -641,7 +641,6 @@ def submit_order(request, customer):
             customer_email=customer.email,
             order=order,
         )
-        notify.send_telegram(notify.new_order_message(order, paid=False))
         return redirect('checkout', invoice_id=invoice.id)
 
 
