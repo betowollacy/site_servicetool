@@ -117,17 +117,17 @@
                             {% if item.status == 'Available' %}
                             <form method="post" action="{% url 'admin_inventory_toggle' item.id %}">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-light-warning" title="Marcar como em uso (indisponível)"><i class="ti ti-lock"></i> Marcar em uso</button>
+                                <button type="submit" class="btn btn-sm btn-light-warning" title="Marcar como em uso (indisponível)"><i class="ti ti-lock"></i></button>
                             </form>
                             {% else %}
                             <form method="post" action="{% url 'admin_inventory_toggle' item.id %}" onsubmit="return confirm('Disponibilizar esta credencial novamente? Ela voltará para o fim da fila de pedidos.')">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-light-success"><i class="ti ti-unlock"></i> Disponibilizar</button>
+                                <button type="submit" class="btn btn-sm btn-light-success" title="Disponibilizar novamente"><i class="ti ti-unlock"></i></button>
                             </form>
                             {% endif %}
                             <form method="post" action="{% url 'admin_inventory_data_delete' item.id %}" onsubmit="return confirm('Remover esta credencial do estoque?');">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-light-danger"><i class="ti ti-trash"></i> Excluir</button>
+                                <button type="submit" class="btn btn-sm btn-light-danger" title="Excluir credencial"><i class="ti ti-trash"></i></button>
                             </form>
                         </div>
                     </td>

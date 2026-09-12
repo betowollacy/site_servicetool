@@ -46,24 +46,24 @@
                     <td><span class="badge bg-light-primary">{{ order.service_status }}</span></td>
                     <td>
                         <div class="d-flex flex-wrap gap-2 align-items-start">
-                            <button class="btn btn-sm btn-light-primary" data-bs-toggle="collapse" data-bs-target="#order-{{ order.id }}"><i class="ti ti-edit"></i> Atualizar</button>
+                            <button class="btn btn-sm btn-light-primary" title="Atualizar status/resposta" data-bs-toggle="collapse" data-bs-target="#order-{{ order.id }}"><i class="ti ti-edit"></i></button>
                             {% if order.inventory_id_for_delivery and order.service_status != 'Success' and order.service_status != 'Rejected' %}
                             <form method="post" action="{% url 'admin_order_deliver_credential' order.id %}" onsubmit="return confirm('Entregar o próximo login/senha disponível do estoque e marcar como entregue (Sucesso)?')">
                                 {% csrf_token %}
-                                <button class="btn btn-sm btn-light-success" title="Usa o próximo login disponível do estoque e preenche a resposta automaticamente"><i class="ti ti-key"></i> Entregar login{% if order.available_count %} ({{ order.available_count }}){% endif %}</button>
+                                <button class="btn btn-sm btn-light-success" title="Entregar o próximo login{% if order.available_count %} disponível ({{ order.available_count }}){% endif %} e marcar como entregue"><i class="ti ti-key"></i></button>
                             </form>
                             {% endif %}
                             {% if order.service_status != 'Rejected' %}
                             <form method="post" action="{% url 'admin_order_refund' order.id %}" onsubmit="return confirm('Estornar este pedido? Devolverá R$ {{ order.service_price|floatformat:2 }} ao saldo do cliente.')">
                                 {% csrf_token %}
-                                <button class="btn btn-sm btn-light-danger"><i class="ti ti-rotate-2"></i> Estornar</button>
+                                <button class="btn btn-sm btn-light-danger" title="Estornar pedido"><i class="ti ti-rotate-2"></i></button>
                             </form>
                             {% else %}
                             <span class="badge bg-light-danger">Estornado</span>
                             {% endif %}
                             <form method="post" action="{% url 'admin_order_delete' order.id %}" onsubmit="return confirm('Excluir o pedido #{{ order.id }}? Esta ação não pode ser desfeita.')">
                                 {% csrf_token %}
-                                <button class="btn btn-sm btn-light-danger"><i class="ti ti-trash"></i> Deletar</button>
+                                <button class="btn btn-sm btn-light-danger" title="Excluir pedido"><i class="ti ti-trash"></i></button>
                             </form>
                         </div>
                         <div class="collapse mt-2" id="order-{{ order.id }}">

@@ -94,7 +94,7 @@
                         <a href="{% url 'admin_inventory_detail' item.inventory.id %}" class="btn btn-sm btn-light-primary"><i class="ti ti-key"></i> Ver logins</a>
                         <form method="post" action="{% url 'admin_inventory_delete' item.inventory.id %}" onsubmit="return confirm('Excluir o estoque &quot;{{ item.inventory.name }}&quot; e todas as suas credenciais?');">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-light-danger"><i class="ti ti-trash"></i> Excluir</button>
+                            <button type="submit" class="btn btn-sm btn-light-danger" title="Excluir estoque"><i class="ti ti-trash"></i></button>
                         </form>
                     </td>
                 </tr>
