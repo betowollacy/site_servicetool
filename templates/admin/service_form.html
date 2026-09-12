@@ -71,7 +71,13 @@
                         <div class="col-12 mb-3">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" name="collect_login" id="collectLogin" value="1" {% if not service or service.collect_login %}checked{% endif %}>
-                                <label class="form-check-label" for="collectLogin">Pedir usuário e e-mail do cliente na compra (Ativações e Créditos). Desmarque para vender sem solicitar esses dados.</label>
+                                <label class="form-check-label" for="collectLogin">Pedir usuário do cliente na compra (Ativações e Créditos). Desmarque para vender sem solicitar esses dados.</label>
+                            </div>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="collect_email" id="collectEmail" value="1" {% if not service or service.collect_email %}checked{% endif %}>
+                                <label class="form-check-label" for="collectEmail">Pedir também o e-mail da ferramenta na compra. Desmarque para solicitar somente o usuário.</label>
                             </div>
                         </div>
                     </div>
