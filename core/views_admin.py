@@ -33,6 +33,7 @@ TYPE_MAP = {
     'server': ('Server Service', 'Aluguel'),
     'credit': ('Credit Service', 'Créditos'),
     'imei': ('IMEI Service', 'IMEI'),
+    'method': ('Method Service', 'Métodos'),
 }
 
 

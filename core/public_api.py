@@ -228,6 +228,8 @@ def _service_type_key(service_type):
         return 'credit_service'
     if service_type == 'IMEI Service':
         return 'imei_service'
+    if service_type == 'Method Service':
+        return 'method_service'
     return 'server_service'
 
 

@@ -847,3 +847,57 @@ class CreditServiceFormTests(TestCase):
         inputs = {i.field_name: i.field_value for i in order.order_inputs.all()}
         self.assertEqual(inputs.get('Email'), 'ferramenta@email.com')
         self.assertNotIn('Quantidade de Créditos', inputs)
+
+
+class MethodServiceTests(TestCase):
+    def setUp(self):
+        Currency.objects.create(code='BRL', name='Brazilian Real', icon='R$', rate=Decimal('1.0000'), status='Active')
+        self.customer = Customer.objects.create(
+            name='Cliente Métodos', email='metodo@teste.com', mobile='11999999999',
+            password=Customer.make_password('senha123'), currency='BRL',
+            balance=Decimal('100.00'),
+        )
+        self.group = ServiceGroup.objects.create(name='Métodos', slug='method', status='Active')
+        self.service = ServiceList.objects.create(
+            service_type='Method Service', service_group=self.group,
+            title='Firmware Unlock', original_price=Decimal('15.00'),
+            status='Active', slug='firmware-unlock',
+        )
+
+    def _login(self):
+        session = self.client.session
+        session['customer_id'] = self.customer.id
+        session.save()
+
+    def test_admin_service_list_has_methods_pill(self):
+        staff = User.objects.create_user(username='adminmetodo', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        resp = self.client.get(reverse('admin_service_list', args=['method']))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn('nav-link active" href="/admin-panel/services/method/"', html)
+        self.assertIn('Métodos', html)
+        self.assertIn(self.service.title, html)
+
+    def test_server_view_offers_free_instructions_field(self):
+        self._login()
+        resp = self.client.get(reverse('service_view', args=[self.service.slug]))
+        html = resp.content.decode()
+        self.assertIn('name="Instruções"', html)
+        self.assertIn('Escreva sua solicitação', html)
+        self.assertIn('envie o link dessa firmware', html)
+
+    def test_submit_order_stores_instructions_and_keeps_manual_delivery(self):
+        self._login()
+        resp = self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+            'Instruções': 'Envie o link dessa firmware',
+        })
+        self.assertEqual(resp.status_code, 302)
+        order = CustomerOrder.objects.latest('id')
+        self.assertEqual(order.service_type, 'method_service')
+        inputs = {i.field_name: i.field_value for i in order.order_inputs.all()}
+        self.assertEqual(inputs.get('Instruções'), 'Envie o link dessa firmware')
+        self.assertEqual(order.service_input1, 'Envie o link dessa firmware')
+        self.customer.refresh_from_db()
+        self.assertEqual(self.customer.balance, Decimal('85.00'))

@@ -58,6 +58,13 @@
                             {% if serviceInputs %}
                             <div>
                                 {% for serviceInput in serviceInputs %}
+                                {% if serviceData.service_type == 'Method Service' and serviceInput.name == 'Instruções' %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="fields.{{ forloop.counter0 }}">Escreva sua solicitação (ex.: envie o link dessa firmware)</label>
+                                    <textarea class="form-control" name="{{ serviceInput.name }}" id="fields.{{ forloop.counter0 }}" rows="4" placeholder="Ex.: envie o link dessa firmware"></textarea>
+                                    <small class="text-muted">Descreva o que você precisa para o vendedor entregar no pedido.</small>
+                                </div>
+                                {% else %}
                                 <div class="mb-3">
                                     <label class="form-label" for="fields.{{ forloop.counter0 }}">Informe <b>{{ serviceInput.name }}</b></label>
                                     <input type="{% if 'Quantidade' in serviceInput.name %}number{% else %}text{% endif %}" class="form-control" name="{{ serviceInput.name }}" id="fields.{{ forloop.counter0 }}" placeholder="{{ serviceInput.name }}" {% if 'Quantidade' in serviceInput.name %}min="1" step="1"{% endif %} {% if 'Quantidade' in serviceInput.name or serviceInput.name == 'Email' %}required{% endif %}>
@@ -68,6 +75,7 @@
                                     <small class="text-muted">E-mail da conta da ferramenta onde serão creditados os créditos.</small>
                                     {% endif %}
                                 </div>
+                                {% endif %}
                                 {% endfor %}
                             </div>
                             {% endif %}
@@ -95,7 +103,7 @@
                                 <button type="submit" class="btn btn-primary rounded place-order w-100" id="placeOrderBtn">FAZER UM PEDIDO</button>
                             </div>
                             {% if serviceData.article %}
-                            <div class="mt-3 p-3 bg-light rounded-2 border-start border-primary border-4" style="white-space: pre-line; font-size: 1rem;" id="service-article">
+                            <div class="mt-3 p-3 bg-light rounded-2 border-start border-primary border-4" style="white-space: pre-line; font-size: 1rem; color: #1f2937; background-color: #ffffff;" id="service-article">
                                 {{ serviceData.article|richtext }}
                             </div>
                             {% endif %}

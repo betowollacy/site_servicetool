@@ -15,7 +15,7 @@ from django.views.decorators.http import require_POST
 from . import asaas, binance, provider_api, public_api
 from .models import (
     Api, ApiLog, CREDIT_SERVICE_EXTRA_FIELDS, Currency, Customer, CustomerOrder,
-    GatewayLog, Invoice, OrderInput, Page, PaymentDeposit, PaymentGateway,
+    GatewayLog, Invoice, METHOD_SERVICE_EXTRA_FIELDS, OrderInput, Page, PaymentDeposit, PaymentGateway,
     ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting,
 )
 
@@ -35,12 +35,18 @@ CATEGORY_SLUGS = {
         'display': 'IMEI',
         'title': 'IMEI/SN Service',
     },
+    'method-service': {
+        'type': 'Method Service',
+        'display': 'Métodos',
+        'title': 'Métodos',
+    },
 }
 
 GROUP_CATEGORY_MAP = {
     'remote': 'server-service',
     'server': 'credit-service',
     'imei': 'imei-service',
+    'method': 'method-service',
 }
 
 
@@ -136,6 +142,10 @@ def _service_input_fields(service):
     names = list(service.service_fields.values_list('name', flat=True))
     if service.service_type == 'Credit Service':
         for extra in CREDIT_SERVICE_EXTRA_FIELDS:
+            if extra not in names:
+                names.append(extra)
+    if service.service_type == 'Method Service':
+        for extra in METHOD_SERVICE_EXTRA_FIELDS:
             if extra not in names:
                 names.append(extra)
     return names
@@ -589,6 +599,8 @@ def _invoice_type_key(service_type):
         return 'credit_service'
     if service_type == 'IMEI Service':
         return 'imei_service'
+    if service_type == 'Method Service':
+        return 'method_service'
     return 'server_service'
 
 

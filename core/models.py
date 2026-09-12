@@ -111,6 +111,7 @@ class ServiceList(models.Model):
         ('Server Service', 'Server Service'),
         ('Credit Service', 'Credit Service'),
         ('IMEI Service', 'IMEI Service'),
+        ('Method Service', 'Method Service'),
     ]
     PRICE_TYPES = [
         ('fixed_price', 'Fixed Price'),
@@ -195,6 +196,8 @@ class ServiceList(models.Model):
 
 CREDIT_SERVICE_EXTRA_FIELDS = ('Quantidade de Créditos', 'Email')
 
+METHOD_SERVICE_EXTRA_FIELDS = ('Instruções',)
+
 
 class ServiceInput(models.Model):
     service = models.ForeignKey(ServiceList, on_delete=models.CASCADE, related_name='service_fields')
@@ -259,6 +262,7 @@ class CustomerOrder(models.Model):
         ('server_service', 'Server'),
         ('credit_service', 'Credit'),
         ('imei_service', 'IMEI'),
+        ('method_service', 'Method'),
     ]
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='orders')
