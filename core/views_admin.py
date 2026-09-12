@@ -246,7 +246,7 @@ def admin_service_list(request, svtype):
         'type_label': label,
         'svtype': svtype,
         'services': ServiceList.objects.filter(service_type=db_type),
-        'type_options': list(TYPE_MAP.items()),
+        'type_options': [(k, TYPE_MAP[k][1]) for k in TYPE_MAP],
     }
     return render(request, 'admin/service_list.html', ctx)
 

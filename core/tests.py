@@ -879,6 +879,26 @@ class MethodServiceTests(TestCase):
         self.assertIn('Métodos', html)
         self.assertIn(self.service.title, html)
 
+    def test_move_select_renders_on_all_category_lists(self):
+        staff = User.objects.create_user(username='adminmoveall', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        for idx, (svtype, stype) in enumerate([
+            ('server', 'Server Service'), ('credit', 'Credit Service'),
+            ('imei', 'IMEI Service'), ('method', 'Method Service'),
+        ]):
+            ServiceList.objects.create(
+                service_type=stype, service_group=self.group,
+                title='Serviço {}'.format(svtype), original_price=Decimal('5.00'),
+                status='Active', slug='serv-{}-{}'.format(svtype, idx),
+            )
+            resp = self.client.get(reverse('admin_service_list', args=[svtype]))
+            self.assertEqual(resp.status_code, 200)
+            html = resp.content.decode()
+            self.assertIn('/move/', html)
+            self.assertIn('target_svtype', html)
+            self.assertIn('Mover para categoria', html)
+            self.assertIn('<option value=', html)
+
     def test_server_view_offers_free_instructions_field(self):
         self._login()
         resp = self.client.get(reverse('service_view', args=[self.service.slug]))
