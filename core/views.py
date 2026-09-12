@@ -1,6 +1,7 @@
 import json
 import random
 import string
+import time
 from decimal import Decimal
 from types import SimpleNamespace
 
@@ -583,6 +584,14 @@ def _debit_and_forward_order(order, customer):
     forwarded, msg = provider_api.submit_local_order(order)
     if forwarded is False:
         provider_api.refund_order(order, msg or 'Falha ao enviar para o provedor.')
+    elif forwarded is True:
+        # O provedor costuma processar na hora: puxa o resultado imediatamente
+        # (com pequenas tentativas) para o cliente nao esperar o cron.
+        for _ in range(3):
+            provider_api.sync_local_order(order)
+            if order.service_status != 'In Process':
+                break
+            time.sleep(4)
     notify.send_telegram(notify.new_order_message(order, paid=True))
 
 
