@@ -246,6 +246,7 @@ def admin_service_list(request, svtype):
         'type_label': label,
         'svtype': svtype,
         'services': ServiceList.objects.filter(service_type=db_type),
+        'type_options': list(TYPE_MAP.items()),
     }
     return render(request, 'admin/service_list.html', ctx)
 
@@ -427,6 +428,25 @@ def admin_service_delete(request, svtype, service_id):
         title = service.title
         service.delete()
         messages.success(request, f'Serviço "{title}" excluído com sucesso.')
+    return redirect('admin_service_list', svtype)
+
+
+@_staff
+def admin_service_move(request, svtype, service_id):
+    db_type, label = _service_type_from(svtype)
+    service = ServiceList.objects.filter(id=service_id, service_type=db_type).first()
+    if not service:
+        messages.error(request, 'Serviço não encontrado.')
+        return redirect('admin_service_list', svtype)
+    target = request.POST.get('target_svtype', '')
+    new_type, new_label = TYPE_MAP.get(target, (None, None))
+    if request.method == 'POST' and new_type:
+        service.service_type = new_type
+        service.service_group = _group_for(target, new_label)
+        service.save(update_fields=['service_type', 'service_group'])
+        messages.success(request, f'Serviço "{service.title}" movido para {new_label}.')
+        return redirect('admin_service_list', target)
+    messages.error(request, 'Categoria de destino inválida.')
     return redirect('admin_service_list', svtype)
 
 

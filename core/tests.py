@@ -901,3 +901,28 @@ class MethodServiceTests(TestCase):
         self.assertEqual(order.service_input1, 'Envie o link dessa firmware')
         self.customer.refresh_from_db()
         self.assertEqual(self.customer.balance, Decimal('85.00'))
+
+    def test_admin_moves_service_between_categories(self):
+        staff = User.objects.create_user(username='adminmove', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        self.service.service_type = 'Server Service'
+        self.service.save(update_fields=['service_type'])
+        resp = self.client.post(reverse('admin_service_move', args=['server', self.service.id]), {
+            'target_svtype': 'method',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.service.refresh_from_db()
+        self.assertEqual(self.service.service_type, 'Method Service')
+        self.assertEqual(self.service.service_group.slug, 'method')
+
+    def test_admin_move_rejects_invalid_target(self):
+        staff = User.objects.create_user(username='adminmove2', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        self.service.service_type = 'Server Service'
+        self.service.save(update_fields=['service_type'])
+        resp = self.client.post(reverse('admin_service_move', args=['server', self.service.id]), {
+            'target_svtype': 'inexistente',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.service.refresh_from_db()
+        self.assertEqual(self.service.service_type, 'Server Service')

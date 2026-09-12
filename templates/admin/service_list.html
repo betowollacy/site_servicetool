@@ -58,6 +58,17 @@
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-light-danger"><i class="ti ti-trash"></i> Excluir</button>
                         </form>
+                        <form method="post" action="{% url 'admin_service_move' svtype s.id %}" class="d-flex gap-1 align-items-center">
+                            {% csrf_token %}
+                            <select name="target_svtype" class="form-select form-select-sm" style="max-width:130px" title="Mover para categoria">
+                                {% for opt_svtype, opt_label in type_options %}
+                                {% if opt_svtype != svtype %}
+                                <option value="{{ opt_svtype }}">{{ opt_label }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-light-warning" title="Mover para categoria selecionada"><i class="ti ti-arrow-right"></i></button>
+                        </form>
                     </td>
                 </tr>
                 {% empty %}
