@@ -31,7 +31,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Serviço vinculado</label>
-                        <input type="text" class="form-control mb-2" id="serviceSearch" placeholder="Buscar serviço..." autocomplete="off">
+                        <input type="text" class="form-control mb-2" id="serviceSearch" placeholder="Buscar serviço..." autocomplete="off" data-st-persist>
                         <select name="service_id" class="form-select" id="serviceSelect">
                             <option value="0">-- Nenhum --</option>
                             {% for s in services %}
@@ -72,7 +72,7 @@
         <h6 class="mb-0">Credenciais</h6>
         <div class="input-group" style="max-width: 300px;">
             <span class="input-group-text"><i class="ti ti-search"></i></span>
-            <input type="text" id="credsSearch" class="form-control" placeholder="Buscar login...">
+            <input type="text" id="credsSearch" class="form-control" placeholder="Buscar login..." data-st-persist>
         </div>
     </div>
     <div class="card-body table-responsive">
@@ -145,19 +145,23 @@
 <script>
     $(function () {
         var $rows = $("#credsTable tbody tr");
-        $("#credsSearch").on("keyup", function () {
-            var q = this.value.toLowerCase().trim();
+        function applyCreds() {
+            var q = $("#credsSearch").val().toLowerCase().trim();
             $rows.each(function () {
                 $(this).toggle($(this).text().toLowerCase().indexOf(q) > -1);
             });
-        });
+        }
+        $("#credsSearch").on("keyup", applyCreds);
         var $select = $("#serviceSelect");
-        $("#serviceSearch").on("keyup", function () {
-            var q = this.value.toLowerCase().trim();
+        function applyService() {
+            var q = $("#serviceSearch").val().toLowerCase().trim();
             $select.find("option").each(function () {
                 $(this).toggle($(this).text().toLowerCase().indexOf(q) > -1);
             });
-        });
+        }
+        $("#serviceSearch").on("keyup", applyService);
+        applyCreds();
+        applyService();
     });
 </script>
 {% endblock %}

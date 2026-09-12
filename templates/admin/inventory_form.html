@@ -24,7 +24,7 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Serviço vinculado</label>
-                    <input type="text" class="form-control mb-2" id="serviceSearch" placeholder="Buscar serviço..." autocomplete="off">
+                    <input type="text" class="form-control mb-2" id="serviceSearch" placeholder="Buscar serviço..." autocomplete="off" data-st-persist>
                     <select name="service_id" class="form-select" id="serviceSelect">
                         <option value="0">-- Nenhum / vincular depois --</option>
                         {% for s in services %}
@@ -47,12 +47,14 @@
 <script>
     $(function () {
         var $select = $("#serviceSelect");
-        $("#serviceSearch").on("keyup", function () {
-            var q = this.value.toLowerCase().trim();
+        function apply() {
+            var q = $("#serviceSearch").val().toLowerCase().trim();
             $select.find("option").each(function () {
                 $(this).toggle($(this).text().toLowerCase().indexOf(q) > -1);
             });
-        });
+        }
+        $("#serviceSearch").on("keyup", apply);
+        apply();
     });
 </script>
 {% endblock %}

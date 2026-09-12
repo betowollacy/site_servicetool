@@ -16,7 +16,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <div class="input-group" style="max-width: 320px;">
             <span class="input-group-text"><i class="ti ti-search"></i></span>
-            <input type="text" id="serviceSearch" class="form-control" placeholder="Buscar produto...">
+            <input type="text" id="serviceSearch" class="form-control" placeholder="Buscar produto..." data-st-persist>
         </div>
         <a href="{% url 'admin_service_new' svtype %}" class="btn btn-primary"><i class="fas fa-plus me-2"></i> Adicionar Serviço</a>
     </div>
@@ -87,12 +87,14 @@
 <script>
     $(function () {
         var $rows = $("#servicesTable tbody tr");
-        $("#serviceSearch").on("keyup", function () {
-            var q = this.value.toLowerCase().trim();
+        function apply() {
+            var q = $("#serviceSearch").val().toLowerCase().trim();
             $rows.each(function () {
                 $(this).toggle($(this).text().toLowerCase().indexOf(q) > -1);
             });
-        });
+        }
+        $("#serviceSearch").on("keyup", apply);
+        apply();
     });
 </script>
 {% endblock %}

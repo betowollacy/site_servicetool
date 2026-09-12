@@ -22,7 +22,7 @@
                     {% csrf_token %}
                     <div class="mb-3">
                         <label class="form-label">Serviço</label>
-                        <input type="text" class="form-control mb-2" id="serviceSearchQuick" placeholder="Buscar serviço..." autocomplete="off">
+                        <input type="text" class="form-control mb-2" id="serviceSearchQuick" placeholder="Buscar serviço..." autocomplete="off" data-st-persist>
                         <select name="service_id" class="form-select" id="serviceSelectQuick" required>
                             <option value="">-- Escolha o serviço --</option>
                             {% for s in services %}
@@ -58,7 +58,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <div class="input-group" style="max-width: 320px;">
             <span class="input-group-text"><i class="ti ti-search"></i></span>
-            <input type="text" id="inventorySearch" class="form-control" placeholder="Buscar estoque...">
+            <input type="text" id="inventorySearch" class="form-control" placeholder="Buscar estoque..." data-st-persist>
         </div>
         <a href="{% url 'admin_inventory_new' %}" class="btn btn-primary"><i class="fas fa-plus me-2"></i> Novo Estoque</a>
     </div>
@@ -111,19 +111,23 @@
 <script>
     $(function () {
         var $rows = $("#inventoryTable tbody tr");
-        $("#inventorySearch").on("keyup", function () {
-            var q = this.value.toLowerCase().trim();
+        function applyRows() {
+            var q = $("#inventorySearch").val().toLowerCase().trim();
             $rows.each(function () {
                 $(this).toggle($(this).text().toLowerCase().indexOf(q) > -1);
             });
-        });
+        }
+        $("#inventorySearch").on("keyup", applyRows);
         var $selectQuick = $("#serviceSelectQuick");
-        $("#serviceSearchQuick").on("keyup", function () {
-            var q = this.value.toLowerCase().trim();
+        function applyQuick() {
+            var q = $("#serviceSearchQuick").val().toLowerCase().trim();
             $selectQuick.find("option").each(function () {
                 $(this).toggle($(this).text().toLowerCase().indexOf(q) > -1);
             });
-        });
+        }
+        $("#serviceSearchQuick").on("keyup", applyQuick);
+        applyRows();
+        applyQuick();
     });
 </script>
 {% endblock %}

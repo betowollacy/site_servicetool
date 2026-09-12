@@ -113,9 +113,18 @@
         <script>
             feather.replace();
             if ($.fn.dataTable) {
-                $('table.dataTable').DataTable({ language: { search: 'Buscar', lengthMenu: 'Mostrar _MENU_ por página', info: 'Mostrando _START_ a _END_ de _TOTAL_', paginate: { next: 'Próximo', previous: 'Anterior' } } });
+                $('table.dataTable').DataTable({ stateSave: true, language: { search: 'Buscar', lengthMenu: 'Mostrar _MENU_ por página', info: 'Mostrando _START_ a _END_ de _TOTAL_', paginate: { next: 'Próximo', previous: 'Anterior' } } });
             }
             $(function () {
+                document.querySelectorAll('input[data-st-persist]').forEach(function (input) {
+                    var key = 'st_persist_' + input.id + '_' + window.location.pathname;
+                    var saved = null;
+                    try { saved = localStorage.getItem(key); } catch (e) {}
+                    if (saved !== null) input.value = saved;
+                    $(input).on('keyup change', function () {
+                        try { localStorage.setItem(key, input.value); } catch (e) {}
+                    });
+                });
                 document.querySelectorAll('.pc-navbar li.pc-hasmenu').forEach(function(li) {
                     li.classList.remove('pc-trigger');
                     var submenu = li.querySelector(':scope > .pc-submenu');
@@ -144,13 +153,13 @@
                         badge.style.display = data.count > 0 ? '' : 'none';
                     }
                     var last = data.orders && data.orders[0];
-                    if (!last || sessionStorage.getItem('st_seen_id') === String(last.id)) return;
+                    if (!last || localStorage.getItem('st_seen_id') === String(last.id)) return;
                     var node = document.createElement('div');
                     node.className = 'card';
                     node.style.cssText = 'position:fixed;top:70px;right:16px;z-index:9999;width:320px;box-shadow:0 6px 20px rgba(0,0,0,.25)';
                     node.innerHTML = '<div class="card-body p-3"><div class="text-uppercase text-muted small mb-1">Novo pedido #' + last.id + '</div><h6 class="mb-1">' + last.customer + '</h6><div class="text-muted small mb-2" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + last.service + '</div><div class="d-flex justify-content-between align-items-center"><span class="fw-semibold">R$ ' + last.price + '</span><a href="' + ordersUrl + '" class="btn btn-sm btn-primary">Ver pedido</a></div></div>';
                     document.body.appendChild(node);
-                    sessionStorage.setItem('st_seen_id', String(last.id));
+                    localStorage.setItem('st_seen_id', String(last.id));
                     setTimeout(function () { node.remove(); }, 8000);
                 }).catch(function () {});
             }
