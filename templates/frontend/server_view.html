@@ -95,8 +95,9 @@
                 <div class="card rounded-0 pd-sticky">
                     <div class="p-4 border-bottom d-flex align-items-center justify-content-between">
                         <div>
-                            <small class="text-body-secondary d-block mb-1">Preço</small>
+                            <small class="text-body-secondary d-block mb-1">{% if serviceData.service_type == 'Credit Service' %}Preço por crédito{% else %}Preço{% endif %}</small>
                             <span class="pd-price text-primary">R$ {{ Price|floatformat:2 }}</span>
+                            <span class="d-block fw-bold mt-1" id="liveTotal" hidden>Total: R$ 0,00</span>
                         </div>
                         <div class="text-end">
                             {% if serviceData.process_type == 'Auto' %}
@@ -228,6 +229,18 @@
 {% block footer_script %}
 <script>
     $(document).ready(function () {
+        {% if serviceData.service_type == 'Credit Service' %}
+        var unit = parseFloat('{{ Price|floatformat:2 }}');
+        var qtyInput = $('#orderForm input[name="Quantidade de Créditos"]');
+        function updateLiveTotal() {
+            if (!unit || !qtyInput.length) return;
+            var qty = parseInt(qtyInput.val(), 10);
+            if (!(qty >= 1)) qty = 1;
+            $('#liveTotal').text('Total: R$ ' + (unit * qty).toFixed(2)).prop('hidden', false);
+        }
+        qtyInput.on('input', updateLiveTotal);
+        updateLiveTotal();
+        {% endif %}
         if ($('#orderForm').length) {
             $('#placeOrderBtn').on('click', function (e) {
                 var agree = $('#form-check-input').is(':checked');

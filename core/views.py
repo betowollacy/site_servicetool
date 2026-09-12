@@ -624,22 +624,30 @@ def submit_order(request, customer):
         messages.error(request, ', '.join(errors))
         return redirect('service_view', service.slug)
 
+    service_qnt = 1
+    for field_name in _service_input_fields(service):
+        if 'quantidade' in field_name.lower() or field_name.lower().startswith(('qtd', 'qty', 'qnt')):
+            try:
+                service_qnt = int(str(request.POST.get(field_name, '1') or '1').strip())
+            except (TypeError, ValueError):
+                service_qnt = 1
+            if service_qnt < 1:
+                service_qnt = 1
+            break
+    total_price = service.original_price * service_qnt
+
     order = CustomerOrder.objects.create(
         customer=customer,
         service=service,
         service_status='Waiting Action',
         service_type=_invoice_type_key(service.service_type),
-        service_price=service.original_price,
+        service_price=total_price,
+        service_qnt=str(service_qnt),
         service_title=service.title,
         seen='false',
     )
     for field_name in _service_input_fields(service):
         if 'quantidade' in field_name.lower() or field_name.lower().startswith(('qtd', 'qty', 'qnt')):
-            try:
-                order.service_qnt = int(str(request.POST.get(field_name, '1') or '1').strip())
-            except (TypeError, ValueError):
-                order.service_qnt = 1
-            order.save(update_fields=['service_qnt'])
             continue
         value = request.POST.get(field_name, '').strip()
         OrderInput.objects.create(order=order, field_name=field_name, field_value=value)
@@ -647,7 +655,7 @@ def submit_order(request, customer):
             order.service_input1 = value
             order.save(update_fields=['service_input1'])
 
-    price = service.original_price
+    price = total_price
     if customer.balance >= price:
         _debit_and_forward_order(order, customer)
         messages.success(request, 'Pedido realizado com sucesso.')
