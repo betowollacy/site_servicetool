@@ -110,6 +110,7 @@ class ServiceList(models.Model):
     SERVICE_TYPES = [
         ('Server Service', 'Server Service'),
         ('Credit Service', 'Credit Service'),
+        ('Activation Service', 'Activation Service'),
         ('IMEI Service', 'IMEI Service'),
         ('Method Service', 'Method Service'),
     ]
@@ -194,7 +195,9 @@ class ServiceList(models.Model):
         return self.original_price
 
 
-CREDIT_SERVICE_EXTRA_FIELDS = ('Quantidade de Créditos', 'Email')
+CREDIT_SERVICE_EXTRA_FIELDS = ('Quantidade de Créditos', 'Usuário', 'E-mail da Ferramenta')
+
+ACTIVATION_SERVICE_EXTRA_FIELDS = ('Usuário', 'E-mail da Ferramenta')
 
 METHOD_SERVICE_EXTRA_FIELDS = ('Instruções',)
 
@@ -261,6 +264,7 @@ class CustomerOrder(models.Model):
     SERVICE_TYPES = [
         ('server_service', 'Server'),
         ('credit_service', 'Credit'),
+        ('activation_service', 'Activation'),
         ('imei_service', 'IMEI'),
         ('method_service', 'Method'),
     ]

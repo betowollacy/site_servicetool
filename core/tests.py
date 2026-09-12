@@ -815,12 +815,14 @@ class CreditServiceFormTests(TestCase):
         session['customer_id'] = self.customer.id
         session.save()
 
-    def test_server_view_offers_quantity_and_email_for_credit(self):
+    def test_server_view_offers_quantity_user_and_email_for_credit(self):
         self._login()
         resp = self.client.get(reverse('service_view', args=[self.service.slug]))
         html = resp.content.decode()
         self.assertIn('name="Quantidade de Créditos"', html)
-        self.assertIn('name="Email"', html)
+        self.assertIn('name="Usuário"', html)
+        self.assertIn('name="E-mail da Ferramenta"', html)
+        self.assertNotIn('name="Senha"', html)
 
     def test_imei_service_does_not_receive_credit_fields(self):
         self._login()
@@ -834,19 +836,102 @@ class CreditServiceFormTests(TestCase):
         self.assertIn('name="IMEI"', html)
         self.assertNotIn('Quantidade de Créditos', html)
 
-    def test_submit_order_stores_quantity_and_email(self):
+    def test_submit_order_requires_user_and_email(self):
         self._login()
         resp = self.client.post(reverse('submit_order'), {
             'serviceID': self.service.id,
             'Quantidade de Créditos': '5',
-            'Email': 'ferramenta@email.com',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(CustomerOrder.objects.count(), 0)
+
+    def test_submit_order_stores_user_and_email(self):
+        self._login()
+        resp = self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+            'Quantidade de Créditos': '5',
+            'Usuário': 'ferramenta.login',
+            'E-mail da Ferramenta': 'ferramenta@email.com',
         })
         self.assertEqual(resp.status_code, 302)
         order = CustomerOrder.objects.latest('id')
         self.assertEqual(order.service_qnt, '5')
         inputs = {i.field_name: i.field_value for i in order.order_inputs.all()}
-        self.assertEqual(inputs.get('Email'), 'ferramenta@email.com')
+        self.assertEqual(inputs.get('Usuário'), 'ferramenta.login')
+        self.assertEqual(inputs.get('E-mail da Ferramenta'), 'ferramenta@email.com')
         self.assertNotIn('Quantidade de Créditos', inputs)
+        self.assertNotIn('Senha', inputs)
+
+
+class ActivationServiceTests(TestCase):
+    def setUp(self):
+        Currency.objects.create(code='BRL', name='Brazilian Real', icon='R$', rate=Decimal('1.0000'), status='Active')
+        self.customer = Customer.objects.create(
+            name='Cliente Ativação', email='ativacao@teste.com', mobile='11999999999',
+            password=Customer.make_password('senha123'), currency='BRL',
+            balance=Decimal('100.00'),
+        )
+        self.group = ServiceGroup.objects.create(name='Ativação', slug='activation', status='Active')
+        self.service = ServiceList.objects.create(
+            service_type='Activation Service', service_group=self.group,
+            title='Ativação Phoenix', original_price=Decimal('12.00'),
+            status='Active', slug='ativacao-phoenix',
+        )
+
+    def _login(self):
+        session = self.client.session
+        session['customer_id'] = self.customer.id
+        session.save()
+
+    def test_admin_service_list_has_activation_pill(self):
+        staff = User.objects.create_user(username='adminativ', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        resp = self.client.get(reverse('admin_service_list', args=['activation']))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn('nav-link active" href="/admin-panel/services/activation/"', html)
+        self.assertIn('Ativação', html)
+        self.assertIn(self.service.title, html)
+
+    def test_server_view_offers_user_email_and_registration_warning_for_activation(self):
+        self._login()
+        resp = self.client.get(reverse('service_view', args=[self.service.slug]))
+        html = resp.content.decode()
+        self.assertIn('name="Usuário"', html)
+        self.assertIn('E-mail da Ferramenta', html)
+        self.assertNotIn('name="Senha"', html)
+        self.assertNotIn('Quantidade de Créditos', html)
+        self.assertIn('o cliente precisa estar cadastrado na ferramenta', html)
+
+    def test_activation_category_page_exists(self):
+        resp = self.client.get(reverse('category', args=['activation-service']))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn('Ativação', html)
+        self.assertIn(self.service.title, html)
+
+    def test_submit_order_requires_user_and_email_for_activation(self):
+        self._login()
+        resp = self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(CustomerOrder.objects.count(), 0)
+
+    def test_submit_activation_order_stores_user_and_email(self):
+        self._login()
+        resp = self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+            'Usuário': 'usuario.ferramenta',
+            'E-mail da Ferramenta': 'conta@ferramenta.com',
+        })
+        self.assertEqual(resp.status_code, 302)
+        order = CustomerOrder.objects.latest('id')
+        self.assertEqual(order.service_type, 'activation_service')
+        inputs = {i.field_name: i.field_value for i in order.order_inputs.all()}
+        self.assertEqual(inputs.get('Usuário'), 'usuario.ferramenta')
+        self.assertEqual(inputs.get('E-mail da Ferramenta'), 'conta@ferramenta.com')
+        self.assertNotIn('Senha', inputs)
 
 
 class MethodServiceTests(TestCase):
@@ -884,6 +969,7 @@ class MethodServiceTests(TestCase):
         self.client.force_login(staff)
         for idx, (svtype, stype) in enumerate([
             ('server', 'Server Service'), ('credit', 'Credit Service'),
+            ('activation', 'Activation Service'),
             ('imei', 'IMEI Service'), ('method', 'Method Service'),
         ]):
             ServiceList.objects.create(

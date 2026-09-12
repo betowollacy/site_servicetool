@@ -226,6 +226,8 @@ def _create_paid_order(customer, service, qnt, fields):
 def _service_type_key(service_type):
     if service_type == 'Credit Service':
         return 'credit_service'
+    if service_type == 'Activation Service':
+        return 'activation_service'
     if service_type == 'IMEI Service':
         return 'imei_service'
     if service_type == 'Method Service':

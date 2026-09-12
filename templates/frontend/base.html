@@ -116,10 +116,9 @@
     </header>
 
     <div class="servicetool-dropdown" id="drop-down-2">
-        {% for group in groups %}
-        <a href="{% url 'category' group.cat_slug %}">
-            {% if group.slug == 'imei' %}📶{% elif group.slug == 'server' %}📲{% else %}💰{% endif %}
-            {{ group.name }}
+        {% for cat in category_links %}
+        <a href="{% url 'category' cat.slug %}">
+            {{ cat.icon }} {{ cat.display }}
         </a>
         {% endfor %}
     </div>
@@ -201,8 +200,10 @@
         <div class="offcanvas-body">
             <h5 class="display-6 fs-5 border-bottom mb-2 pb-2">LISTA DE SERVIÇO</h5>
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'imei-service' %}">📶 Serviço de Imei e Consultas <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
-            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'credit-service' %}">📲 Ativações e Créditos <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'credit-service' %}">📲 Créditos <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'activation-service' %}">⚡ Ativação <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'server-service' %}">💰 Aluguel <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'method-service' %}">💡 Métodos <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             {% if customer %}
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_dashboard' %}" style="margin-top: 12px;"><i class="bi bi-tachometer"></i> Meu Painel <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_order_history' %}"><i class="bi bi-bag"></i> Histórico de ordem <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>

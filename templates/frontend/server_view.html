@@ -51,6 +51,15 @@
                         <div class="show-error-message"></div>
 
                         {% if customer %}
+                        {% if serviceData.service_type == 'Activation Service' %}
+                        <div class="alert alert-warning d-flex gap-2 align-items-start rounded-0 mb-3" id="activation-notice">
+                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                            <div>
+                                <strong>Atenção:</strong> para ativar este serviço, o cliente precisa estar cadastrado na ferramenta.
+                                Se ainda não estiver cadastrado, cadastre-se ou envie os seus dados (usuário e e-mail da ferramenta) para realizarmos o seu cadastro.
+                            </div>
+                        </div>
+                        {% endif %}
                         <form method="post" action="{% url 'submit_order' %}" id="orderForm">
                             {% csrf_token %}
                             <input type="hidden" name="serviceID" value="{{ serviceData.id }}">
@@ -67,12 +76,12 @@
                                 {% else %}
                                 <div class="mb-3">
                                     <label class="form-label" for="fields.{{ forloop.counter0 }}">Informe <b>{{ serviceInput.name }}</b></label>
-                                    <input type="{% if 'Quantidade' in serviceInput.name %}number{% else %}text{% endif %}" class="form-control" name="{{ serviceInput.name }}" id="fields.{{ forloop.counter0 }}" placeholder="{{ serviceInput.name }}" {% if 'Quantidade' in serviceInput.name %}min="1" step="1"{% endif %} {% if 'Quantidade' in serviceInput.name or serviceInput.name == 'Email' %}required{% endif %}>
+                                    <input type="{% if serviceInput.name == 'Senha' %}password{% elif 'Quantidade' in serviceInput.name %}number{% elif 'E-mail' in serviceInput.name or 'Email' in serviceInput.name %}email{% else %}text{% endif %}" class="form-control" name="{{ serviceInput.name }}" id="fields.{{ forloop.counter0 }}" placeholder="{{ serviceInput.name }}" {% if 'Quantidade' in serviceInput.name %}min="1" step="1"{% endif %} required>
                                     {% if 'Quantidade' in serviceInput.name %}
                                     <small class="text-muted">Quantidade de créditos a adicionar na conta da ferramenta.</small>
                                     {% endif %}
-                                    {% if serviceInput.name == 'Email' %}
-                                    <small class="text-muted">E-mail da conta da ferramenta onde serão creditados os créditos.</small>
+                                    {% if serviceInput.name in 'Usuário Senha E-mail da Ferramenta' %}
+                                    <small class="text-muted">Dados da conta da ferramenta cadastrada no site do vendedor, usados para adicionar/ativar o pedido.</small>
                                     {% endif %}
                                 </div>
                                 {% endif %}

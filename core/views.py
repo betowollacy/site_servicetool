@@ -14,8 +14,9 @@ from django.views.decorators.http import require_POST
 
 from . import asaas, binance, provider_api, public_api
 from .models import (
-    Api, ApiLog, CREDIT_SERVICE_EXTRA_FIELDS, Currency, Customer, CustomerOrder,
-    GatewayLog, Invoice, METHOD_SERVICE_EXTRA_FIELDS, OrderInput, Page, PaymentDeposit, PaymentGateway,
+    Api, ApiLog, ACTIVATION_SERVICE_EXTRA_FIELDS, CREDIT_SERVICE_EXTRA_FIELDS,
+    Currency, Customer, CustomerOrder, GatewayLog, Invoice, METHOD_SERVICE_EXTRA_FIELDS,
+    OrderInput, Page, PaymentDeposit, PaymentGateway,
     ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting,
 )
 
@@ -28,7 +29,12 @@ CATEGORY_SLUGS = {
     'credit-service': {
         'type': 'Credit Service',
         'display': 'Créditos',
-        'title': 'Ativações e Créditos',
+        'title': 'Créditos',
+    },
+    'activation-service': {
+        'type': 'Activation Service',
+        'display': 'Ativação',
+        'title': 'Ativação',
     },
     'imei-service': {
         'type': 'IMEI Service',
@@ -45,8 +51,17 @@ CATEGORY_SLUGS = {
 GROUP_CATEGORY_MAP = {
     'remote': 'server-service',
     'server': 'credit-service',
+    'activation': 'activation-service',
     'imei': 'imei-service',
     'method': 'method-service',
+}
+
+CATEGORY_MENU_ICONS = {
+    'server-service': '💰',
+    'credit-service': '📲',
+    'activation-service': '⚡',
+    'imei-service': '📶',
+    'method-service': '💡',
 }
 
 
@@ -93,10 +108,19 @@ def _base_ctx(request):
         cat_slug = GROUP_CATEGORY_MAP.get(g.slug)
         if cat_slug:
             groups.append({'slug': g.slug, 'name': g.name, 'cat_slug': cat_slug})
+    category_links = [
+        {
+            'slug': slug,
+            'display': cfg['display'],
+            'icon': CATEGORY_MENU_ICONS.get(slug, '🛒'),
+        }
+        for slug, cfg in CATEGORY_SLUGS.items()
+    ]
     return {
         'currency_icon': 'R$',
         'sliders': Slider.objects.filter(status='Active').order_by('id'),
         'groups': groups,
+        'category_links': category_links,
         'activeGateway': PaymentGateway.objects.filter(name__iexact='Asaas', status='Active'),
     }
 
@@ -138,12 +162,18 @@ def category(request, slug):
 
 
 def _service_input_fields(service):
-    """Campos de entrada do servico. Para Credit Service garante Email e Password."""
+    """Campos de entrada do servico. Credit pede quantidade + usuario + email;
+    Activation pede usuario + email para cadastro/ativacao."""
     names = list(service.service_fields.values_list('name', flat=True))
     if service.service_type == 'Credit Service':
-        for extra in CREDIT_SERVICE_EXTRA_FIELDS:
-            if extra not in names:
-                names.append(extra)
+        extras = CREDIT_SERVICE_EXTRA_FIELDS
+    elif service.service_type == 'Activation Service':
+        extras = ACTIVATION_SERVICE_EXTRA_FIELDS
+    else:
+        extras = ()
+    for extra in extras:
+        if extra not in names:
+            names.append(extra)
     if service.service_type == 'Method Service':
         for extra in METHOD_SERVICE_EXTRA_FIELDS:
             if extra not in names:
@@ -550,6 +580,17 @@ def submit_order(request, customer):
         messages.error(request, 'Service unavailable.')
         return redirect('homepage')
 
+    required_fields = []
+    if service.service_type == 'Credit Service':
+        required_fields = list(CREDIT_SERVICE_EXTRA_FIELDS)
+    elif service.service_type == 'Activation Service':
+        required_fields = list(ACTIVATION_SERVICE_EXTRA_FIELDS)
+    errors = [f'Informe {field_name}.' for field_name in required_fields
+              if not request.POST.get(field_name, '').strip()]
+    if errors:
+        messages.error(request, ', '.join(errors))
+        return redirect('service_view', service.slug)
+
     order = CustomerOrder.objects.create(
         customer=customer,
         service=service,
@@ -597,6 +638,8 @@ def submit_order(request, customer):
 def _invoice_type_key(service_type):
     if service_type == 'Credit Service':
         return 'credit_service'
+    if service_type == 'Activation Service':
+        return 'activation_service'
     if service_type == 'IMEI Service':
         return 'imei_service'
     if service_type == 'Method Service':

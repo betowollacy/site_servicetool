@@ -15,7 +15,8 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 from .models import (
-    Api, CREDIT_SERVICE_EXTRA_FIELDS, Currency, Customer, CustomerOrder, Inventory,
+    Api, ACTIVATION_SERVICE_EXTRA_FIELDS, CREDIT_SERVICE_EXTRA_FIELDS,
+    Currency, Customer, CustomerOrder, Inventory,
     InventoryData, Invoice, Page, PaymentGateway, RemoteServiceInput, RemoteServiceList,
     ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting,
 )
@@ -32,6 +33,7 @@ SERVICE_STATUS_CHOICES = ['Waiting Action', 'In Process', 'Success', 'Rejected']
 TYPE_MAP = {
     'server': ('Server Service', 'Aluguel'),
     'credit': ('Credit Service', 'Créditos'),
+    'activation': ('Activation Service', 'Ativação'),
     'imei': ('IMEI Service', 'IMEI'),
     'method': ('Method Service', 'Métodos'),
 }
@@ -936,9 +938,14 @@ def admin_api_link(request):
                     else:
                         remote_names = []
                     if local_type == 'Credit Service':
-                        for extra in CREDIT_SERVICE_EXTRA_FIELDS:
-                            if extra not in remote_names:
-                                ServiceInput.objects.get_or_create(service=service, name=extra)
+                        extras = CREDIT_SERVICE_EXTRA_FIELDS
+                    elif local_type == 'Activation Service':
+                        extras = ACTIVATION_SERVICE_EXTRA_FIELDS
+                    else:
+                        extras = ()
+                    for extra in extras:
+                        if extra not in remote_names:
+                            ServiceInput.objects.get_or_create(service=service, name=extra)
                     messages.success(request, 'Serviço "{}" vinculado ao provedor.'.format(service.title))
                 else:
                     messages.error(request, 'Serviço local não encontrado.')
