@@ -72,6 +72,7 @@ _DURATION_RULES = [
     ('4h', ['4h', '4 horas', '4 hrs', '4 hour', '4 hours']),
     ('5h', ['5h', '5 horas', '5 hour', '5 hours']),
     ('6h', ['6h', '6 horas', '6 hrs', '6 hour', '6 hours']),
+    ('3d', ['3 dias', '3 day', '3 days']),
     ('7d', ['7 dias', '7 dias', '7 day', '7 days', '1 semana', 'week']),
     ('10h', ['10h', '10 horas', '10 hour', '10 hours']),
     ('12h', ['12h', '12 horas', '12 hour', '12 hours']),
@@ -83,6 +84,7 @@ _DURATION_RULES = [
     ('6m', ['6 meses', '6 months', '6 month']),
     ('12m', ['1 ano', '1 year', '12 meses', '12 months', '12 month', '1 yr']),
     ('2y', ['2 anos', '2 years', '2 year']),
+    ('3y', ['3 anos', '3 years', '3 year']),
 ]
 
 _KIND_RULES = [
@@ -200,15 +202,18 @@ def find_remote_match(title, api=None):
 
 
 def _match_acceptable(score, overlap, dur, rdur, kind, rkind):
+    # Conflito duro: duracao ou tipo diferentes nunca integram.
+    if dur and rdur and dur != rdur:
+        return False
+    if kind and rkind and kind != rkind:
+        return False
     if score >= 2.2:
         return True
-    if overlap < 0.5:
-        return False
-    if dur and rdur and dur == rdur:
+    # Marca reconhecida + reforco (duracao ou tipo iguais) integra.
+    if overlap >= 0.5 and ((dur and rdur and dur == rdur) or (kind and rkind and kind == rkind)):
         return True
-    if kind and rkind and kind == rkind:
-        return True
-    return False
+    # Sem reforco: exige marca bem especifica (quase todos os tokens batendo).
+    return overlap >= 0.75
 
 
 def auto_link_service(service, min_score=2.2):
