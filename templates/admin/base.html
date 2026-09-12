@@ -32,6 +32,7 @@
         </div>
         <div class="top-loader" style="display:none;"><div class="loader-bar"></div></div>
 
+        {% if request.user.is_authenticated %}
         {% include 'admin/include/sidebar.html' %}
 
         <header class="pc-header" style="background: rgb(192 192 192 / 13%)">
@@ -93,6 +94,7 @@
                 </div>
             </div>
         </header>
+        {% endif %}
 
         <div class="pc-container">
             <div class="pc-content">
