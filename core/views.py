@@ -588,7 +588,7 @@ def _debit_and_forward_order(order, customer):
         # O provedor costuma processar na hora: puxa o resultado imediatamente
         # (com pequenas tentativas) para o cliente nao esperar o cron.
         for _ in range(3):
-            provider_api.sync_local_order(order)
+            provider_api.sync_local_order(order, notify_complete=False)
             if order.service_status != 'In Process':
                 break
             time.sleep(4)

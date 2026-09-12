@@ -521,7 +521,7 @@ def refund_order(order, message):
     order.save(update_fields=['service_status', 'service_comments'])
 
 
-def sync_local_order(order):
+def sync_local_order(order, notify_complete=True):
     """Consulta o status do pedido no provedor e atualiza o pedido local."""
     api = provider_for_order(order)
     if api is None or not (order.trx_id or '').strip():
@@ -543,6 +543,9 @@ def sync_local_order(order):
 
     if target == 'Rejected' and order.service_status != 'Rejected':
         refund_order(order, code or 'Pedido rejeitado pelo provedor.')
+        if notify_complete:
+            from . import notify
+            notify.send_telegram(notify.rejected_order_message(order, order.service_comments))
         return True
 
     if target != order.service_status:
@@ -553,4 +556,7 @@ def sync_local_order(order):
         changed = True
     if changed:
         order.save(update_fields=['service_status', 'service_comments'])
+        if target == 'Success' and notify_complete:
+            from . import notify
+            notify.send_telegram(notify.completed_order_message(order))
     return True

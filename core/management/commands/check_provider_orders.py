@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from core import provider_api
+from core import notify, provider_api
 from core.models import Api, CustomerOrder
 
 
@@ -42,6 +42,7 @@ class Command(BaseCommand):
                     delivered, _ = provider_api.deliver_from_inventory(order)
                     if delivered:
                         ok += 1
+                        notify.send_telegram(notify.completed_order_message(order))
             except Exception as exc:
                 self.stderr.write('Erro no pedido #{}: {}'.format(order.id, exc))
         self.stdout.write('Sincronizados {} de {} pedidos.'.format(ok, total))
