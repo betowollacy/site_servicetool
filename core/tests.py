@@ -433,29 +433,31 @@ class ProviderApiAdminTests(TestCase):
         self.assertEqual(list(remote.service_fields.values_list('name', flat=True)), ['IMEI'])
 
     @patch('core.provider_api.fetch_catalog')
-    def test_admin_search_imports_only_matching_remote_services(self, fetch):
+    def test_admin_import_does_not_rewrite_unchanged_remote(self, fetch):
         fetch.return_value = [
             {'referenceid': '7', 'name': 'Unlock 1', 'servicetype': 'IMEI', 'credit': 10,
              'group': 'Ferramentas', 'time': '', 'fields': ['IMEI']},
-            {'referenceid': '9', 'name': 'Consulta Samsung', 'servicetype': 'IMEI', 'credit': 15,
-             'group': 'Ferramentas', 'time': '', 'fields': ['IMEI']},
         ]
         self._login()
-        resp = self.client.post(reverse('admin_api_search', args=[self.api.id]), {'q': 'unlock'})
-        self.assertEqual(resp.status_code, 302)
-        remotes = list(RemoteServiceList.objects.values_list('referenceid', flat=True))
-        self.assertEqual(remotes, ['7'])
+        self.client.post(reverse('admin_api_import', args=[self.api.id]))
+        remote = RemoteServiceList.objects.get(api=self.api)
+        remote_id = remote.id
+        self.client.post(reverse('admin_api_import', args=[self.api.id]))
+        remote.refresh_from_db()
+        self.assertEqual(remote.id, remote_id)
+        self.assertEqual(RemoteServiceList.objects.filter(api=self.api).count(), 1)
 
-    @patch('core.provider_api.fetch_catalog')
-    def test_admin_search_no_match_does_not_import(self, fetch):
-        fetch.return_value = [
-            {'referenceid': '7', 'name': 'Unlock 1', 'servicetype': 'IMEI', 'credit': 10,
-             'group': 'Ferramentas', 'time': '', 'fields': ['IMEI']},
-        ]
+    def test_admin_api_list_filters_remote_services_by_q(self):
+        RemoteServiceList.objects.create(api=self.api, referenceid='7', SERVICETYPE='IMEI',
+                                         SERVICENAME='Unlock 1', CREDIT=Decimal('10.00'))
+        RemoteServiceList.objects.create(api=self.api, referenceid='9', SERVICETYPE='IMEI',
+                                         SERVICENAME='Consulta Samsung', CREDIT=Decimal('15.00'))
         self._login()
-        resp = self.client.post(reverse('admin_api_search', args=[self.api.id]), {'q': 'nada'})
-        self.assertEqual(resp.status_code, 302)
-        self.assertEqual(RemoteServiceList.objects.filter(api=self.api).count(), 0)
+        resp = self.client.get(reverse('admin_api_list'), {'q': 'unlock'})
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn('Unlock 1', html)
+        self.assertNotIn('Consulta Samsung', html)
 
     def test_admin_link_binds_service(self):
         remote = RemoteServiceList.objects.create(

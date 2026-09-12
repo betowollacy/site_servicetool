@@ -29,15 +29,10 @@
     </div>
     <div class="collapse" id="api-collapse-{{ api.id }}">
         <div class="card-body d-flex flex-wrap gap-2 border-bottom">
-            <form method="post" action="{% url 'admin_api_test' api.id %}">{% csrf_token %}
+            <form method="post" action="{% url 'admin_api_test' api.id %}" data-loading>{% csrf_token %}
                 <button class="btn btn-sm btn-outline-secondary"><i class="ti ti-device-desktop-analytics me-1"></i> Testar conexão</button>
             </form>
-            <form method="post" action="{% url 'admin_api_search' api.id %}" class="d-flex align-items-center gap-2 ms-lg-auto">
-                {% csrf_token %}
-                <input type="text" name="q" class="form-control form-control-sm font-monospace" style="min-width:260px" placeholder="Buscar na API (nome ou ID)" required>
-                <button class="btn btn-sm btn-primary" type="submit"><i class="ti ti-search me-1"></i> Buscar na API</button>
-            </form>
-            <form method="post" action="{% url 'admin_api_import' api.id %}" onsubmit="return confirm('Importar/atualizar os serviços do provedor?')">{% csrf_token %}
+            <form method="post" action="{% url 'admin_api_import' api.id %}" data-loading onsubmit="return confirm('Importar/atualizar os serviços do provedor?')">{% csrf_token %}
                 <button class="btn btn-sm btn-outline-primary"><i class="ti ti-download me-1"></i> Importar serviços</button>
             </form>
             <a href="{% url 'admin_api_detail' api.id %}" class="btn btn-sm btn-light-secondary"><i class="ti ti-eye me-1"></i> Ver dados</a>
@@ -68,7 +63,14 @@
 {% endfor %}
 
 <div class="card">
-    <div class="card-header"><h6 class="mb-0"><i class="ti ti-link me-2"></i> Serviços do provedor (vincular ao catálogo)</h6></div>
+    <div class="card-header d-flex flex-wrap align-items-center gap-2">
+        <h6 class="mb-0"><i class="ti ti-link me-2"></i> Serviços do provedor (vincular ao catálogo)</h6>
+        <form method="get" class="ms-auto d-flex gap-2" data-loading>
+            <input type="text" name="q" value="{{ search_q|default:'' }}" class="form-control form-control-sm font-monospace" style="min-width:240px" placeholder="Buscar por nome ou ID...">
+            <button class="btn btn-sm btn-primary" type="submit"><i class="ti ti-search me-1"></i> Buscar</button>
+            {% if search_q %}<a href="{% url 'admin_api_list' %}" class="btn btn-sm btn-light-secondary">Limpar</a>{% endif %}
+        </form>
+    </div>
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover dataTable">
@@ -122,4 +124,16 @@
         </div>
     </div>
 </div>
+{% endblock %}
+{% block footer_script %}
+<script>
+    $(document).on('submit', 'form[data-loading]', function () {
+        var $btn = $(this).find('button[type="submit"]');
+        var original = $btn.html();
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Carregando...');
+        setTimeout(function () {
+            $btn.prop('disabled', false).html(original);
+        }, 120000);
+    });
+</script>
 {% endblock %}

@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import logout
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -808,7 +808,11 @@ REMOTE_TYPE_TO_LOCAL = {
 def admin_api_list(request):
     apis = Api.objects.all().order_by('-id')
     local_services = list(ServiceList.objects.filter(status='Active').order_by('service_type', 'title'))
-    remote_services = list(RemoteServiceList.objects.select_related('api').order_by('api_id', 'SERVICENAME'))
+    q = (request.GET.get('q') or '').strip()
+    remote_qs = RemoteServiceList.objects.select_related('api').order_by('api_id', 'SERVICENAME')
+    if q:
+        remote_qs = remote_qs.filter(Q(SERVICENAME__icontains=q) | Q(referenceid__icontains=q))
+    remote_services = list(remote_qs)
     linked_by_remote = {}
     for linked in ServiceList.objects.exclude(api__isnull=True).exclude(referenceid__isnull=True).exclude(referenceid=''):
         linked_by_remote.setdefault((linked.api_id, linked.referenceid), []).append(linked)
@@ -818,6 +822,7 @@ def admin_api_list(request):
         'remote_services': remote_services,
         'linked_by_remote': linked_by_remote,
         'remote_type_to_local': REMOTE_TYPE_TO_LOCAL,
+        'search_q': q,
     })
 
 
@@ -887,66 +892,50 @@ def admin_api_import(request, api_id):
         except provider_api.ProviderError as exc:
             messages.error(request, 'Falha ao importar: {}'.format(exc))
             return redirect('admin_api_list')
-        seen = set()
+        existing = {r.referenceid: r for r in RemoteServiceList.objects.filter(api=api)}
+        created = 0
+        updated = 0
         for item in catalog:
-            remote, was_created = RemoteServiceList.objects.update_or_create(
-                api=api,
-                referenceid=item['referenceid'],
-                defaults={
-                    'SERVICENAME': item['name'],
-                    'SERVICETYPE': item['servicetype'],
-                    'CREDIT': Decimal(str(item['credit']) or '0'),
-                    'added': True,
-                },
-            )
+            rid = item['referenceid']
+            remote = existing.get(rid)
+            credit = Decimal(str(item['credit']) or '0')
             fields = list(dict.fromkeys(item['fields']))
-            RemoteServiceInput.objects.filter(remote_service=remote).exclude(name__in=fields).delete()
-            for fname in fields:
-                RemoteServiceInput.objects.get_or_create(remote_service=remote, name=fname)
-            seen.add(remote.id)
-        messages.success(request, 'Importados {} serviços do provedor ({} novos).'.format(
-            len(catalog), len(seen)))
-    return redirect('admin_api_list')
-
-
-@_staff
-def admin_api_search(request, api_id):
-    """Busca na API do provedor por nome ou ID e adiciona os produtos encontrados
-    à lista de vínculos (mesmo comportamento do import, mas só para o que casar)."""
-    api = Api.objects.filter(id=api_id).first()
-    if not api or request.method != 'POST':
-        return redirect('admin_api_list')
-    q = (request.POST.get('q') or '').strip()
-    if not q:
-        return redirect('admin_api_list')
-    try:
-        catalog = provider_api.fetch_catalog(api)
-    except provider_api.ProviderError as exc:
-        messages.error(request, 'Falha ao buscar na API: {}'.format(exc))
-        return redirect('admin_api_list')
-    term = q.lower()
-    matches = [item for item in catalog
-               if term in (item['name'] or '').lower() or term in str(item['referenceid'] or '').lower()]
-    if not matches:
-        messages.info(request, 'Nenhum produto encontrado no provedor para "{}".'.format(q))
-        return redirect('admin_api_list')
-    for item in matches:
-        remote, _ = RemoteServiceList.objects.update_or_create(
-            api=api,
-            referenceid=item['referenceid'],
-            defaults={
-                'SERVICENAME': item['name'],
-                'SERVICETYPE': item['servicetype'],
-                'CREDIT': Decimal(str(item['credit']) or '0'),
-                'added': True,
-            },
-        )
-        fields = list(dict.fromkeys(item['fields']))
-        RemoteServiceInput.objects.filter(remote_service=remote).exclude(name__in=fields).delete()
-        for fname in fields:
-            RemoteServiceInput.objects.get_or_create(remote_service=remote, name=fname)
-    messages.success(request, '{} produto(s) encontrado(s) para "{}" e adicionado(s) à lista de vínculos.'.format(
-        len(matches), q))
+            if remote is None:
+                remote = RemoteServiceList.objects.create(
+                    api=api,
+                    referenceid=rid,
+                    SERVICENAME=item['name'],
+                    SERVICETYPE=item['servicetype'],
+                    CREDIT=credit,
+                    added=True,
+                )
+                created += 1
+                sync = True
+            else:
+                changed = (
+                    remote.SERVICENAME != item['name']
+                    or remote.SERVICETYPE != item['servicetype']
+                    or remote.CREDIT != credit
+                    or not remote.added
+                )
+                if changed:
+                    remote.SERVICENAME = item['name']
+                    remote.SERVICETYPE = item['servicetype']
+                    remote.CREDIT = credit
+                    remote.added = True
+                    remote.save(update_fields=['SERVICENAME', 'SERVICETYPE', 'CREDIT', 'added'])
+                    updated += 1
+                sync = changed
+            if sync:
+                current = set(remote.service_fields.values_list('name', flat=True))
+                to_delete = current - set(fields)
+                if to_delete:
+                    RemoteServiceInput.objects.filter(remote_service=remote, name__in=to_delete).delete()
+                for fname in fields:
+                    if fname not in current:
+                        RemoteServiceInput.objects.create(remote_service=remote, name=fname)
+        messages.success(request, 'Importados {} serviços do provedor ({} novos, {} atualizados).'.format(
+            len(catalog), created, updated))
     return redirect('admin_api_list')
 
 
