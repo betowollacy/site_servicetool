@@ -55,7 +55,7 @@
                                     <input type="radio" name="payment_methode" value="{{ gateway.NAME }}" class="checkbox-input" required {% if forloop.first %}checked{% endif %}>
                                     <span class="checkbox-tile w-fit-content">
                                         <span class="checkbox-icon">
-                                            <img src="{{ gateway.LOGO }}" alt="" height="40" width="60" class="rounded">
+                                            <img src="{% if gateway.NAME == 'Asaas' %}{% static 'resource/pix.svg' %}{% else %}{{ gateway.LOGO }}{% endif %}" alt="{% if gateway.NAME == 'Asaas' %}PIX{% endif %}" height="40" width="60" class="rounded">
                                         </span>
                                         <span class="checkbox-label mt-1">{{ gateway.NAME }}</span>
                                     </span>

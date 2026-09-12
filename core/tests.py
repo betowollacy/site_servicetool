@@ -115,6 +115,16 @@ class EndToEndPaymentTests(TestCase):
         self.assertEqual(self.invoice.invoice_status, 'Paid')
         self.assertEqual(deposit.status, 'Paid')
 
+    def test_checkout_shows_pix_symbol_for_asaas(self):
+        session = self.client.session
+        session['customer_id'] = self.customer.id
+        session.save()
+        resp = self.client.get(reverse('checkout', args=[self.invoice.id]))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn('resource/pix.svg', html)
+        self.assertNotIn('asaas.svg', html)
+
 
 class PublicApiTests(TestCase):
     def setUp(self):
