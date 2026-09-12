@@ -43,7 +43,8 @@
 </head>
 <body data-pc-direction="ltr">
 
-    <div id="servicetooltheme-loader" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+    <div id="servicetooltheme-loader" class="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center" style="z-index:99999;background:var(--bs-body-bg,#ffffff);">
+        <img src="{{ siteLogo }}" alt="logo" style="max-width:220px;max-height:90px;width:auto;height:auto;object-fit:contain;margin-bottom:18px;" />
         <div class="spinner-border text-primary" role="status" style="width:3.5rem;height:3.5rem;"></div>
     </div>
 
