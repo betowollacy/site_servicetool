@@ -40,7 +40,7 @@ TYPE_MAP = {
 
 
 def _staff(fn):
-    return staff_member_required(fn, login_url='/admin/login/')
+    return staff_member_required(fn, login_url='/django-admin/login/')
 
 
 @_staff
