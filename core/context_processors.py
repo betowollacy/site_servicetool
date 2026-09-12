@@ -62,6 +62,7 @@ def admin_context(request):
         'serverServiceCount': ServiceList.objects.filter(service_type='Server Service').count(),
         'creditServiceCount': ServiceList.objects.filter(service_type='Credit Service').count(),
         'imeiServiceCount': ServiceList.objects.filter(service_type='IMEI Service').count(),
+        'methodServiceCount': ServiceList.objects.filter(service_type='Method Service').count(),
         'waitingActionCount': CustomerOrder.objects.filter(service_status='Waiting Action').count(),
         'inProcessCount': CustomerOrder.objects.filter(service_status='In Process').count(),
         'successCount': CustomerOrder.objects.filter(service_status='Success').count(),
