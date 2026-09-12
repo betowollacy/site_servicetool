@@ -564,7 +564,10 @@ def _debit_and_forward_order(order, customer):
         return
     customer.balance = customer.balance - price
     customer.save(update_fields=['balance'])
-    order.service_status = 'In Process'
+    if order.service_type == 'imei_service':
+        order.service_status = 'Waiting Action'
+    else:
+        order.service_status = 'In Process'
     order.save(update_fields=['service_status'])
     Statement.objects.create(
         customer=customer, description=f"Order #{order.id} - {order.service_title}",

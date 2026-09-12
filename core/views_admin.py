@@ -17,7 +17,7 @@ from django.utils.text import slugify
 from .models import (
     Api, ACTIVATION_SERVICE_EXTRA_FIELDS, CREDIT_SERVICE_EXTRA_FIELDS,
     Currency, Customer, CustomerOrder, Inventory,
-    InventoryData, Invoice, Page, PaymentGateway, RemoteServiceInput, RemoteServiceList,
+    InventoryData, Invoice, OrderInput, Page, PaymentGateway, RemoteServiceInput, RemoteServiceList,
     ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting,
 )
 from . import provider_api, public_api
@@ -65,10 +65,15 @@ def admin_orders(request, status):
         InventoryData.objects.filter(inventory_id__in=inv_ids, status='Available')
         .values('inventory_id').annotate(c=Count('id')).values_list('inventory_id', 'c')
     )
+    descriptions = dict(
+        OrderInput.objects.filter(field_name='Descreva o serviço')
+        .values_list('order_id', 'field_value')
+    )
     for order in orders:
         inv = order.service.inventory if order.service else None
         order.inventory_id_for_delivery = inv.id if inv else None
         order.available_count = avail.get(inv.id, 0) if inv else 0
+        order.service_description = descriptions.get(order.id, '')
     ctx = {
         'status': status,
         'status_label': label,

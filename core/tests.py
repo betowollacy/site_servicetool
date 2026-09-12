@@ -977,6 +977,52 @@ class ActivationServiceTests(TestCase):
         self.assertNotIn('Senha', inputs)
 
 
+class ImeiOrderFlowTests(TestCase):
+    def setUp(self):
+        Currency.objects.create(code='BRL', name='Brazilian Real', icon='R$', rate=Decimal('1.0000'), status='Active')
+        self.customer = Customer.objects.create(
+            name='Cliente IMEI', email='imei@teste.com', mobile='11999999999',
+            password=Customer.make_password('senha123'), currency='BRL',
+            balance=Decimal('100.00'),
+        )
+        self.group = ServiceGroup.objects.create(name='Serviço de IMEI e Consultas', slug='imei', status='Active')
+        self.service = ServiceList.objects.create(
+            service_type='IMEI Service', service_group=self.group,
+            title='Consulta IMEI', original_price=Decimal('5.00'),
+            status='Active', slug='consulta-imei',
+        )
+        self.staff = User.objects.create_user(username='adminflow', password='senha123', is_staff=True)
+
+    def _customer_login(self):
+        session = self.client.session
+        session['customer_id'] = self.customer.id
+        session.save()
+
+    def test_imei_order_lands_in_admin_with_inputs(self):
+        self._customer_login()
+        resp = self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+            'IMEI': '356938035643809',
+            'Descreva o serviço': 'tela de hello',
+        })
+        self.assertEqual(resp.status_code, 302)
+        order = CustomerOrder.objects.latest('id')
+        self.assertEqual(order.service_type, 'imei_service')
+        self.assertEqual(order.service_status, 'Waiting Action')
+        inputs = {i.field_name: i.field_value for i in order.order_inputs.all()}
+        self.assertEqual(inputs.get('IMEI'), '356938035643809')
+        self.assertEqual(inputs.get('Descreva o serviço'), 'tela de hello')
+
+        self.client.logout()
+        self.client.force_login(self.staff)
+        page = self.client.get(reverse('admin_orders', args=['waiting']))
+        self.assertEqual(page.status_code, 200)
+        html = page.content.decode()
+        self.assertIn('356938035643809', html)
+        self.assertIn('tela de hello', html)
+        self.assertIn('Descrição do Serviço', html)
+
+
 class MethodServiceTests(TestCase):
     def setUp(self):
         Currency.objects.create(code='BRL', name='Brazilian Real', icon='R$', rate=Decimal('1.0000'), status='Active')
