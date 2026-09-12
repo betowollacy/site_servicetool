@@ -984,6 +984,7 @@ class ActivationServiceTests(TestCase):
         html = resp.content.decode()
         self.assertNotIn('name="Usuário"', html)
         self.assertNotIn('E-mail da Ferramenta', html)
+        self.assertNotIn('o cliente precisa estar cadastrado na ferramenta', html)
 
     def test_submit_order_without_login_when_collect_login_off(self):
         self._login()

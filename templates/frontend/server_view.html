@@ -51,7 +51,7 @@
                         <div class="show-error-message"></div>
 
                         {% if customer %}
-                        {% if serviceData.service_type == 'Activation Service' %}
+                        {% if serviceData.service_type == 'Activation Service' and serviceData.collect_login %}
                         <div class="alert alert-warning d-flex gap-2 align-items-start rounded-0 mb-3" id="activation-notice">
                             <i class="bi bi-exclamation-triangle-fill fs-5"></i>
                             <div>
