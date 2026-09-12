@@ -37,8 +37,8 @@
             <tbody>
                 {% for s in services %}
                 <tr>
-                    <td>#{{ s.id }}</td>
-                    <td>{{ s.title }}</td>
+                    <td>{{ s.id }}</td>
+                    <td><a href="{% url 'admin_service_edit' svtype s.id %}" class="fw-semibold text-primary">{{ s.title }}</a></td>
                     <td>R$ {{ s.price_for|floatformat:2 }}</td>
                     <td>{{ s.delivery_time|default:"-" }}</td>
                     <td>{{ s.sells }}</td>
@@ -55,7 +55,6 @@
                     </td>
                     <td class="text-nowrap" style="position:sticky; right:0; background:var(--bs-body-bg,#ffffff); box-shadow:-2px 0 6px rgba(0,0,0,.08);">
                         <div class="d-flex gap-1">
-                        <a href="{% url 'admin_service_edit' svtype s.id %}" class="btn btn-sm btn-light-primary"><i class="ti ti-edit"></i> Editar</a>
                         <form method="post" action="{% url 'admin_service_delete' svtype s.id %}" onsubmit="return confirm('Excluir o serviço &quot;{{ s.title }}&quot;?');">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-light-danger"><i class="ti ti-trash"></i> Excluir</button>
