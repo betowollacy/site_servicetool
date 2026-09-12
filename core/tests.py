@@ -834,6 +834,7 @@ class CreditServiceFormTests(TestCase):
         resp = self.client.get(reverse('service_view', args=[imei.slug]))
         html = resp.content.decode()
         self.assertIn('name="IMEI"', html)
+        self.assertIn('IMEI ou Serial', html)
         self.assertNotIn('Quantidade de Créditos', html)
 
     def test_submit_order_requires_user_and_email(self):

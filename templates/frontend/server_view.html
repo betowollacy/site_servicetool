@@ -73,6 +73,12 @@
                                     <textarea class="form-control" name="{{ serviceInput.name }}" id="fields.{{ forloop.counter0 }}" rows="4" placeholder="Ex.: envie o link dessa firmware"></textarea>
                                     <small class="text-muted">Descreva o que você precisa para o vendedor entregar no pedido.</small>
                                 </div>
+                                {% elif serviceData.service_type == 'IMEI Service' and forloop.first %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="fields.{{ forloop.counter0 }}">Informe <b>IMEI ou Serial</b> do aparelho</label>
+                                    <input type="text" class="form-control" name="{{ serviceInput.name }}" id="fields.{{ forloop.counter0 }}" placeholder="IMEI ou Serial" maxlength="300" required>
+                                    <small class="text-muted">Envie o IMEI ou o número de série (SN) do aparelho.</small>
+                                </div>
                                 {% else %}
                                 <div class="mb-3">
                                     <label class="form-label" for="fields.{{ forloop.counter0 }}">Informe <b>{{ serviceInput.name }}</b></label>
