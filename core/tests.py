@@ -1762,7 +1762,7 @@ class MaintenanceModeTests(TestCase):
         SystemSetting.objects.create(key='siteMaintenanceMode', value='on')
         self._login_customer()
         resp = self.client.post(reverse('submit_order'), {'serviceID': service.id})
-        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.status_code, 503)
         self.assertEqual(CustomerOrder.objects.count(), 0)
 
     def test_public_api_order_blocked_during_maintenance(self):
