@@ -1669,8 +1669,8 @@ class MaintenanceModeTests(TestCase):
         SystemSetting.objects.create(key='siteMaintenanceMsg', value='Volte em 1 hora')
         resp = self.client.get(reverse('homepage'))
         self.assertEqual(resp.status_code, 503)
-        self.assertContains(resp, 'Volte em 1 hora')
-        self.assertContains(resp, 'Estamos em manutenção')
+        self.assertContains(resp, 'Volte em 1 hora', status_code=503)
+        self.assertContains(resp, 'Estamos em manutenção', status_code=503)
 
     def test_webhook_stays_live_during_maintenance(self):
         SystemSetting.objects.create(key='siteMaintenanceMode', value='on')
