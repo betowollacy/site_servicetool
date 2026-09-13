@@ -18,6 +18,22 @@
     <div class='col-lg-4'>
         <div class='card mb-3'>
             <div class='card-body'>
+                {% if pref_order %}
+                <div class='alert alert-info py-2'>Pedido #{{ pref_order.id }} carregado — as outras opções foram descartadas.</div>
+            </div>
+        </div>
+        <div class='card mb-3'>
+            <div class='card-body'>
+                <h6 class='fw-bold mb-3'>Pedido #{{ pref_order.id }} a refazer</h6>
+                <div class='mb-1'><b>Cliente:</b> {{ pref_order.customer.name }} ({{ pref_order.customer.email }})</div>
+                <div class='mb-1'><b>Serviço:</b> {{ pref_order.service_title }}</div>
+                <div class='mb-1'><b>Status:</b> {{ pref_order.service_status }}</div>
+                {% if pref_order.trx_id %}<div class='mb-1'><b>Ref anterior:</b> {{ pref_order.trx_id }}</div>{% endif %}
+                {% if pref_order.service_comments %}<div class='mb-1'><b>Resposta anterior:</b> {{ pref_order.service_comments }}</div>{% endif %}
+                <a href='/admin-panel/administrador/' class='btn btn-sm btn-outline-secondary mt-2'>Descartar e voltar</a>
+            </div>
+        </div>
+        {% else %}
                 <h6 class='fw-bold mb-3'>Serviço (com API integrada)</h6>
                 <form method='get'>
                     <select name='service' class='form-select mb-2' onchange='this.form.submit()'>
@@ -44,6 +60,7 @@
                 </form>
             </div>
         </div>
+        {% endif %}
         {% if api %}
         <div class='card'>
             <div class='card-body'>
@@ -61,21 +78,29 @@
             <div class='card-body'>
                 <h6 class='fw-bold mb-3'>Novo pedido na API{% if service %} — {{ service.title }}{% endif %}</h6>
                 {% if pref_order %}
-                <div class='alert alert-info py-2'>Copiando dados do pedido #{{ pref_order.id }} ({{ pref_order.service_title }}) — cliente pré-selecionado.</div>
+                <div class='alert alert-info py-2'>Refazendo o pedido #{{ pref_order.id }} — cliente travado neste envio. Confira os campos e envie.</div>
                 {% endif %}
                 {% if service %}
                 <form method='post'>
                     {% csrf_token %}
                     <input type='hidden' name='serviceID' value='{{ service.id }}'>
+                    {% if pref_order %}
+                    <input type='hidden' name='customerID' value='{{ pref_order.customer_id }}'>
+                    <div class='mb-3'>
+                        <label class='form-label'>Cliente (travado)</label>
+                        <input type='text' class='form-control' value='{{ pref_order.customer.name }} ({{ pref_order.customer.email }})' readonly>
+                    </div>
+                    {% else %}
                     <div class='mb-3'>
                         <label class='form-label'>Cliente</label>
                         <select name='customerID' class='form-select' required>
                             <option value=''>Selecione o cliente...</option>
                             {% for c in customers %}
-                            <option value='{{ c.id }}' {% if pref_order and c.id == pref_order.customer_id %}selected{% endif %}>{{ c.name }} ({{ c.email }})</option>
+                            <option value='{{ c.id }}'>{{ c.name }} ({{ c.email }})</option>
                             {% endfor %}
                         </select>
                     </div>
+                    {% endif %}
                     {% for obj in input_objects %}
                     <div class='mb-3'>
                         <label class='form-label'>{{ obj.name }}</label>

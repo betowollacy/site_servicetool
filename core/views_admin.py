@@ -336,10 +336,13 @@ def admin_administrator(request):
     service = ServiceList.objects.select_related('api').filter(id=_parse_int(service_id)).first()
 
     order_input_id = request.GET.get('order') or ''
-    pref_order = CustomerOrder.objects.filter(id=_parse_int(order_input_id)).first()
+    pref_order = CustomerOrder.objects.select_related(
+        'customer', 'service', 'service__api',
+    ).filter(id=_parse_int(order_input_id)).first()
     pref_inputs = {}
     if pref_order:
         pref_inputs = {i.field_name: i.field_value for i in pref_order.order_inputs.all()}
+        service = pref_order.service
 
     customer_q = (request.GET.get('customer_q') or '').strip()
     customers = Customer.objects.filter(status='Active')
@@ -362,8 +365,19 @@ def admin_administrator(request):
         api_price = remote.CREDIT if remote and remote.CREDIT else api.reseller_price
         try:
             info = provider_api.account_info(api)
-            api_balance = info['credit']
-        except provider_api.ProviderError as exc:
+            digits = ''.join(ch for ch in str(info.get('credit') or '') if ch.isdigit() or ch in '.,-')
+            api_balance = None
+            if digits:
+                try:
+                    api_balance = float(digits.replace(',', '.'))
+                except (TypeError, ValueError):
+                    api_balance = None
+            if api_balance is None:
+                try:
+                    api_balance = float(info.get('creditraw') or 0)
+                except (TypeError, ValueError):
+                    api_balance = 0.0
+        except Exception as exc:
             api_balance_error = str(exc)
 
     input_objects = []
@@ -399,6 +413,8 @@ def admin_administrator(request):
         if errors:
             for msg in errors:
                 messages.error(request, msg)
+            if pref_order:
+                return redirect(reverse('admin_administrator') + '?order={}'.format(pref_order.id))
             if service:
                 return redirect(reverse('admin_administrator') + '?service={}'.format(service.id))
             return redirect('admin_administrator')
@@ -438,6 +454,8 @@ def admin_administrator(request):
             order.process_type = 'Manual'
             order.save(update_fields=['service_status', 'process_type'])
             messages.warning(request, 'Pedido #{} criado, mas o servico nao e automatico. Edite manualmente.'.format(order.id))
+        if pref_order:
+            return redirect('admin_administrator')
         return redirect(reverse('admin_administrator') + '?service={}'.format(service.id))
 
     ctx = {
