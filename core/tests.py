@@ -1,9 +1,12 @@
 import base64
 import json
+import os
 from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
+from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -1793,3 +1796,52 @@ class MaintenanceModeTests(TestCase):
         })
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(CustomerOrder.objects.count(), 0)
+
+
+class AdminSettingUploadTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='adminset', password='senha123', is_staff=True)
+
+    def _upload(self, kind, name='logo.png'):
+        return self.client.post(
+            reverse('admin_setting_upload_image', args=[kind]),
+            {'image': SimpleUploadedFile(name, b'\x89PNG\r\n\x1a\n' + b'0' * 64, content_type='image/png')},
+        )
+
+    def test_upload_logo(self):
+        self.client.force_login(self.staff)
+        resp = self._upload('logo')
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertIn('url', data)
+        self.assertTrue(data['url'].startswith('/media/settings/logo/'))
+        self.assertTrue(os.path.exists(os.path.join(settings.MEDIA_ROOT, data['url'].replace('/media/', ''))))
+
+    def test_upload_favicon(self):
+        self.client.force_login(self.staff)
+        resp = self._upload('favicon', 'favicon.png')
+        self.assertEqual(resp.status_code, 200)
+        data = json.loads(resp.content)
+        self.assertIn('url', data)
+        self.assertTrue(data['url'].startswith('/media/settings/favicon/'))
+
+    def test_upload_requires_staff(self):
+        resp = self._upload('logo')
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('/login/', resp.url)
+
+    def test_upload_rejects_bad_format(self):
+        self.client.force_login(self.staff)
+        resp = self.client.post(
+            reverse('admin_setting_upload_image', args=['logo']),
+            {'image': SimpleUploadedFile('logo.xyz', b'0' * 64, content_type='text/plain')},
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    def test_upload_rejects_invalid_kind(self):
+        self.client.force_login(self.staff)
+        resp = self.client.post(
+            reverse('admin_setting_upload_image', args=['video']),
+            {'image': SimpleUploadedFile('logo.png', b'\x89PNG\r\n\x1a\n', content_type='image/png')},
+        )
+        self.assertEqual(resp.status_code, 400)

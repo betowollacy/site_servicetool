@@ -509,6 +509,29 @@ def admin_setting(request):
 
 
 @_staff
+def admin_setting_upload_image(request, kind):
+    if kind not in ('logo', 'favicon'):
+        return JsonResponse({'error': 'Tipo inválido.'}, status=400)
+    if request.method != 'POST' or not request.FILES.get('image'):
+        return JsonResponse({'error': 'Envie um arquivo de imagem.'}, status=400)
+    f = request.FILES['image']
+    name = (f.name or '').lower()
+    ext = name.rsplit('.', 1)[-1] if '.' in name else ''
+    if ext not in ('png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'):
+        return JsonResponse({'error': 'Formato não permitido (use PNG, JPG, WEBP, GIF ou BMP).'}, status=400)
+    if kind == 'favicon' and ext not in ('png', 'ico', 'jpg', 'jpeg', 'webp'):
+        return JsonResponse({'error': 'Favicon: use PNG, ICO, JPG ou WEBP.'}, status=400)
+    subdir = settings.MEDIA_ROOT / 'settings' / kind
+    subdir.mkdir(parents=True, exist_ok=True)
+    fname = "{}_{}.{}".format(kind, uuid.uuid4().hex[:10], ext)
+    dest = subdir / fname
+    with open(dest, 'wb+') as out:
+        for chunk in f.chunks():
+            out.write(chunk)
+    return JsonResponse({'url': '{0}settings/{1}/{2}'.format(settings.MEDIA_URL, kind, fname)})
+
+
+@_staff
 def admin_maintenance(request):
     on = str(SystemSetting.get('siteMaintenanceMode', 'off')).strip().lower() in ('1', 'true', 'yes', 'on')
     message = SystemSetting.get('siteMaintenanceMsg', '')

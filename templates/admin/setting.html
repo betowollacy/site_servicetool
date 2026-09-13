@@ -32,11 +32,23 @@
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">URL do Logotipo</label>
-                    <input type="text" class="form-control" name="siteLogo" value="{{ settings.siteLogo }}">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="siteLogo" id="siteLogoInput" value="{{ settings.siteLogo }}">
+                        <button type="button" class="btn btn-primary" id="uploadLogoBtn"><i class="ti ti-upload me-1"></i> Enviar Logotipo</button>
+                    </div>
+                    <input type="file" id="uploadLogoFile" accept="image/*" class="d-none">
+                    {% if settings.siteLogo %}<img src="{{ settings.siteLogo }}" alt="logo" style="max-height:44px;margin-top:8px;" class="border rounded p-1">{% endif %}
+                    <div class="form-text">Clique em "Enviar Logotipo" para subir um arquivo do seu computador, ou cole um link direto.</div>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">URL do Favicon</label>
-                    <input type="text" class="form-control" name="siteFav" value="{{ settings.siteFav }}">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="siteFav" id="siteFavInput" value="{{ settings.siteFav }}">
+                        <button type="button" class="btn btn-primary" id="uploadFavBtn"><i class="ti ti-upload me-1"></i> Enviar Favicon</button>
+                    </div>
+                    <input type="file" id="uploadFavFile" accept="image/*,.ico" class="d-none">
+                    {% if settings.siteFav %}<img src="{{ settings.siteFav }}" alt="favicon" style="height:32px;margin-top:8px;" class="border rounded p-1">{% endif %}
+                    <div class="form-text">Clique em "Enviar Favicon" para subir um arquivo (PNG/ICO/JPG/WEBP), ou cole um link direto.</div>
                 </div>
             </div>
         </div>
@@ -71,4 +83,46 @@
         </div>
     </div>
 </form>
+{% endblock %}
+
+{% block footer_script %}
+<script>
+    $(function () {
+        function bindUpload(uploadBtn, uploadFile, targetInput) {
+            $(uploadBtn).on("click", function () {
+                $(uploadFile).trigger("click");
+            });
+            $(uploadFile).on("change", function () {
+                var file = this.files[0];
+                if (!file) return;
+                var kind = $(uploadFile).data("kind");
+                var fd = new FormData();
+                fd.append("image", file);
+                fd.append("csrfmiddlewaretoken", $("input[name=csrfmiddlewaretoken]").val());
+                var $btn = $(uploadBtn).prop("disabled", true).text("Enviando...");
+                $.ajax({
+                    url: "{% url 'admin_setting_upload_image' '__kind__' %}".replace("__kind__", kind),
+                    method: "POST",
+                    data: fd,
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        $(targetInput).val(res.url);
+                        $btn.prop("disabled", false).html('<i class="ti ti-upload me-1"></i> Enviar');
+                    },
+                    error: function (xhr) {
+                        var msg = "Falha no envio.";
+                        try { msg = JSON.parse(xhr.responseText).error || msg; } catch (e) {}
+                        alert(msg);
+                        $btn.prop("disabled", false).text("Enviar");
+                    }
+                });
+            });
+        }
+        $("#uploadLogoFile").data("kind", "logo");
+        bindUpload("#uploadLogoBtn", "#uploadLogoFile", "#siteLogoInput");
+        $("#uploadFavFile").data("kind", "favicon");
+        bindUpload("#uploadFavBtn", "#uploadFavFile", "#siteFavInput");
+    });
+</script>
 {% endblock %}
