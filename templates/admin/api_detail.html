@@ -44,6 +44,7 @@
                 <tr><th>URL da API</th><td><code>{{ api.api_url|default:'-' }}</code></td></tr>
                 <tr><th>Usuário (username)</th><td><code>{{ api.api_username|default:'-' }}</code></td></tr>
                 <tr><th>Chave da API (apiaccesskey)</th><td><code>{{ api.api_key|default:'-' }}</code></td></tr>
+                <tr><th>PIN mestre</th><td><code>{% if api.api_pin %}••••••••{% else %}-{% endif %}</code> <small class="text-muted">(oculto)</small></td></tr>
                 <tr><th>Serviços importados</th><td>{{ api.remote_services.count }} serviço(s) do provedor</td></tr>
             </table>
         </div>
@@ -67,6 +68,7 @@
                 <div class="col-md-6 mb-3"><label class="form-label">URL da API</label><input type="text" name="api_url" class="form-control font-monospace" value="{{ api.api_url|default:'' }}"></div>
                 <div class="col-md-6 mb-3"><label class="form-label">Usuário (username)</label><input type="text" name="api_username" class="form-control font-monospace" value="{{ api.api_username|default:'' }}"></div>
                 <div class="col-md-6 mb-3"><label class="form-label">Chave da API (apiaccesskey)</label><input type="text" name="api_key" class="form-control font-monospace" value="{{ api.api_key|default:'' }}"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">PIN mestre (compras RITUNLOCKER)</label><input type="password" name="api_pin" class="form-control font-monospace" value="{{ api.api_pin|default:'' }}" placeholder="Não vai pro cliente"></div>
                 <div class="col-md-4 mb-3"><label class="form-label">Câmbio USD→BRL</label><input type="text" name="price_rate" class="form-control font-monospace" value="{{ api.price_rate }}" placeholder="ex.: 5.35 (0 = sem conversão)"></div>
                 <div class="col-md-4 mb-3"><label class="form-label">Margem (%)</label><input type="text" name="price_markup" class="form-control font-monospace" value="{{ api.price_markup }}" placeholder="ex.: 30"></div>
                 <div class="col-md-4 mb-3 align-self-end"><small class="text-muted">Usados para sugerir o preço do serviço ao vincular.</small></div>

@@ -450,6 +450,8 @@ class Api(models.Model):
     api_url = models.CharField(max_length=500, blank=True, null=True)
     api_username = models.CharField(max_length=255, blank=True, null=True)
     api_key = models.CharField(max_length=500, blank=True, null=True)
+    api_pin = models.CharField(max_length=255, blank=True, null=True,
+                               help_text='PIN mestre usado na autenticação de compras (ex.: RITUNLOCKER).')
     status = models.CharField(max_length=20, default='Active')
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     price_type = models.CharField(max_length=30, default='fixed_price')

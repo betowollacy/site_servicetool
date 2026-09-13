@@ -587,6 +587,9 @@ def submit_local_order(order):
     if _protocol(api) == _PROTOCOL_RITUNLOCKER:
         params = {'ID': (service.referenceid or '').strip(), 'QNT': str(order.service_qnt or 1)}
         params.update({k: v for k, v in fields.items() if v})
+        pin = (api.api_pin or '').strip()
+        if pin and not any(str(k).upper() in ('PIN', 'MASTERPIN') for k in fields):
+            params['PIN'] = pin
         params = json.dumps(params)
     else:
         params = _params_xml(service, fields, order.service_qnt or 1)

@@ -456,6 +456,26 @@ class ProviderApiTests(TestCase):
         self.assertEqual(order.trx_id, '8888')
 
     @patch('core.provider_api._request')
+    def test_ritunlocker_submit_sends_master_pin_when_configured(self, req):
+        def fake(api, action, parameters=''):
+            self.assertEqual(action, 'placeimeiorder')
+            parsed = json.loads(parameters)
+            self.assertEqual(parsed['PIN'], '123987')
+            return {'SUCCESS': [{'MESSAGE': 'Order placed successfully', 'ORDERID': '999000'}]}
+        req.side_effect = fake
+        service = ServiceList.objects.get(id=self.service.id)
+        api = self._rit_api()
+        api.api_pin = '123987'
+        api.save(update_fields=['api_pin'])
+        service.api = api
+        service.save(update_fields=['api'])
+        self.service = service
+        order = self._order()
+        ok, ref = provider_api.submit_local_order(order)
+        self.assertTrue(ok)
+        self.assertEqual(ref, '999000')
+
+    @patch('core.provider_api._request')
     def test_ritunlocker_sync_uses_imeistatus(self, req):
         def fake(api, action, parameters=''):
             self.assertEqual(action, 'imeistatus')
