@@ -21,6 +21,7 @@ class MaintenanceModeMiddleware(MiddlewareMixin):
     """
 
     ALWAYS_OK_PREFIXES = (
+        '/admin/',
         '/admin-panel/',
         '/django-admin/',
         '/media/',

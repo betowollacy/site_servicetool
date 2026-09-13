@@ -1738,6 +1738,15 @@ class MaintenanceModeTests(TestCase):
         resp = self.client.get(reverse('admin_dashboard'))
         self.assertEqual(resp.status_code, 200)
 
+    def test_admin_redirect_stays_live_during_maintenance(self):
+        SystemSetting.objects.create(key='siteMaintenanceMode', value='on')
+        self.client.force_login(self.staff)
+        resp = self.client.get('/admin/')
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.url, '/admin-panel/')
+        resp2 = self.client.get('/admin-panel/')
+        self.assertEqual(resp2.status_code, 200)
+
     def test_toggle_on_off(self):
         self.client.force_login(self.staff)
         resp = self.client.post(
