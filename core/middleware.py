@@ -15,9 +15,9 @@ def _on(value):
 class MaintenanceModeMiddleware(MiddlewareMixin):
     """Bloqueia o site publico quando o modo manutencao esta ativo.
 
-    O painel administrativo, o admin do Django, arquivos de midia/static e os
-    webhooks de pagamento continuam acessiveis. Usuarios staff tambem podem
-    navegar no site publico (para testar as mudancas) durante a manutencao.
+    Vale para TODOS os visitantes (staff incluido). O painel administrativo,
+    o admin do Django, arquivos de midia/static e os webhooks de pagamento
+    continuam acessiveis.
     """
 
     ALWAYS_OK_PREFIXES = (
@@ -33,9 +33,6 @@ class MaintenanceModeMiddleware(MiddlewareMixin):
             return None
         path = request.path or ''
         if path.startswith(self.ALWAYS_OK_PREFIXES):
-            return None
-        user = getattr(request, 'user', None)
-        if user is not None and getattr(user, 'is_authenticated', False) and getattr(user, 'is_staff', False):
             return None
         response = render(request, 'maintenance.html', {
             'maintenance_msg': SystemSetting.get('siteMaintenanceMsg', ''),
