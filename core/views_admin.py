@@ -1151,6 +1151,15 @@ def admin_api_update(request, api_id):
 
 
 @_staff
+def admin_api_delete(request, api_id):
+    api = Api.objects.filter(id=api_id).first()
+    if api and request.method == 'POST':
+        name = api.api_name
+        api.delete()
+        messages.success(request, 'API "{}" excluida com sucesso. Os servicos vinculados ficam sem API e podem ser revinculados.'.format(name))
+    return redirect('admin_api_list')
+
+@_staff
 def admin_api_test(request, api_id):
     api = Api.objects.filter(id=api_id).first()
     if api:
