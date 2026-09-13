@@ -586,10 +586,16 @@ def submit_local_order(order):
     fields = _fields_dict(order)
     if _protocol(api) == _PROTOCOL_RITUNLOCKER:
         params = {'ID': (service.referenceid or '').strip(), 'QNT': str(order.service_qnt or 1)}
-        params.update({k: v for k, v in fields.items() if v})
+        provided = {k: v for k, v in fields.items() if v}
+        params.update(provided)
         pin = (api.api_pin or '').strip()
-        if pin and not any(str(k).upper() in ('PIN', 'MASTERPIN') for k in fields):
+        if pin and not any(str(k).upper() in ('PIN', 'MASTERPIN') for k in provided):
             params['PIN'] = pin
+        # A RITUNLOCKER exige IMEI no placeimeiorder. Para servicos sem input
+        # (ex.: RENT de ferramenta), envia o email do comprador como identificador.
+        if not any(str(k).upper() in ('IMEI', 'IMEI1', 'SERIAL', 'SERIAL NUMBER', 'ECID', 'UDID', 'USERID') for k in params):
+            buyer = (order.customer.email if order.customer and order.customer.email else '').strip()
+            params['IMEI'] = buyer or 'order{}'.format(order.id)
         params = json.dumps(params)
     else:
         params = _params_xml(service, fields, order.service_qnt or 1)

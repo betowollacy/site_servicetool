@@ -476,6 +476,23 @@ class ProviderApiTests(TestCase):
         self.assertEqual(ref, '999000')
 
     @patch('core.provider_api._request')
+    def test_ritunlocker_submit_sends_customer_email_when_no_input(self, req):
+        def fake(api, action, parameters=''):
+            self.assertEqual(action, 'placeimeiorder')
+            parsed = json.loads(parameters)
+            self.assertEqual(parsed['IMEI'], self.customer.email)
+            return {'SUCCESS': [{'MESSAGE': 'Order placed successfully', 'ORDERID': '999111'}]}
+        req.side_effect = fake
+        service = ServiceList.objects.get(id=self.service.id)
+        service.api = self._rit_api()
+        service.save(update_fields=['api'])
+        self.service = service
+        order = self._order()
+        ok, ref = provider_api.submit_local_order(order)
+        self.assertTrue(ok)
+        self.assertEqual(ref, '999111')
+
+    @patch('core.provider_api._request')
     def test_ritunlocker_sync_uses_imeistatus(self, req):
         def fake(api, action, parameters=''):
             self.assertEqual(action, 'imeistatus')
