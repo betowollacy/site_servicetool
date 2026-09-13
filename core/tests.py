@@ -392,6 +392,114 @@ class ProviderApiTests(TestCase):
         self.assertEqual(order.service_status, 'In Process')
         req.assert_not_called()
 
+    def _rit_api(self):
+        return Api.objects.create(
+            api_name='Rit Unlocker', api_type='ritunlocker',
+            api_url='https://ritunlocker.com/api',
+            api_username='', api_key='CHAVE-RIT-123', status='Active',
+        )
+
+    def test_ritunlocker_endpoint_normalization(self):
+        api = self._rit_api()
+        self.assertEqual(provider_api.endpoint_for(api, 'accountinfo'),
+                         'https://ritunlocker.com/api/accountinfo')
+        self.assertEqual(provider_api.endpoint_for(api, 'imeistatus'),
+                         'https://ritunlocker.com/api/imeistatus')
+        self.assertEqual(provider_api.endpoint_for(api, 'placeimeiorder'),
+                         'https://ritunlocker.com/api/placeimeiorder')
+        api.api_url = 'https://ritunlocker.com/api/index.php'
+        api.save(update_fields=['api_url'])
+        self.assertEqual(provider_api.endpoint_for(api, 'accountinfo'),
+                         'https://ritunlocker.com/api/accountinfo')
+
+    @patch('core.provider_api.urllib.request.urlopen')
+    def test_ritunlocker_request_uses_key(self, urlopen):
+        class _Resp:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return None
+
+            def read(self):
+                return b'{"SUCCESS": [{"AccountInfo": {"credit": "100.00", "currency": "USD"}}]}'
+        urlopen.return_value = _Resp()
+
+        info = provider_api.account_info(self._rit_api())
+        req = urlopen.call_args[0][0]
+        self.assertEqual(req.full_url, 'https://ritunlocker.com/api/accountinfo')
+        self.assertIn(b'key=CHAVE-RIT-123', req.data)
+        self.assertNotIn(b'apiaccesskey', req.data)
+        self.assertNotIn(b'username', req.data)
+        self.assertEqual(info['credit'], '100.00')
+
+    @patch('core.provider_api._request')
+    def test_ritunlocker_submit_sends_imei_instead_of_customfield(self, req):
+        def fake(api, action, parameters=''):
+            self.assertEqual(action, 'placeimeiorder')
+            self.assertNotIn('CUSTOMFIELD', parameters)
+            parsed = json.loads(parameters)
+            self.assertEqual(parsed['ID'], '9001')
+            self.assertEqual(parsed['IMEI'], '351234567890123')
+            return {'SUCCESS': [{'MESSAGE': 'Order placed successfully', 'ORDERID': '8888'}]}
+        req.side_effect = fake
+        service = ServiceList.objects.get(id=self.service.id)
+        service.api = self._rit_api()
+        service.save(update_fields=['api'])
+        self.service = service
+        order = self._order()
+        OrderInput.objects.create(order=order, field_name='IMEI', field_value='351234567890123')
+        ok, ref = provider_api.submit_local_order(order)
+        self.assertTrue(ok)
+        self.assertEqual(ref, '8888')
+        order.refresh_from_db()
+        self.assertEqual(order.trx_id, '8888')
+
+    @patch('core.provider_api._request')
+    def test_ritunlocker_sync_uses_imeistatus(self, req):
+        def fake(api, action, parameters=''):
+            self.assertEqual(action, 'imeistatus')
+            return {'SUCCESS': [{'STATUS': '4', 'CODE': 'complete', 'ORDERID': '5550001'}]}
+        req.side_effect = fake
+        service = ServiceList.objects.get(id=self.service.id)
+        service.api = self._rit_api()
+        service.save(update_fields=['api'])
+        self.service = service
+        order = self._order()
+        order.trx_id = '5550001'
+        order.save(update_fields=['trx_id'])
+        provider_api.sync_local_order(order)
+        order.refresh_from_db()
+        self.assertEqual(order.service_status, 'Success')
+        self.assertEqual(order.service_comments, 'complete')
+
+    @patch('core.provider_api._request')
+    def test_ritunlocker_fetch_catalog_parses_list(self, req):
+        def fake(api, action, parameters=''):
+            return {'SUCCESS': [{'LIST': [
+                {'GROUPNAME': 'iPhone Services', 'SERVICES': [
+                    {'SERVICEID': '123', 'SERVICENAME': 'iPhone X Unlock',
+                     'CREDIT': 5.0, 'SERVICETYPE': 'IMEI', 'TIME': '10 Minutes',
+                     'CUSTOM': {'bulk': '0', 'allow': '1', 'customname': 'IMEI'}},
+                ]},
+            ]}]}
+        req.side_effect = fake
+        catalog = provider_api.fetch_catalog(self._rit_api())
+        self.assertEqual(len(catalog), 1)
+        self.assertEqual(catalog[0]['referenceid'], '123')
+        self.assertEqual(catalog[0]['name'], 'iPhone X Unlock')
+        self.assertEqual(catalog[0]['fields'], ['IMEI'])
+
+    def test_suggested_price_applies_rate_and_markup(self):
+        api = self._rit_api()
+        api.price_rate = Decimal('5.35')
+        api.price_markup = Decimal('30')
+        self.assertEqual(provider_api.suggested_price(api, Decimal('2.00')), Decimal('13.91'))
+        api.price_rate = Decimal('0')
+        api.price_markup = Decimal('0')
+        self.assertEqual(provider_api.suggested_price(api, Decimal('5.00')), Decimal('5.00'))
+        self.assertEqual(provider_api.suggested_price(None, Decimal('4.00')), Decimal('4.00'))
+
 
 class ProviderApiAdminTests(TestCase):
     def setUp(self):
@@ -518,6 +626,58 @@ class ProviderApiAdminTests(TestCase):
         self.assertContains(resp, 'KEY2')
         resp = self.client.get(reverse('admin_api_detail', args=[99999]))
         self.assertEqual(resp.status_code, 302)
+
+    def test_admin_api_delete_unlinks_services_and_removes_remote(self):
+        self.service.api = self.api
+        self.service.referenceid = '7'
+        self.service.save(update_fields=['api', 'referenceid'])
+        RemoteServiceList.objects.create(
+            api=self.api, referenceid='7', SERVICETYPE='IMEI', SERVICENAME='Unlock 1',
+            CREDIT=Decimal('10.00'))
+        self._login()
+        resp = self.client.post(reverse('admin_api_delete', args=[self.api.id]))
+        self.assertEqual(resp.status_code, 302)
+        self.assertFalse(Api.objects.filter(id=self.api.id).exists())
+        self.assertFalse(RemoteServiceList.objects.filter(api_id=self.api.id).exists())
+        self.service.refresh_from_db()
+        self.assertIsNone(self.service.api_id)
+        self.assertEqual(self.service.referenceid, '')
+        self.assertEqual(self.service.process_type, 'Manual')
+
+    def test_admin_api_delete_requires_post(self):
+        self._login()
+        resp = self.client.get(reverse('admin_api_delete', args=[self.api.id]))
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(Api.objects.filter(id=self.api.id).exists())
+
+    def test_admin_api_update_saves_price_fields(self):
+        self._login()
+        self.client.post(reverse('admin_api_update', args=[self.api.id]), {
+            'api_name': self.api.api_name,
+            'status': 'Active',
+            'price_rate': '5.35',
+            'price_markup': '30',
+        })
+        self.api.refresh_from_db()
+        self.assertEqual(self.api.price_rate, Decimal('5.3500'))
+        self.assertEqual(self.api.price_markup, Decimal('30.00'))
+
+    def test_admin_link_sets_auto_price(self):
+        remote = RemoteServiceList.objects.create(
+            api=self.api, referenceid='7', SERVICETYPE='IMEI', SERVICENAME='Unlock 1',
+            CREDIT=Decimal('10.00'))
+        RemoteServiceInput.objects.create(remote_service=remote, name='IMEI')
+        self.api.price_rate = Decimal('5.00')
+        self.api.price_markup = Decimal('10')
+        self.api.save(update_fields=['price_rate', 'price_markup'])
+        self._login()
+        self.client.post(reverse('admin_api_link'), {
+            'remote_id': remote.id, 'service_id': self.service.id, 'auto_price': '1',
+        })
+        self.service.refresh_from_db()
+        self.assertEqual(self.service.original_price, Decimal('55.00'))
+        self.assertEqual(self.service.api_id, self.api.id)
+        self.assertEqual(self.service.referenceid, '7')
 
 
 class AdminRefundTests(TestCase):

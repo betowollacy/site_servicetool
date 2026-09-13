@@ -5,6 +5,7 @@ import re
 import unicodedata
 import urllib.parse
 import urllib.request
+from decimal import Decimal, InvalidOperation
 from xml.sax.saxutils import escape
 
 from .models import Api, ApiLog, CustomerOrder, InventoryData, RemoteServiceList, ServiceInput, Statement
@@ -256,11 +257,70 @@ def auto_link_service(service, min_score=2.2):
     return remote, score
 
 
-def endpoint_for(api):
-    """Normaliza api_url para o endpoint index.php do provedor."""
+# --------------------------------------------------------------------------- #
+# Protocolos: dhru (GSM Theme) e ritunlocker (endpoints diretos + key)
+# --------------------------------------------------------------------------- #
+
+_PROTOCOL_DHRU = 'dhru'
+_PROTOCOL_RITUNLOCKER = 'ritunlocker'
+
+
+def _protocol(api):
+    """Detecta o protocolo do provedor: dhru padrao ou ritunlocker."""
+    url = (api.api_url or '').lower()
+    if 'ritunlocker' in url:
+        return _PROTOCOL_RITUNLOCKER
+    api_type = (api.api_type or '').strip().lower()
+    if api_type == _PROTOCOL_RITUNLOCKER:
+        return _PROTOCOL_RITUNLOCKER
+    return _PROTOCOL_DHRU
+
+
+def _status_action(api):
+    """Acao de consulta de status (differe entre os protocolos)."""
+    if _protocol(api) == _PROTOCOL_RITUNLOCKER:
+        return 'imeistatus'
+    return 'getimeiorder'
+
+
+def suggested_price(api, credit):
+    """Preco de venda sugerido (R$) a partir do custo do provedor.
+
+    custo_local = custo (CREDIT) x price_rate (cambio USD->BRL)
+    preco = custo_local + margem (price_markup %)
+    Se price_rate for 0, o custo e usado como esta (sem conversao).
+    """
+    def _dec(value):
+        try:
+            return Decimal(str(value or 0))
+        except (TypeError, ValueError, InvalidOperation):
+            return Decimal('0')
+
+    rate = _dec(api.price_rate if api else 0)
+    markup = _dec(api.price_markup if api else 0)
+    cost = _dec(credit)
+    if rate > 0:
+        cost = cost * rate
+    if markup:
+        cost = cost * (Decimal('100') + markup) / Decimal('100')
+    return cost.quantize(Decimal('0.01'))
+
+
+def endpoint_for(api, action=''):
+    """Normaliza api_url para o endpoint do provedor.
+
+    No protocolo dhru retorna o endpoint index.php (a acao vai no POST).
+    No protocolo ritunlocker retorna a URL base + o nome da acao.
+    """
     url = (api.api_url or '').strip().rstrip('/')
     if not url:
         return ''
+    if _protocol(api) == _PROTOCOL_RITUNLOCKER:
+        if url.endswith('.php'):
+            url = url.rsplit('/', 1)[0]
+        if action and not url.endswith('/' + action):
+            url += '/' + action
+        return url
     if url.endswith('.php'):
         return url
     if url.endswith('/api'):
@@ -275,16 +335,34 @@ def _log(api, message, log_for='provider_api'):
         logger.exception('Falha ao gravar ApiLog')
 
 
+def _parse_parameters(parameters=''):
+    """Converte o parametro JSON (ID/QNT/campos) em dict, quando aplicável."""
+    if not parameters:
+        return {}
+    try:
+        parsed = json.loads(parameters)
+    except (ValueError, TypeError):
+        return {}
+    if not isinstance(parsed, dict):
+        return {}
+    return {k: v for k, v in parsed.items() if v is not None}
+
+
 def _request(api, action, parameters=''):
-    url = endpoint_for(api)
+    url = endpoint_for(api, action)
     if not url:
         raise ProviderError('API URL nao configurada.')
-    payload = urllib.parse.urlencode({
-        'username': (api.api_username or '').strip(),
-        'apiaccesskey': (api.api_key or '').strip(),
-        'action': action,
-        'parameters': parameters or '',
-    }).encode('utf-8')
+    if _protocol(api) == _PROTOCOL_RITUNLOCKER:
+        payload_data = {'key': (api.api_key or '').strip()}
+        payload_data.update(_parse_parameters(parameters))
+        payload = urllib.parse.urlencode(payload_data).encode('utf-8')
+    else:
+        payload = urllib.parse.urlencode({
+            'username': (api.api_username or '').strip(),
+            'apiaccesskey': (api.api_key or '').strip(),
+            'action': action,
+            'parameters': parameters or '',
+        }).encode('utf-8')
     req = urllib.request.Request(url, data=payload, method='POST')
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
@@ -321,6 +399,36 @@ def account_info(api):
     }
 
 
+def _parse_listing(row):
+    """Normaliza o LIST do provedor para [(nome_do_grupo, tipo, [(sid, svc)...])].
+
+    Suporta o formato dhru (dict de grupos) e o ritunlocker (lista de grupos).
+    """
+    listing = row.get('LIST') or {}
+    groups = []
+    if isinstance(listing, list):
+        for group in listing:
+            if not isinstance(group, dict):
+                continue
+            gname = group.get('GROUPNAME') or ''
+            gtype = group.get('GROUPTYPE') or ''
+            services = group.get('SERVICES') or []
+            if isinstance(services, dict):
+                items = [(str(sid), svc) for sid, svc in services.items() if isinstance(svc, dict)]
+            else:
+                items = [(str(s.get('SERVICEID')), s) for s in services if isinstance(s, dict)]
+            groups.append((gname, gtype, items))
+    elif isinstance(listing, dict):
+        for gname, group in listing.items():
+            if not isinstance(group, dict):
+                continue
+            gtype = group.get('GROUPTYPE') or ''
+            services = group.get('SERVICES') or {}
+            items = [(str(sid), svc) for sid, svc in services.items() if isinstance(svc, dict)]
+            groups.append((gname, gtype, items))
+    return groups
+
+
 def service_list(api):
     data = _request(api, PROVIDER_ACTIONS['IMEI Service']['list'])
     row = _success_rows(data)[0]
@@ -343,12 +451,9 @@ def fetch_catalog(api):
     """Baixa a lista de servicos do provedor e devolve uma lista plana."""
     data = _request(api, PROVIDER_ACTIONS['IMEI Service']['list'])
     row = _success_rows(data)[0]
-    listing = row.get('LIST') or {}
     catalog = []
-    for group_name, group in (listing or {}).items():
-        services = group.get('SERVICES') or {}
-        group_type = group.get('GROUPTYPE') or ''
-        for sid, svc in (services or {}).items():
+    for group_name, group_type, services in _parse_listing(row):
+        for sid, svc in services:
             catalog.append({
                 'referenceid': str(sid),
                 'name': (svc.get('SERVICENAME') or ''),
@@ -430,7 +535,9 @@ def provider_for_order(order):
     api = service.api
     if not api or api.status != 'Active':
         return None
-    if not (api.api_url or '').strip() or not (api.api_username or '').strip() or not (api.api_key or '').strip():
+    if not (api.api_url or '').strip() or not (api.api_key or '').strip():
+        return None
+    if _protocol(api) != _PROTOCOL_RITUNLOCKER and not (api.api_username or '').strip():
         return None
     if not (service.referenceid or '').strip():
         return None
@@ -477,14 +584,19 @@ def submit_local_order(order):
     service = order.service
     actions = actions_for(service)
     fields = _fields_dict(order)
-    params = _params_xml(service, fields, order.service_qnt or 1)
+    if _protocol(api) == _PROTOCOL_RITUNLOCKER:
+        params = {'ID': (service.referenceid or '').strip(), 'QNT': str(order.service_qnt or 1)}
+        params.update({k: v for k, v in fields.items() if v})
+        params = json.dumps(params)
+    else:
+        params = _params_xml(service, fields, order.service_qnt or 1)
     try:
         data = _request(api, actions['place'], params)
         row = _success_rows(data)[0]
     except ProviderError as exc:
         _log(api, 'place fail order #{}: {}'.format(order.id, exc))
         return False, str(exc)
-    ref = row.get('REFERENCEID') or row.get('referenceid')
+    ref = row.get('REFERENCEID') or row.get('referenceid') or row.get('ORDERID')
     if not str(ref or '').strip():
         _log(api, 'place empty ref order #{}: {}'.format(order.id, row))
         return False, 'Provedor nao retornou numero do pedido.'
@@ -528,9 +640,13 @@ def sync_local_order(order, notify_complete=True):
         return False
     service = order.service
     actions = actions_for(service)
-    params = _params_xml(service, None, 1, order_id=(order.trx_id or '').strip())
+    get_action = _status_action(api)
+    if _protocol(api) == _PROTOCOL_RITUNLOCKER:
+        params = json.dumps({'ID': (order.trx_id or '').strip()})
+    else:
+        params = _params_xml(service, None, 1, order_id=(order.trx_id or '').strip())
     try:
-        data = _request(api, actions['get'], params)
+        data = _request(api, get_action, params)
         row = _success_rows(data)[0]
         status = int(float(row.get('STATUS', 0) or 0))
         code = row.get('CODE', '') or ''

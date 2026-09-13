@@ -453,6 +453,10 @@ class Api(models.Model):
     status = models.CharField(max_length=20, default='Active')
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     price_type = models.CharField(max_length=30, default='fixed_price')
+    price_rate = models.DecimalField(max_digits=12, decimal_places=4, default=Decimal('0.0000'),
+                                     help_text='Câmbio USD→BRL usado para sugerir preço. 0 = não converter.')
+    price_markup = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'),
+                                       help_text='Margem (%) adicionada sobre o custo do provedor.')
     customer_price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     reseller_price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     distributor_price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))

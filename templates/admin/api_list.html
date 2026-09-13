@@ -36,8 +36,9 @@
                 <button class="btn btn-sm btn-outline-primary"><i class="ti ti-download me-1"></i> Importar serviços</button>
             </form>
             <a href="{% url 'admin_api_detail' api.id %}" class="btn btn-sm btn-light-secondary"><i class="ti ti-eye me-1"></i> Ver dados</a>
-            <form method="post" action="{% url 'admin_api_delete' api.id %}" onsubmit="return confirm('Excluir a API {{ api.api_name }}? Os servicos vinculados ficam sem API.')">{% csrf_token %}
-                <button class="btn btn-sm btn-light-danger"><i class="ti ti-trash me-1"></i> Excluir</button>
+<form method="post" action="{% url 'admin_api_delete' api.id %}" onsubmit="return confirm('Excluir a API {{ api.api_name }}? Os serviços vinculados serão desvinculados.')">{% csrf_token %}
+                <button class="btn btn-sm btn-outline-danger"><i class="ti ti-trash me-1"></i> Excluir</button>
+            </form>
             </form>
         </div>
         <form method="post" action="{% url 'admin_api_update' api.id %}">
@@ -54,7 +55,10 @@
                     </div>
                     <div class="col-md-6 mb-3"><label class="form-label">URL da API</label><input type="text" name="api_url" class="form-control font-monospace" value="{{ api.api_url|default:'' }}" placeholder="https://provedor.com.br/public"></div>
                     <div class="col-md-6 mb-3"><label class="form-label">Usuário (username)</label><input type="text" name="api_username" class="form-control font-monospace" value="{{ api.api_username|default:'' }}"></div>
-                    <div class="col-12 mb-3"><label class="form-label">Chave da API (apiaccesskey)</label><input type="text" name="api_key" class="form-control font-monospace" value="{{ api.api_key|default:'' }}"></div>
+                    <div class="col-md-6 mb-3"><label class="form-label">Chave da API (apiaccesskey)</label><input type="text" name="api_key" class="form-control font-monospace" value="{{ api.api_key|default:'' }}"></div>
+                    <div class="col-md-4 mb-3"><label class="form-label">Câmbio USD→BRL</label><input type="text" name="price_rate" class="form-control font-monospace" value="{{ api.price_rate }}" placeholder="ex.: 5.35 (0 = sem conversão)"></div>
+                    <div class="col-md-4 mb-3"><label class="form-label">Margem (%)</label><input type="text" name="price_markup" class="form-control font-monospace" value="{{ api.price_markup }}" placeholder="ex.: 30"></div>
+                    <div class="col-md-4 mb-3 align-self-end"><small class="text-muted">Usados para sugerir o preço do serviço ao vincular.</small></div>
                 </div>
             </div>
             <div class="card-footer"><button class="btn btn-primary"><i class="ti ti-device-floppy me-2"></i> Salvar</button></div>
@@ -83,7 +87,8 @@
                         <th>ID no provedor</th>
                         <th>Serviço (provedor)</th>
                         <th>Tipo</th>
-                        <th>Preço</th>
+                        <th>Preço (provedor)</th>
+                        <th>Preço sugerido</th>
                         <th>Serviço local vinculado</th>
                         <th class="text-end">Ação</th>
                     </tr>
@@ -95,7 +100,8 @@
                         <td><code>{{ remote.referenceid|default:'-' }}</code></td>
                         <td>{{ remote.SERVICENAME }}</td>
                         <td><span class="badge bg-light-primary">{{ remote.SERVICETYPE }}</span></td>
-                        <td>{{ remote.CREDIT }}</td>
+                        <td>{{ remote.CREDIT }} USD</td>
+                        <td>{% if remote.price_brl is not None %}R$ {{ remote.price_brl }}{% else %}-{% endif %}</td>
                         <td>
                             {% for key, links in linked_by_remote.items %}
                                 {% if key.0 == remote.api_id and key.1 == remote.referenceid %}
@@ -109,12 +115,16 @@
                             <form method="post" action="{% url 'admin_api_link' %}" class="d-flex gap-2 justify-content-end">
                                 {% csrf_token %}
                                 <input type="hidden" name="remote_id" value="{{ remote.id }}">
-                                <select name="service_id" class="form-select form-select-sm" style="max-width:260px">
+                                <select name="service_id" class="form-select form-select-sm" style="max-width:240px">
                                     <option value="">-- Desvincular --</option>
                                     {% for svc in local_services %}
                                     <option value="{{ svc.id }}" data-type="{{ svc.service_type }}">{{ svc.id }} - {{ svc.service_type }} - {{ svc.title }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="form-check form-check-inline mt-2">
+                                    <input class="form-check-input" type="checkbox" name="auto_price" value="1" id="ap-{{ remote.id }}" checked>
+                                    <label class="form-check-label text-muted" for="ap-{{ remote.id }}" style="font-size:.75rem">Preço auto</label>
+                                </div>
                                 <button class="btn btn-sm btn-primary"><i class="ti ti-link"></i></button>
                             </form>
                         </td>

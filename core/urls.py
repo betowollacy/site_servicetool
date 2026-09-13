@@ -46,6 +46,7 @@ urlpatterns = [
     path('admin-panel/apis/', views_admin.admin_api_list, name='admin_api_list'),
     path('admin-panel/apis/new/', views_admin.admin_api_new, name='admin_api_new'),
     path('admin-panel/apis/<int:api_id>/update/', views_admin.admin_api_update, name='admin_api_update'),
+    path('admin-panel/apis/<int:api_id>/delete/', views_admin.admin_api_delete, name='admin_api_delete'),
     path('admin-panel/apis/<int:api_id>/test/', views_admin.admin_api_test, name='admin_api_test'),
 path('admin-panel/apis/<int:api_id>/import/', views_admin.admin_api_import, 
 name='admin_api_import'),

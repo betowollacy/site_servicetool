@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 import os
 import uuid
@@ -1083,6 +1083,17 @@ REMOTE_TYPE_TO_LOCAL = {
 }
 
 
+def _price_field(request, name, default=Decimal('0')):
+    """Lê um campo decimal de formulário, retornando o valor padrão se inválido."""
+    raw = (request.POST.get(name) or '').strip().replace(',', '.').replace('R$', '')
+    if not raw:
+        return default
+    try:
+        return Decimal(raw)
+    except (TypeError, ValueError, InvalidOperation):
+        return default
+
+
 @_staff
 def admin_api_list(request):
     apis = Api.objects.all().order_by('-id')
@@ -1092,6 +1103,8 @@ def admin_api_list(request):
     if q:
         remote_qs = remote_qs.filter(Q(SERVICENAME__icontains=q) | Q(referenceid__icontains=q))
     remote_services = list(remote_qs)
+    for remote in remote_services:
+        remote.price_brl = provider_api.suggested_price(remote.api, remote.CREDIT) if remote.api else None
     linked_by_remote = {}
     for linked in ServiceList.objects.exclude(api__isnull=True).exclude(referenceid__isnull=True).exclude(referenceid=''):
         linked_by_remote.setdefault((linked.api_id, linked.referenceid), []).append(linked)
@@ -1127,6 +1140,8 @@ def admin_api_new(request):
             api_username=(request.POST.get('api_username') or '').strip(),
             api_key=(request.POST.get('api_key') or '').strip(),
             status=request.POST.get('status', 'Active'),
+            price_rate=_price_field(request, 'price_rate'),
+            price_markup=_price_field(request, 'price_markup'),
         )
         messages.success(request, 'API criada com sucesso.')
         return redirect('admin_api_list')
@@ -1145,6 +1160,10 @@ def admin_api_update(request, api_id):
             api.api_key = request.POST['api_key'].strip()
         if request.POST.get('status') in ('Active', 'Inactive'):
             api.status = request.POST['status']
+        if request.POST.get('price_rate') is not None:
+            api.price_rate = _price_field(request, 'price_rate')
+        if request.POST.get('price_markup') is not None:
+            api.price_markup = _price_field(request, 'price_markup')
         api.save()
         messages.success(request, 'API atualizada com sucesso.')
     return redirect('admin_api_list')
@@ -1155,10 +1174,10 @@ def admin_api_delete(request, api_id):
     api = Api.objects.filter(id=api_id).first()
     if api and request.method == 'POST':
         name = api.api_name
+        ServiceList.objects.filter(api=api).update(api=None, referenceid='', process_type='Manual')
         api.delete()
-        messages.success(request, 'API "{}" excluida com sucesso. Os servicos vinculados ficam sem API e podem ser revinculados.'.format(name))
+        messages.success(request, 'API "{}" excluída com sucesso. Os serviços vinculados ficam sem API e podem ser revinculados.'.format(name))
     return redirect('admin_api_list')
-
 @_staff
 def admin_api_test(request, api_id):
     api = Api.objects.filter(id=api_id).first()
@@ -1242,7 +1261,12 @@ def admin_api_link(request):
                     service.api = remote.api
                     service.referenceid = remote.referenceid
                     service.process_type = 'Auto'
-                    service.save(update_fields=['api', 'referenceid', 'process_type'])
+                    suggested = provider_api.suggested_price(remote.api, remote.CREDIT) if remote.api else None
+                    auto_priced = False
+                    if request.POST.get('auto_price') and suggested is not None:
+                        service.original_price = suggested
+                        auto_priced = True
+                    service.save(update_fields=['api', 'referenceid', 'process_type', 'original_price'])
                     local_type = REMOTE_TYPE_TO_LOCAL.get(remote.SERVICETYPE.upper(), service.service_type)
                     if local_type != service.service_type:
                         service.service_type = local_type
@@ -1264,7 +1288,11 @@ def admin_api_link(request):
                     for extra in extras:
                         if extra not in remote_names:
                             ServiceInput.objects.get_or_create(service=service, name=extra)
-                    messages.success(request, 'Serviço "{}" vinculado ao provedor.'.format(service.title))
+                    if auto_priced:
+                        messages.success(request, 'Serviço "{}" vinculado ao provedor. Preço definido automaticamente: R$ {}.'.format(
+                            service.title, suggested))
+                    else:
+                        messages.success(request, 'Serviço "{}" vinculado ao provedor.'.format(service.title))
                 else:
                     messages.error(request, 'Serviço local não encontrado.')
             else:
