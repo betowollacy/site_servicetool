@@ -1648,6 +1648,42 @@ class AdminPromoteTests(TestCase):
         self.assertContains(resp, 'Administrador')
 
 
+class AdminServiceBulkDeleteTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='adminbulk', password='senha123', is_staff=True)
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
+        self.s1 = ServiceList.objects.create(service_type='Server Service', service_group=self.group, title='Produto A', slug='produto-a', price_type='fixed_price', original_price=Decimal('10.00'))
+        self.s2 = ServiceList.objects.create(service_type='Server Service', service_group=self.group, title='Produto B', slug='produto-b', price_type='fixed_price', original_price=Decimal('20.00'))
+        self.s3 = ServiceList.objects.create(service_type='Server Service', service_group=self.group, title='Produto C', slug='produto-c', price_type='fixed_price', original_price=Decimal('30.00'))
+        self.imei = ServiceList.objects.create(service_type='IMEI Service', service_group=self.group, title='Produto IMEI', slug='produto-imei', price_type='fixed_price', original_price=Decimal('5.00'))
+
+    def test_bulk_delete_removes_only_selected_of_type(self):
+        self.client.force_login(self.staff)
+        resp = self.client.post(
+            reverse('admin_service_bulk_delete', args=['server']),
+            {'service_ids': '{},{},{}'.format(self.s1.id, self.s2.id, self.s3.id)},
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertFalse(ServiceList.objects.filter(id__in=[self.s1.id, self.s2.id, self.s3.id]).exists())
+        self.assertTrue(ServiceList.objects.filter(id=self.imei.id).exists())
+
+    def test_bulk_delete_ignores_other_type_ids(self):
+        self.client.force_login(self.staff)
+        resp = self.client.post(
+            reverse('admin_service_bulk_delete', args=['server']),
+            {'service_ids': '{},{}'.format(self.s1.id, self.imei.id)},
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertFalse(ServiceList.objects.filter(id=self.s1.id).exists())
+        self.assertTrue(ServiceList.objects.filter(id=self.imei.id).exists())
+
+    def test_bulk_delete_empty_selection_keeps_all(self):
+        self.client.force_login(self.staff)
+        resp = self.client.post(reverse('admin_service_bulk_delete', args=['server']), {'service_ids': ''})
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(ServiceList.objects.filter(service_type='Server Service').count(), 3)
+
+
 class MaintenanceModeTests(TestCase):
     def setUp(self):
         self.staff = User.objects.create_user(username='adminmanu', password='senha123', is_staff=True)

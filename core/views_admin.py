@@ -737,6 +737,26 @@ def admin_service_delete(request, svtype, service_id):
 
 
 @_staff
+def admin_service_bulk_delete(request, svtype):
+    db_type, label = _service_type_from(svtype)
+    if request.method == 'POST':
+        raw = request.POST.get('service_ids', '')
+        ids = []
+        for part in str(raw).split(','):
+            part = part.strip()
+            if part.isdigit():
+                ids.append(int(part))
+        qs = ServiceList.objects.filter(id__in=ids, service_type=db_type)
+        count = qs.count()
+        if count:
+            qs.delete()
+            messages.success(request, f'{count} serviço(s) excluído(s) com sucesso.')
+        else:
+            messages.warning(request, 'Nenhum serviço selecionado para exclusão.')
+    return redirect('admin_service_list', svtype)
+
+
+@_staff
 def admin_service_move(request, svtype, service_id):
     db_type, label = _service_type_from(svtype)
     service = ServiceList.objects.filter(id=service_id, service_type=db_type).first()

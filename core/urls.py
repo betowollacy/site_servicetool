@@ -32,6 +32,7 @@ urlpatterns = [
     path('admin-panel/orders/<int:order_id>/deliver-credential/', views_admin.admin_order_deliver_credential, name='admin_order_deliver_credential'),
     path('admin-panel/services/<str:svtype>/', views_admin.admin_service_list, name='admin_service_list'),
     path('admin-panel/services/<str:svtype>/new/', views_admin.admin_service_new, name='admin_service_new'),
+    path('admin-panel/services/<str:svtype>/bulk-delete/', views_admin.admin_service_bulk_delete, name='admin_service_bulk_delete'),
     path('admin-panel/services/<str:svtype>/<int:service_id>/edit/', views_admin.admin_service_edit, name='admin_service_edit'),
     path('admin-panel/services/<str:svtype>/<int:service_id>/toggle-api/', views_admin.admin_service_toggle_api, name='admin_service_toggle_api'),
     path('admin-panel/services/<str:svtype>/<int:service_id>/toggle-login/', views_admin.admin_service_toggle_login, name='admin_service_toggle_login'),
