@@ -539,6 +539,11 @@ def sync_local_order(order, notify_complete=True):
         return False
 
     target = PROVIDER_TO_LOCAL_STATUS.get(status, order.service_status)
+    # Nunca regride: In Process/Success nao voltam a Waiting, Success e terminal.
+    if target == 'Waiting Action' and order.service_status in ('In Process', 'Success'):
+        target = order.service_status
+    if target == 'In Process' and order.service_status == 'Success':
+        target = 'Success'
     changed = False
 
     if target == 'Rejected' and order.service_status != 'Rejected':

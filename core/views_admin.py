@@ -386,6 +386,14 @@ def admin_administrator(request):
             is_qnt = 'quantidade' in name.lower() or name.lower().startswith(('qtd', 'qty', 'qnt'))
             input_objects.append({'name': name, 'value': pref_inputs.get(name, ''), 'is_qnt': is_qnt})
 
+    api_ready = bool(service) and provider_api.provider_for_order(CustomerOrder(service=service)) is not None
+    last_order = None
+    last_id = _parse_int(request.session.get('last_admin_order'))
+    if last_id:
+        last_order = CustomerOrder.objects.select_related('customer').filter(id=last_id).first()
+        if last_order is None:
+            request.session.pop('last_admin_order', None)
+
     if request.method == 'POST':
         errors = []
         customer = Customer.objects.filter(id=_parse_int(request.POST.get('customerID'))).first()
@@ -395,6 +403,8 @@ def admin_administrator(request):
             errors.append('Cliente inativo.')
         if service is None or service.api is None or not (service.referenceid or '').strip():
             errors.append('Selecione um servico vinculado a uma API com ID do produto.')
+        elif not provider_api.provider_for_order(CustomerOrder(service=service)):
+            errors.append('Servico nao esta habilitado para API automatica: marque API habilitada e preencha o ID do produto no cadastro do servico.')
         fields = {}
         qnt = 1
         if customer and service:
@@ -454,6 +464,7 @@ def admin_administrator(request):
             order.process_type = 'Manual'
             order.save(update_fields=['service_status', 'process_type'])
             messages.warning(request, 'Pedido #{} criado, mas o servico nao e automatico. Edite manualmente.'.format(order.id))
+        request.session['last_admin_order'] = order.id
         if pref_order:
             return redirect('admin_administrator')
         return redirect(reverse('admin_administrator') + '?service={}'.format(service.id))
@@ -470,6 +481,8 @@ def admin_administrator(request):
         'input_objects': input_objects,
         'pref_order': pref_order,
         'order_input_id': order_input_id,
+        'api_ready': api_ready,
+        'last_order': last_order,
     }
     return render(request, 'admin/administrator.html', ctx)
 

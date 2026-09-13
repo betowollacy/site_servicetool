@@ -308,7 +308,7 @@ class ProviderApiTests(TestCase):
         def fake(api, action, parameters=''):
             self.assertEqual(action, 'placeimeiorder')
             self.assertIn('9001', parameters)
-            self.assertIn('CUSTOMFIELD', parameters)
+            self.assertIn('351234567890123', parameters)
             return {'SUCCESS': [{'MESSAGE': 'Order received', 'REFERENCEID': '5550001'}], 'apiversion': '1.0'}
         req.side_effect = fake
         order = self._order()
