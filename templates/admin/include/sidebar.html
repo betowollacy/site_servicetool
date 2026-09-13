@@ -42,6 +42,12 @@
                         <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'rejected' %}">Rejeitados <span class="pc-submenu-count">{{ rejectedCount }}</span></a></li>
                     </ul>
                 </li>
+                <li class="pc-item pc-hasmenu">
+                    <a href="{% url 'admin_administrator' %}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-user-cog"></i></span>
+                        <span class="pc-mtext">Administrador</span>
+                    </a>
+                </li>
 
                 <li class="pc-item pc-hasmenu">
                     <a href="{% url 'admin_invoice_list' %}" class="pc-link">

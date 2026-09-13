@@ -50,6 +50,7 @@ urlpatterns = [
 path('admin-panel/apis/<int:api_id>/import/', views_admin.admin_api_import, 
 name='admin_api_import'),
     path('admin-panel/apis/link/', views_admin.admin_api_link, name='admin_api_link'),
+    path('admin-panel/administrador/', views_admin.admin_administrator, name='admin_administrator'),
     path('admin-panel/setting/', views_admin.admin_setting, name='admin_setting'),
     path('admin-panel/logout/', views_admin.admin_logout, name='admin_logout'),
 

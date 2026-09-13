@@ -319,6 +319,143 @@ def admin_service_list(request, svtype):
 
 
 @_staff
+def admin_administrator(request):
+    """Pedido direto na API do provedor, pelo valor fornecido por ela.
+
+    Refaz o pedido de um cliente sem debitar saldo e sem precisar
+    entrar no site do provedor."""
+    from .views import _invoice_type_key, _service_input_fields
+
+    def _parse_int(value):
+        try:
+            return int(str(value or '').strip())
+        except (TypeError, ValueError):
+            return None
+
+    service_id = request.GET.get('service') or request.POST.get('serviceID') or ''
+    service = ServiceList.objects.select_related('api').filter(id=_parse_int(service_id)).first()
+
+    order_input_id = request.GET.get('order') or ''
+    pref_order = CustomerOrder.objects.filter(id=_parse_int(order_input_id)).first()
+    pref_inputs = {}
+    if pref_order:
+        pref_inputs = {i.field_name: i.field_value for i in pref_order.order_inputs.all()}
+
+    customer_q = (request.GET.get('customer_q') or '').strip()
+    customers = Customer.objects.filter(status='Active')
+    if customer_q:
+        customers = customers.filter(Q(name__icontains=customer_q) | Q(email__icontains=customer_q))
+    customers = customers.order_by('name')[:50]
+
+    services = ServiceList.objects.filter(
+        status='Active', api__isnull=False, api__status='Active',
+    ).select_related('api').order_by('title')
+
+    api = service.api if service else None
+    api_price = None
+    api_balance = None
+    api_balance_error = ''
+    if api:
+        remote = RemoteServiceList.objects.filter(
+            api=api, referenceid=(service.referenceid or '').strip(),
+        ).first()
+        api_price = remote.CREDIT if remote and remote.CREDIT else api.reseller_price
+        try:
+            info = provider_api.account_info(api)
+            api_balance = info['credit']
+        except provider_api.ProviderError as exc:
+            api_balance_error = str(exc)
+
+    input_objects = []
+    if service:
+        for name in _service_input_fields(service):
+            is_qnt = 'quantidade' in name.lower() or name.lower().startswith(('qtd', 'qty', 'qnt'))
+            input_objects.append({'name': name, 'value': pref_inputs.get(name, ''), 'is_qnt': is_qnt})
+
+    if request.method == 'POST':
+        errors = []
+        customer = Customer.objects.filter(id=_parse_int(request.POST.get('customerID'))).first()
+        if customer is None:
+            errors.append('Selecione o cliente.')
+        elif customer.status != 'Active':
+            errors.append('Cliente inativo.')
+        if service is None or service.api is None or not (service.referenceid or '').strip():
+            errors.append('Selecione um servico vinculado a uma API com ID do produto.')
+        fields = {}
+        qnt = 1
+        if customer and service:
+            for obj in input_objects:
+                name = obj['name']
+                if obj['is_qnt']:
+                    qnt = _parse_int(request.POST.get(name)) or 1
+                    if qnt < 1:
+                        qnt = 1
+                    continue
+                value = request.POST.get(name, '').strip()
+                if not value:
+                    errors.append('Informe {}.'.format(name))
+                else:
+                    fields[name] = value
+        if errors:
+            for msg in errors:
+                messages.error(request, msg)
+            if service:
+                return redirect(reverse('admin_administrator') + '?service={}'.format(service.id))
+            return redirect('admin_administrator')
+
+        cost = (api_price or service.original_price) * qnt
+        order = CustomerOrder.objects.create(
+            customer=customer,
+            service=service,
+            service_status='In Process',
+            service_type=_invoice_type_key(service.service_type),
+            service_price=cost,
+            service_qnt=str(qnt),
+            service_title=service.title,
+            process_type='Auto',
+        )
+        for name, value in fields.items():
+            OrderInput.objects.create(order=order, field_name=name, field_value=value)
+            if not order.service_input1:
+                order.service_input1 = value
+                order.save(update_fields=['service_input1'])
+
+        forwarded, msg = provider_api.submit_local_order(order)
+        order.refresh_from_db()
+        if forwarded is False:
+            order.service_status = 'Rejected'
+            order.service_comments = msg or 'Falha ao enviar para a API.'
+            order.save(update_fields=['service_status', 'service_comments'])
+            messages.error(request, 'Falha no pedido #{}: {}'.format(order.id, order.service_comments))
+        elif forwarded is True:
+            provider_api.sync_local_order(order, notify_complete=False)
+            order.refresh_from_db()
+            result = order.replied_in or order.service_comments or '-'
+            messages.success(request, 'Pedido #{} enviado a API (ref: {}). Status: {}. Resultado: {}'.format(
+                order.id, order.trx_id or '-', order.service_status, result))
+        else:
+            order.service_status = 'Waiting Action'
+            order.process_type = 'Manual'
+            order.save(update_fields=['service_status', 'process_type'])
+            messages.warning(request, 'Pedido #{} criado, mas o servico nao e automatico. Edite manualmente.'.format(order.id))
+        return redirect(reverse('admin_administrator') + '?service={}'.format(service.id))
+
+    ctx = {
+        'service': service,
+        'services': services,
+        'api': api,
+        'api_price': api_price,
+        'api_balance': api_balance,
+        'api_balance_error': api_balance_error,
+        'customers': customers,
+        'customer_q': customer_q,
+        'input_objects': input_objects,
+        'pref_order': pref_order,
+        'order_input_id': order_input_id,
+    }
+    return render(request, 'admin/administrator.html', ctx)
+
+@_staff
 def admin_setting(request):
     keys = [
         'siteTitle', 'siteMetaTitle', 'siteMetaDes', 'siteKeyword', 'siteLogo', 'siteFav',
