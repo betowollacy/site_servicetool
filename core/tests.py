@@ -1,10 +1,12 @@
 import base64
 import json
+from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from core import asaas, provider_api
 from core.models import (
@@ -319,6 +321,38 @@ class ProviderApiTests(TestCase):
         order.refresh_from_db()
         self.assertEqual(order.trx_id, '5550001')
         self.assertEqual(order.process_type, 'Auto')
+
+    @patch('core.provider_api._request')
+    def test_submit_blocks_recent_duplicate(self, req):
+        def fake(api, action, parameters=''):
+            return {'SUCCESS': [{'MESSAGE': 'Order received', 'REFERENCEID': '100001'}], 'apiversion': '1.0'}
+        req.side_effect = fake
+        first = self._order()
+        OrderInput.objects.create(order=first, field_name='IMEI', field_value='351234567890123')
+        ok, ref = provider_api.submit_local_order(first)
+        self.assertTrue(ok)
+        self.assertEqual(req.call_count, 1)
+        duplicate = self._order()
+        ok, msg = provider_api.submit_local_order(duplicate)
+        self.assertFalse(ok)
+        self.assertIn('duplicada', msg.lower())
+        self.assertEqual(req.call_count, 1)
+
+    @patch('core.provider_api._request')
+    def test_submit_permits_after_duplicate_window(self, req):
+        def fake(api, action, parameters=''):
+            return {'SUCCESS': [{'MESSAGE': 'Order received', 'REFERENCEID': '100002'}], 'apiversion': '1.0'}
+        req.side_effect = fake
+        first = self._order()
+        OrderInput.objects.create(order=first, field_name='IMEI', field_value='351234567890123')
+        provider_api.submit_local_order(first)
+        CustomerOrder.objects.filter(id=first.id).update(
+            created_at=timezone.now() - provider_api.DUPLICATE_WINDOW - timedelta(seconds=1))
+        second = self._order()
+        OrderInput.objects.create(order=second, field_name='IMEI', field_value='351234567890123')
+        ok, ref = provider_api.submit_local_order(second)
+        self.assertTrue(ok)
+        self.assertEqual(req.call_count, 2)
 
     @patch('core.provider_api._request')
     def test_sync_local_order_fetches_code(self, req):

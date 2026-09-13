@@ -5,8 +5,11 @@ import re
 import unicodedata
 import urllib.parse
 import urllib.request
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 from xml.sax.saxutils import escape
+
+from django.utils import timezone
 
 from .models import Api, ApiLog, CustomerOrder, InventoryData, RemoteServiceList, ServiceInput, Statement
 
@@ -41,6 +44,10 @@ LOCAL_TO_PROVIDER_STATUS = {
     'Rejected': 3,
     'Success': 4,
 }
+
+# Janela em que o mesmo cliente+servico e considerado compra duplicada
+# (prevenco: evita que um mesmo produto RENT seja enviado 2x ao provedor).
+DUPLICATE_WINDOW = timedelta(seconds=120)
 
 PROVIDER_TO_LOCAL_STATUS = {v: k for k, v in LOCAL_TO_PROVIDER_STATUS.items()}
 
@@ -586,6 +593,24 @@ def deliver_from_inventory(order):
     return True, item.code
 
 
+def _recent_duplicate_order(order):
+    """Retorna o pedido mais recente do mesmo cliente+servico ja enviado ao
+    provedor dentro da janela DUPLICATE_WINDOW. Usado para nao enviar o mesmo
+    RENT 2x no mesmo instante (o provedor cobra por pedido)."""
+    if not order.id or not order.service_id or not order.customer_id:
+        return None
+    since = timezone.now() - DUPLICATE_WINDOW
+    return (
+        CustomerOrder.objects
+        .filter(customer=order.customer, service=order.service,
+                id__lt=order.id, created_at__gte=since)
+        .exclude(service_status='Rejected')
+        .filter(trx_id__isnull=False)
+        .order_by('-id')
+        .first()
+    )
+
+
 def submit_local_order(order):
     """Envia o pedido local ao provedor. Retorna (None, '') se não automático,
     (False, erro) se falhou, (True, ref) se enviado."""
@@ -593,6 +618,14 @@ def submit_local_order(order):
     if api is None:
         delivered, code = deliver_from_inventory(order)
         return (True, code) if delivered else (None, '')
+    duplicate = _recent_duplicate_order(order)
+    if duplicate is not None:
+        msg = ('Compra duplicada bloqueada: o pedido #{} do mesmo serviço já '
+               'foi enviado ao provedor a menos de 2 minutos. '
+               'Nenhuma cobrança adicional foi feita.').format(duplicate.id)
+        _log(api, 'block duplicate order #{} (ref #{} trx={})'.format(
+            order.id, duplicate.id, duplicate.trx_id))
+        return False, msg
     service = order.service
     actions = actions_for(service)
     fields = _fields_dict(order)
