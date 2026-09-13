@@ -54,6 +54,7 @@ name='admin_api_import'),
     path('admin-panel/apis/<int:api_id>/delete/', views_admin.admin_api_delete, name='admin_api_delete'),
     path('admin-panel/administrador/', views_admin.admin_administrator, name='admin_administrator'),
     path('admin-panel/setting/', views_admin.admin_setting, name='admin_setting'),
+    path('admin-panel/maintenance/', views_admin.admin_maintenance, name='admin_maintenance'),
     path('admin-panel/logout/', views_admin.admin_logout, name='admin_logout'),
 
     path('admin-panel/sliders/', views_admin.admin_slider_list, name='admin_slider_list'),

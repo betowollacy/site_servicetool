@@ -505,6 +505,30 @@ def admin_setting(request):
     return render(request, 'admin/setting.html', {'settings': settings})
 
 
+@_staff
+def admin_maintenance(request):
+    on = str(SystemSetting.get('siteMaintenanceMode', 'off')).strip().lower() in ('1', 'true', 'yes', 'on')
+    message = SystemSetting.get('siteMaintenanceMsg', '')
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        if action in ('on', 'off'):
+            setting, _ = SystemSetting.objects.get_or_create(key='siteMaintenanceMode', defaults={'value': 'off'})
+            setting.value = action
+            setting.save(update_fields=['value'])
+            if action == 'on':
+                msg, _ = SystemSetting.objects.get_or_create(key='siteMaintenanceMsg', defaults={'value': ''})
+                msg.value = request.POST.get('message', '').strip()
+                msg.save(update_fields=['value'])
+                messages.success(request, 'Site em manutenção ATIVADO. Página pública mostra a manutenção.')
+            else:
+                messages.success(request, 'Site em manutenção DESATIVADO. Site público normal.')
+        return redirect('admin_maintenance')
+    return render(request, 'admin/maintenance.html', {
+        'maintenance_on': on,
+        'maintenance_msg': message,
+    })
+
+
 def _service_type_from(svtype):
     return TYPE_MAP.get(svtype, ('Server Service', 'Server'))
 

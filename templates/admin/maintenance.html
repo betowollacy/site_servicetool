@@ -1,0 +1,60 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12"><h4 class="mb-0">Site em Manutenção</h4></div>
+</div>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card {% if maintenance_on %}border-success{% else %}border-secondary{% endif %}">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="ti {% if maintenance_on %}ti-tools text-success{% else %}ti-server text-secondary{% endif %} me-2" style="font-size: 1.6rem"></i>
+                    <div>
+                        <h6 class="fw-bold mb-0">Estado atual</h6>
+                        {% if maintenance_on %}
+                        <span class="badge bg-success">Em manutenção — site público bloqueado</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Site normal — público navegando</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <form method="post" class="row g-3">
+                    {% csrf_token %}
+                    <div class="col-12">
+                        <label class="form-label">Mensagem exibida (opcional)</label>
+                        <textarea class="form-control" name="message" rows="3" placeholder="Estamos atualizando o serviço, volte em instantes...">{{ maintenance_msg }}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" name="action" value="on" class="btn btn-success w-100 {% if maintenance_on %}d-none{% endif %}">
+                            <i class="ti ti-tools me-2"></i> Ativar Manutenção
+                        </button>
+                        <button type="submit" name="action" value="off" class="btn btn-outline-secondary w-100 {% if not maintenance_on %}d-none{% endif %}"
+                                onclick="return confirm('Desativar a manutenção e voltar a exibir o site público?')">
+                            <i class="ti ti-player-play me-2"></i> Desativar Manutenção
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3"><i class="ti ti-info-circle me-1"></i> O que acontece</h6>
+                <ul class="mb-0" style="line-height: 1.9">
+                    <li>Com a manutenção ativa, <b>todo o site público</b> (loja, serviços, checkout, login) mostra uma página avisando o cliente.</li>
+                    <li>O <b>painel administrativo</b> continua funcionando normalmente.</li>
+                    <li>Webhooks de pagamento continuam processando, assim atendimento de pedidos em andamento.</li>
+                    <li>Você (usuário admin) consegue visitar o site público durante a manutenção para testar.</li>
+                    <li>Ideal para quando for trocar API, editar serviços em massa ou ajustar o visual.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

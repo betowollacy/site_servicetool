@@ -1646,3 +1646,64 @@ class AdminPromoteTests(TestCase):
         resp = self.client.get(reverse('admin_customer_list'))
         self.assertContains(resp, 'comconta@teste.com')
         self.assertContains(resp, 'Administrador')
+
+
+class MaintenanceModeTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='adminmanu', password='senha123', is_staff=True)
+        SystemSetting.objects.filter(
+            key__in=['siteMaintenanceMode', 'siteMaintenanceMsg']
+        ).delete()
+
+    def tearDown(self):
+        SystemSetting.objects.filter(
+            key__in=['siteMaintenanceMode', 'siteMaintenanceMsg']
+        ).delete()
+
+    def test_site_normal_without_setting(self):
+        resp = self.client.get(reverse('homepage'))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_public_blocked_when_maintenance_on(self):
+        SystemSetting.objects.create(key='siteMaintenanceMode', value='on')
+        SystemSetting.objects.create(key='siteMaintenanceMsg', value='Volte em 1 hora')
+        resp = self.client.get(reverse('homepage'))
+        self.assertEqual(resp.status_code, 503)
+        self.assertContains(resp, 'Volte em 1 hora')
+        self.assertContains(resp, 'Estamos em manutenção')
+
+    def test_webhook_stays_live_during_maintenance(self):
+        SystemSetting.objects.create(key='siteMaintenanceMode', value='on')
+        resp = self.client.get(reverse('binance_webhook'))
+        self.assertNotEqual(resp.status_code, 503)
+
+    def test_admin_panel_stays_live_during_maintenance(self):
+        SystemSetting.objects.create(key='siteMaintenanceMode', value='on')
+        self.client.force_login(self.staff)
+        resp = self.client.get(reverse('admin_maintenance'))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_staff_can_browse_public_during_maintenance(self):
+        SystemSetting.objects.create(key='siteMaintenanceMode', value='on')
+        self.client.force_login(self.staff)
+        resp = self.client.get(reverse('homepage'))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_toggle_on_off(self):
+        self.client.force_login(self.staff)
+        resp = self.client.post(
+            reverse('admin_maintenance'), {'action': 'on', 'message': 'Trocando API'}
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(SystemSetting.get('siteMaintenanceMode'), 'on')
+        self.assertEqual(SystemSetting.get('siteMaintenanceMsg'), 'Trocando API')
+        # site publico bloqueado agora
+        self.assertEqual(self.client.get(reverse('homepage')).status_code, 200)  # staff logado
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse('homepage')).status_code, 503)
+
+        self.client.force_login(self.staff)
+        resp = self.client.post(reverse('admin_maintenance'), {'action': 'off'})
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(SystemSetting.get('siteMaintenanceMode'), 'off')
+        self.assertEqual(self.client.get(reverse('homepage')).status_code, 200)

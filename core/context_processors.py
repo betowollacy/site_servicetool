@@ -75,4 +75,5 @@ def admin_context(request):
         'apis': list(Api.objects.all().order_by('-id')),
         'buildinApiCount': RemoteServiceList.objects.count(),
         'is_admin_panel': True,
+        'maintenance_on': _bool(SystemSetting.get('siteMaintenanceMode', 'off')),
     }
