@@ -126,7 +126,7 @@ class ServiceList(models.Model):
     COLLECT_FIELDS_CHOICES = [
         ('both', 'Usuário e e-mail'),
         ('user', 'Somente usuário'),
-        ('email', 'Somente e-mail'),
+        ('email', 'Somente e-mail'),    ('serial', 'Serial Number'),
     ]
 
     service_type = models.CharField(max_length=50, choices=SERVICE_TYPES, default='Server Service')

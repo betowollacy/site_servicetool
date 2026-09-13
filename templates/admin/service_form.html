@@ -80,6 +80,7 @@
                                 <option value="both" {% if not service or service.collect_fields == 'both' %}selected{% endif %}>Usuário e e-mail</option>
                                 <option value="user" {% if service.collect_fields == 'user' %}selected{% endif %}>Somente usuário</option>
                                 <option value="email" {% if service.collect_fields == 'email' %}selected{% endif %}>Somente e-mail</option>
+                                <option value="serial" {% if service.collect_fields == 'serial' %}selected{% endif %}>Serial Number</option>
                             </select>
                         </div>
                     </div>

@@ -172,6 +172,8 @@ def _service_input_fields(service):
             requested.append('E-mail da Ferramenta')
         elif service.collect_fields == 'user':
             requested.append('Usuário')
+        elif service.collect_fields == 'serial':
+            requested.append('Serial Number')
         else:
             requested += ['Usuário', 'E-mail da Ferramenta']
     if service.service_type == 'Credit Service':
@@ -612,6 +614,8 @@ def submit_order(request, customer):
             requested.append('E-mail da Ferramenta')
         elif service.collect_fields == 'user':
             requested.append('Usuário')
+        elif service.collect_fields == 'serial':
+            requested.append('Serial Number')
         else:
             requested += ['Usuário', 'E-mail da Ferramenta']
     if service.service_type == 'Credit Service':

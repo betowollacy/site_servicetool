@@ -75,6 +75,7 @@
                                 <option value="both" {% if s.collect_fields == 'both' %}selected{% endif %}>Usuário e e-mail</option>
                                 <option value="user" {% if s.collect_fields == 'user' %}selected{% endif %}>Só usuário</option>
                                 <option value="email" {% if s.collect_fields == 'email' %}selected{% endif %}>Só e-mail</option>
+                                <option value="serial" {% if s.collect_fields == 'serial' %}selected{% endif %}>Serial Number</option>
                             </select>
                         </form>
                         {% else %}

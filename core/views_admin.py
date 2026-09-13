@@ -533,7 +533,7 @@ def _apply_service_post(service, post):
         service.status = post['status']
     service.api_enabled = bool(post.get('api_enabled'))
     service.collect_login = bool(post.get('collect_login'))
-    if post.get('collect_fields') in ('user', 'email', 'both'):
+    if post.get('collect_fields') in ('user', 'email', 'serial', 'both'):
         service.collect_fields = post['collect_fields']
     if post.get('carousel') in ('promocoes', 'desbloqueios'):
         service.carousel = post['carousel']
@@ -690,10 +690,10 @@ def admin_service_set_fields(request, svtype, service_id):
     if not service:
         messages.error(request, 'Serviço não encontrado.')
         return redirect('admin_service_list', svtype)
-    if request.method == 'POST' and request.POST.get('collect_fields') in ('user', 'email', 'both'):
+    if request.method == 'POST' and request.POST.get('collect_fields') in ('user', 'email', 'serial', 'both'):
         service.collect_fields = request.POST['collect_fields']
         service.save(update_fields=['collect_fields'])
-        labels = {'user': 'somente o usuário', 'email': 'somente o e-mail da ferramenta', 'both': 'usuário e e-mail da ferramenta'}
+        labels = {'user': 'somente o usuário', 'email': 'somente o e-mail da ferramenta', 'serial': 'somente o Serial Number', 'both': 'usuário e e-mail da ferramenta'}
         messages.success(request, f'"{service.title}" agora solicita {labels[service.collect_fields]}.')
     return redirect('admin_service_list', svtype)
 
