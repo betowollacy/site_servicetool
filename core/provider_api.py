@@ -109,7 +109,7 @@ _BRAND_STOPWORDS = {
     'day', 'days', 'pro', 'premium', 'basic', 'professional',
     'profissional', 'rent', 'credits', 'credit', 'license', 'activation',
     'activate', 'new', 'existing', 'users', 'user', 'month', 'months', 'year',
-    'years', 'week', 'repair', 'read', 'instant', 'insta', 'online', 'pkg',
+    'years', 'week', 'repair', 'read', 'instant', 'insta', 'online', 'pkg', 'hurs', 'hrs',
 }
 
 
@@ -123,11 +123,23 @@ def _norm_title(text):
 
 
 def _detect_duration(text):
-    words = ' ' + _norm_title(text) + ' '
-    for canon, variants in _DURATION_RULES:
-        for v in variants:
-            if ' {} '.format(v) in words or words.strip().startswith(v + ' ') or words.strip().endswith(' ' + v):
-                return canon
+    # Normaliza o typo comum "hurs" (ex.: "6-Hurs") para "hrs".
+    words = _norm_title(text).replace('hurs', 'hrs')
+    if not words:
+        return None
+    m = re.search(r'(\d+)\s*(hurs|hrs|horas|hora|hours|hour|h)\b', words)
+    if m:
+        return '{}h'.format(m.group(1))
+    m = re.search(r'(\d+)\s*(dias|dia|days|day|d)\b', words)
+    if m:
+        return '{}d'.format(m.group(1))
+    m = re.search(r'(\d+)\s*(meses|mes|month|months)\b', words)
+    if m:
+        return '{}m'.format(m.group(1))
+    m = re.search(r'(\d+)\s*(anos|ano|years|year|yr)\b', words)
+    if m:
+        n = int(m.group(1))
+        return '12m' if n == 1 else '{}y'.format(n)
     return None
 
 

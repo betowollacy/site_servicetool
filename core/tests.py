@@ -527,6 +527,30 @@ class ProviderApiTests(TestCase):
         self.assertEqual(catalog[0]['name'], 'iPhone X Unlock')
         self.assertEqual(catalog[0]['fields'], ['IMEI'])
 
+    def test_detect_duration_reconhece_6_hurs(self):
+        self.assertEqual(provider_api._detect_duration('UNLOCK TOOL RENT (6-Hurs)-API -india'), '6h')
+        self.assertEqual(provider_api._detect_duration('ALUGUEL FERRAMENTA 6 HORAS'), '6h')
+        self.assertEqual(provider_api._detect_duration('Tool Rent 6hrs'), '6h')
+        self.assertEqual(provider_api._detect_duration('Unlock Rent 12h'), '12h')
+
+    def test_auto_link_nao_casa_6h_com_12h(self):
+        api = Api.objects.create(
+            api_name='Rit Unlocker', api_type='ritunlocker',
+            api_url='https://ritunlocker.com/api', api_username='', api_key='CHAVE-RIT-123',
+            status='Active', api_pin='', price_rate=Decimal('0'), price_markup=Decimal('0'),
+        )
+        RemoteServiceList.objects.create(
+            api=api, referenceid='9001', SERVICETYPE='SERVER',
+            SERVICENAME='UNLOCK TOOL RENT (12-Hurs)-API', CREDIT=Decimal('0.90'),
+        )
+        local = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group,
+            title='UNLOCK TOOL RENT (6-Hurs)-API -india',
+            original_price=Decimal('5.00'), status='Active', slug='rent-6h',
+        )
+        remote, score = provider_api.auto_link_service(local)
+        self.assertIsNone(remote)
+
     def test_suggested_price_applies_rate_and_markup(self):
         api = self._rit_api()
         api.price_rate = Decimal('5.35')
