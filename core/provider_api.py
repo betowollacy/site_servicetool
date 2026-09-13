@@ -56,6 +56,20 @@ class ProviderError(Exception):
     pass
 
 
+def maintenance_active():
+    """True quando o modo manutencao do site esta ativo.
+
+    Usado pelas guardas de pedido: com a manutencao ativa nenhum pedido e
+    criado/enviado (web, API e painel), mesmo que o middleware ja bloqueie
+    as paginas publicas."""
+    try:
+        from .models import SystemSetting
+        value = SystemSetting.get('siteMaintenanceMode', 'off')
+    except Exception:
+        return False
+    return str(value or '').strip().lower() in ('1', 'true', 'yes', 'on')
+
+
 def actions_for(service):
     """Acoes do provedor para o servico. Decide primeiro pelo SERVICETYPE do
     produto remoto vinculado (fonte da verdade), depois pelo tipo local."""

@@ -1690,11 +1690,21 @@ class MaintenanceModeTests(TestCase):
         SystemSetting.objects.filter(
             key__in=['siteMaintenanceMode', 'siteMaintenanceMsg']
         ).delete()
+        self.customer = Customer.objects.create(
+            name='Cliente Man', email='climan@teste.com', password=Customer.make_password('senha'),
+            currency='BRL', balance=Decimal('50.00'), api_allow='on', api_key='API-MANUT',
+        )
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
 
     def tearDown(self):
         SystemSetting.objects.filter(
             key__in=['siteMaintenanceMode', 'siteMaintenanceMsg']
         ).delete()
+
+    def _login_customer(self):
+        session = self.client.session
+        session['customer_id'] = self.customer.id
+        session.save()
 
     def test_site_normal_without_setting(self):
         resp = self.client.get(reverse('homepage'))
@@ -1743,3 +1753,43 @@ class MaintenanceModeTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(SystemSetting.get('siteMaintenanceMode'), 'off')
         self.assertEqual(self.client.get(reverse('homepage')).status_code, 200)
+
+    def test_web_order_blocked_during_maintenance(self):
+        service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='Aluguel Teste',
+            slug='aluguel-teste', status='Active', original_price=Decimal('10.00'),
+        )
+        SystemSetting.objects.create(key='siteMaintenanceMode', value='on')
+        self._login_customer()
+        resp = self.client.post(reverse('submit_order'), {'serviceID': service.id})
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(CustomerOrder.objects.count(), 0)
+
+    def test_public_api_order_blocked_during_maintenance(self):
+        service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='Aluguel API',
+            slug='aluguel-api', status='Active', original_price=Decimal('10.00'),
+        )
+        SystemSetting.objects.create(key='siteMaintenanceMode', value='on')
+        resp = self.client.post('/public/api/index.php', {
+            'username': self.customer.email,
+            'apiaccesskey': self.customer.api_key,
+            'action': 'placeimeiorder',
+            'parameters': '<ID>{}</ID><QNT>1</QNT>'.format(service.id),
+        })
+        self.assertEqual(resp.status_code, 503)
+        self.assertEqual(CustomerOrder.objects.count(), 0)
+
+    def test_admin_direct_order_blocked_during_maintenance(self):
+        service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='Aluguel Admin',
+            slug='aluguel-admin', status='Active', original_price=Decimal('10.00'),
+        )
+        SystemSetting.objects.create(key='siteMaintenanceMode', value='on')
+        self.client.force_login(self.staff)
+        resp = self.client.post(reverse('admin_administrator'), {
+            'serviceID': service.id,
+            'customerID': self.customer.id,
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(CustomerOrder.objects.count(), 0)

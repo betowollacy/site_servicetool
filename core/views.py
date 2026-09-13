@@ -606,6 +606,9 @@ def submit_order(request, customer):
     if service.status != 'Active':
         messages.error(request, 'Service unavailable.')
         return redirect('homepage')
+    if provider_api.maintenance_active():
+        messages.error(request, 'Site em manutenção. Pedidos pausados no momento.')
+        return redirect('homepage')
 
     required_fields = []
     requested = []

@@ -395,6 +395,9 @@ def admin_administrator(request):
             request.session.pop('last_admin_order', None)
 
     if request.method == 'POST':
+        if provider_api.maintenance_active():
+            messages.error(request, 'Site em manutenção. Pedidos na API pausados — desative a manutenção para enviar.')
+            return redirect('admin_administrator')
         errors = []
         customer = Customer.objects.filter(id=_parse_int(request.POST.get('customerID'))).first()
         if customer is None:

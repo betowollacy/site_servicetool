@@ -390,6 +390,8 @@ def _get_order_bulk(customer, parameters):
 
 
 def _place_order(customer, parameters):
+    if provider_api.maintenance_active():
+        return _api_error('Site em manutenção. Pedidos pausados.')
     params = _params_dict(parameters)
     service_id = params.get('ID')
     if service_id is None or str(service_id) == '':
@@ -415,6 +417,8 @@ def _place_order(customer, parameters):
 
 
 def _place_bulk_order(customer, parameters):
+    if provider_api.maintenance_active():
+        return _api_error('Site em manutenção. Pedidos pausados.')
     data, err = _decode_bulk(parameters)
     if err:
         return _api_error(err)
