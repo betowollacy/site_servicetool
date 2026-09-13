@@ -551,6 +551,33 @@ class ProviderApiTests(TestCase):
         remote, score = provider_api.auto_link_service(local)
         self.assertIsNone(remote)
 
+    def test_detect_kind_licencas_sao_ativacao(self):
+        self.assertEqual(provider_api._detect_kind('Chimera Tool Basic Licence 1 year'), 'activation')
+        self.assertEqual(provider_api._detect_kind('Cheetah Pro License Ativação'), 'activation')
+        self.assertEqual(provider_api._detect_kind('HW-Key Credits'), 'credits')
+        self.assertEqual(provider_api._detect_kind('Tool Rent 6h'), 'rent')
+        self.assertEqual(provider_api._detect_kind('Chimera Tool Premium Renovação 1 Ano'), 'renew')
+
+    def test_auto_link_creditos_nao_casa_com_ativacao(self):
+        api = Api.objects.create(
+            api_name='Rit Unlocker', api_type='ritunlocker',
+            api_url='https://ritunlocker.com/api', api_username='', api_key='CHAVE-RIT-123',
+            status='Active', api_pin='', price_rate=Decimal('0'), price_markup=Decimal('0'),
+        )
+        RemoteServiceList.objects.create(
+            api=api, referenceid='1', SERVICETYPE='SERVER',
+            SERVICENAME='Chimera Tool Basic Licence 1 year (100 Phone Connection)',
+            CREDIT=Decimal('5.00'),
+        )
+        local = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group,
+            title='Chimera Tool - Créditos Para Serviço',
+            original_price=Decimal('10.00'), status='Active', slug='chimera-creditos',
+        )
+        self.assertEqual(provider_api._detect_kind(local.title), 'credits')
+        remote, score = provider_api.auto_link_service(local)
+        self.assertIsNone(remote)
+
     def test_suggested_price_applies_rate_and_markup(self):
         api = self._rit_api()
         api.price_rate = Decimal('5.35')

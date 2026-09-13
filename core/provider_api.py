@@ -94,9 +94,9 @@ _DURATION_RULES = [
 
 _KIND_RULES = [
     ('rent', ['aluguel', 'rent', 'rental']),
-    ('credits', ['credito', 'creditos', 'credit', 'credits']),
+    ('credits', ['credito', 'creditos', 'credit', 'credits', 'topup', 'top up', 'top-up', 'refill']),
     ('renew', ['renovacao', 'renew', 'renewal', 'transfer']),
-    ('activation', ['ativacao', 'licenca', 'activation', 'license', 'activate']),
+    ('activation', ['ativacao', 'licenca', 'license', 'licence', 'activation', 'activate']),
 ]
 
 _BRAND_STOPWORDS = {
