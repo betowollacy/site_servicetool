@@ -1569,15 +1569,15 @@ def admin_db_export(request):
             src.backup(dest)
     except Exception:
         messages.error(request, 'Falha ao gerar o backup.')
-        return redirect('admin_api_list')
-    finally:
-        src.close()
-        dest.close()
         if os.path.exists(tmp.name):
             try:
                 os.remove(tmp.name)
             except OSError:
                 pass
+        return redirect('admin_api_list')
+    finally:
+        src.close()
+        dest.close()
     with open(tmp.name, 'rb') as fh:
         data = fh.read()
     os.remove(tmp.name)
@@ -1616,27 +1616,25 @@ def admin_db_import(request):
             messages.error(request, 'Arquivo inválido: não parece um backup SQLite (.sqlite) nem um dump .sql.')
             return redirect('admin_api_list')
 
+        # monta o banco a importar num arquivo temporario novo (schema limpo)
+        tmp = tempfile.NamedTemporaryFile(prefix='servicetool_restore_', suffix='.sqlite', delete=False)
+        tmp.write(data)
+        tmp.close()
+        tmp_name = tmp.name
+        src = sqlite3.connect(tmp_name)
         if is_binary:
-            tmp = tempfile.NamedTemporaryFile(prefix='servicetool_restore_', suffix='.sqlite', delete=False)
-            tmp.write(data)
-            tmp.close()
-            tmp_name = tmp.name
-            src = sqlite3.connect(tmp_name)
             src.execute('SELECT count(*) FROM sqlite_master').fetchone()
-            dst = sqlite3.connect(str(db_path))
-            try:
-                with dst:
-                    src.backup(dst)
-            finally:
-                src.close()
-                dst.close()
         else:
-            conn = sqlite3.connect(str(db_path))
-            try:
-                conn.executescript(text)
-                conn.commit()
-            finally:
-                conn.close()
+            src.executescript(text)
+            src.commit()
+        # copia o banco temporario para o banco vivo (online backup)
+        dst = sqlite3.connect(str(db_path))
+        try:
+            with dst:
+                src.backup(dst)
+        finally:
+            src.close()
+            dst.close()
         detail = ''
         if pre_restore:
             detail = ' O banco anterior foi salvo em "backups/{}".'.format(os.path.basename(str(pre_restore)))
