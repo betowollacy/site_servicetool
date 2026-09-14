@@ -2212,7 +2212,8 @@ class OrderEmailTests(TestCase):
         ]:
             self.assertIn(token, mail['text'])
         self.assertIn('userx', mail['html'])
-        self.assertIn('<a href="http://127.0.0.1:8000/customer/order-history/"', mail['html'])
+        expected_url = (settings.SITE_URL or 'http://127.0.0.1:8000').rstrip('/') + reverse('customer_order_history')
+        self.assertIn('<a href="{}"'.format(expected_url), mail['html'])
         self.assertIn('Concluído ✅', mail['html'])
 
     def test_completed_email_fallback_to_full_reply(self):
