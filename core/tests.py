@@ -2359,7 +2359,7 @@ class OrderEmailTests(TestCase):
             'NOVO PEDIDO #{}'.format(self.order.id),
             'Cliente: Cliente Teste', 'E-mail: cliente@teste.com',
             'Serviço: Unlock Tool Rent S-2', 'celular: 11999999999',
-            'Valor: R$ 3,91', 'Pagamento: Pago via saldo', 'Status: In Process',
+            'Valor: R$ 3,91', 'Pagamento: Pago via saldo', 'Status: Em processamento',
         ]:
             self.assertIn(token, mail['text'])
         self.assertIn('cliente@teste.com', mail['html'])
@@ -2399,4 +2399,4 @@ class OrderEmailTests(TestCase):
             _debit_and_forward_order(self.order, self.customer)
         mail.assert_called_once()
         self.assertEqual(mail.call_args.args[0].id, self.order.id)
-        self.assertEqual(mail.call_args.args[1], True)
+        self.assertEqual(mail.call_args.kwargs.get('paid'), True)
