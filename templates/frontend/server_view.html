@@ -124,7 +124,7 @@
                             </div>
                         </div>
                         {% endif %}
-                        <form method="post" action="{% url 'submit_order' %}" id="orderForm">
+                        <form method="post" action="{% url 'submit_order' %}" id="orderForm" enctype="multipart/form-data">
                             {% csrf_token %}
                             <input type="hidden" name="serviceID" value="{{ serviceData.id }}">
 
@@ -159,6 +159,32 @@
                                     {% if serviceInput.name in 'Usuário Senha E-mail da Ferramenta' %}
                                     <small class="text-muted">Dados da conta da ferramenta cadastrada no site do vendedor, usados para adicionar/ativar o pedido.</small>
                                     {% endif %}
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            {% if collect_extras %}
+                            <div class="mb-3">
+                                {% for extra in collect_extras %}
+                                {% if extra.code == 'lock_photo' %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="extra_lock_photo">Informe <b>Foto da tela de bloqueio</b></label>
+                                    <input type="file" class="form-control" name="{{ extra.name }}" id="extra_lock_photo" accept="image/*" required>
+                                    <small class="text-muted">Envie uma foto da tela de bloqueio do aparelho.</small>
+                                </div>
+                                {% elif extra.code == 'anydesk' %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="extra_anydesk">Informe <b>Acesso do AnyDesk</b></label>
+                                    <input type="text" class="form-control" name="{{ extra.name }}" id="extra_anydesk" placeholder="ID e senha do AnyDesk" required>
+                                    <small class="text-muted">Envie o ID e a senha de acesso do AnyDesk.</small>
+                                </div>
+                                {% elif extra.code == 'whatsapp' %}
+                                <div class="mb-3">
+                                    <label class="form-label" for="extra_whatsapp">Informe <b>WhatsApp</b></label>
+                                    <input type="text" class="form-control" name="{{ extra.name }}" id="extra_whatsapp" placeholder="Número com DDD" required>
+                                    <small class="text-muted">Envie um número de WhatsApp com DDD para contato.</small>
                                 </div>
                                 {% endif %}
                                 {% endfor %}

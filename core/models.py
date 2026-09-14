@@ -128,6 +128,11 @@ class ServiceList(models.Model):
         ('user', 'Somente usuário'),
         ('email', 'Somente e-mail'),    ('serial', 'Serial Number'),
     ]
+    COLLECT_EXTRA_CHOICES = [
+        ('anydesk', 'Acesso do AnyDesk'),
+        ('lock_photo', 'Foto da tela de bloqueio'),
+        ('whatsapp', 'WhatsApp'),
+    ]
 
     service_type = models.CharField(max_length=50, choices=SERVICE_TYPES, default='Server Service')
     service_group = models.ForeignKey(ServiceGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='services')
@@ -169,6 +174,7 @@ class ServiceList(models.Model):
     api_enabled = models.BooleanField(default=True, verbose_name='API ativa')
     collect_login = models.BooleanField(default=True, verbose_name='Pedir usuário/e-mail na compra')
     collect_fields = models.CharField(max_length=10, choices=COLLECT_FIELDS_CHOICES, default='both', verbose_name='Dados a solicitar na compra')
+    collect_extras = models.CharField(max_length=120, blank=True, default='', choices=COLLECT_EXTRA_CHOICES, verbose_name='Dados adicionais a solicitar na compra')
     inventory = models.ForeignKey('Inventory', on_delete=models.SET_NULL, null=True, blank=True, related_name='services')
     referenceid = models.CharField(max_length=255, blank=True, null=True)
     CAROUSEL_CHOICES = [

@@ -2068,3 +2068,95 @@ class AdminDbBackupTests(TestCase):
             })
             self.assertEqual(resp.status_code, 302)
             self.assertEqual(self._marker_value(), 'origem')
+
+
+class ServiceCollectExtrasTests(TestCase):
+    def setUp(self):
+        Currency.objects.create(code='BRL', name='Brazilian Real', icon='R$', rate=Decimal('1.0000'), status='Active')
+        self.customer = Customer.objects.create(
+            name='Cliente Extra', email='extra@teste.com', mobile='11999999999',
+            password=Customer.make_password('senha123'), currency='BRL',
+            balance=Decimal('100.00'),
+        )
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group,
+            title='Aluguel Remoto', original_price=Decimal('10.00'),
+            status='Active', slug='aluguel-remoto',
+            collect_login=False, collect_extras='anydesk,lock_photo,whatsapp',
+        )
+
+    def _login(self):
+        session = self.client.session
+        session['customer_id'] = self.customer.id
+        session.save()
+
+    def test_server_view_renders_checked_extras(self):
+        self._login()
+        resp = self.client.get(reverse('service_view', args=[self.service.slug]))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn('name="Acesso do AnyDesk"', html)
+        self.assertIn('name="Foto da tela de bloqueio"', html)
+        self.assertIn('name="WhatsApp"', html)
+        self.assertIn('type="file"', html)
+        self.assertIn('multipart/form-data', html)
+
+    def test_server_view_hides_unchecked_extras(self):
+        self._login()
+        self.service.collect_extras = 'whatsapp'
+        self.service.save()
+        resp = self.client.get(reverse('service_view', args=[self.service.slug]))
+        html = resp.content.decode()
+        self.assertIn('name="WhatsApp"', html)
+        self.assertNotIn('name="Acesso do AnyDesk"', html)
+        self.assertNotIn('type="file"', html)
+
+    def test_submit_order_requires_checked_extras(self):
+        self._login()
+        resp = self.client.post(reverse('submit_order'), {'serviceID': self.service.id})
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(CustomerOrder.objects.count(), 0)
+
+    def test_submit_order_stores_extras_and_photo(self):
+        self._login()
+        photo = SimpleUploadedFile('tela.jpg', b'fakeimage', content_type='image/jpeg')
+        resp = self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+            'Acesso do AnyDesk': '123456 / senha123',
+            'WhatsApp': '11988887777',
+            'Foto da tela de bloqueio': photo,
+        })
+        self.assertEqual(resp.status_code, 302)
+        order = CustomerOrder.objects.latest('id')
+        inputs = {i.field_name: i.field_value for i in order.order_inputs.all()}
+        self.assertEqual(inputs.get('Acesso do AnyDesk'), '123456 / senha123')
+        self.assertEqual(inputs.get('WhatsApp'), '11988887777')
+        photo_url = inputs.get('Foto da tela de bloqueio', '')
+        self.assertTrue(photo_url.startswith('/media/orders/'))
+        photo_path = os.path.join(settings.MEDIA_ROOT, photo_url.replace('/media/', ''))
+        self.assertTrue(os.path.exists(photo_path))
+        os.remove(photo_path)
+
+    @patch('core.views_admin.provider_api.auto_link_service', return_value=(None, 0))
+    def test_admin_service_edit_saves_extras(self, _auto):
+        staff = User.objects.create_user(username='adminextra', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        resp = self.client.post(reverse('admin_service_edit', args=['server', self.service.id]), {
+            'title': 'Aluguel Remoto',
+            'collect_extras': ['anydesk', 'whatsapp'],
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.service.refresh_from_db()
+        self.assertEqual(self.service.collect_extras, 'anydesk,whatsapp')
+
+    @patch('core.views_admin.provider_api.auto_link_service', return_value=(None, 0))
+    def test_admin_service_edit_clears_extras(self, _auto):
+        staff = User.objects.create_user(username='adminex2', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        resp = self.client.post(reverse('admin_service_edit', args=['server', self.service.id]), {
+            'title': 'Aluguel Remoto',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.service.refresh_from_db()
+        self.assertEqual(self.service.collect_extras, '')

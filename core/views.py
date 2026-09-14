@@ -1,10 +1,14 @@
 import json
+import os
 import random
 import string
 import time
+import uuid
 from decimal import Decimal
+from pathlib import Path
 from types import SimpleNamespace
 
+from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q, Sum
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
@@ -203,6 +207,28 @@ def _service_input_objects(service):
     return [db.get(name, SimpleNamespace(name=name)) for name in names]
 
 
+def _service_extra_fields(service):
+    """Campos adicionais marcados no painel (AnyDesk/WhatsApp/foto) a solicitar na compra."""
+    labels = dict(ServiceList.COLLECT_EXTRA_CHOICES)
+    extras = []
+    for code in service.collect_extras.split(','):
+        code = code.strip()
+        if code in labels:
+            extras.append({'code': code, 'name': labels[code]})
+    return extras
+
+
+def _save_order_photo(upload):
+    """Salva a foto enviada na compra em media/orders e devolve a URL publica."""
+    folder = Path(settings.MEDIA_ROOT) / 'orders'
+    folder.mkdir(parents=True, exist_ok=True)
+    fname = 'order_{0}_{1}'.format(uuid.uuid4().hex[:12], os.path.basename(upload.name))
+    with open(folder / fname, 'wb') as fh:
+        for chunk in upload.chunks():
+            fh.write(chunk)
+    return '{0}orders/{1}'.format(settings.MEDIA_URL, fname)
+
+
 def server_view(request, slug):
     service = get_object_or_404(ServiceList, slug=slug)
     if service.status != 'Active':
@@ -211,6 +237,7 @@ def server_view(request, slug):
     ctx = {
         'serviceData': service,
         'serviceInputs': _service_input_objects(service),
+        'collect_extras': _service_extra_fields(service),
         'serviceTags': tags,
         'Price': service.original_price,
         'keyWord': ','.join(t for t in [service.kw1, service.kw2, service.kw3, service.kw4, service.kw5] if t),
@@ -625,8 +652,16 @@ def submit_order(request, customer):
         required_fields = ['Quantidade de Créditos'] + requested
     elif service.service_type == 'Activation Service':
         required_fields = requested
+    extra_fields = _service_extra_fields(service)
+    for extra in extra_fields:
+        if extra['code'] == 'lock_photo':
+            if not request.FILES.get(extra['name']):
+                required_fields.append(extra['name'])
+        elif not request.POST.get(extra['name'], '').strip():
+            required_fields.append(extra['name'])
+    photo_names = {x['name'] for x in extra_fields if x['code'] == 'lock_photo'}
     errors = [f'Informe {field_name}.' for field_name in required_fields
-              if not request.POST.get(field_name, '').strip()]
+              if not (field_name in photo_names and request.FILES.get(field_name))]
     if errors:
         messages.error(request, ', '.join(errors))
         return redirect('service_view', service.slug)
@@ -661,6 +696,16 @@ def submit_order(request, customer):
         if not order.service_input1:
             order.service_input1 = value
             order.save(update_fields=['service_input1'])
+    for extra in extra_fields:
+        if extra['code'] == 'lock_photo':
+            value = _save_order_photo(request.FILES.get(extra['name']))
+        else:
+            value = request.POST.get(extra['name'], '').strip()
+        if value:
+            OrderInput.objects.create(order=order, field_name=extra['name'], field_value=value)
+            if not order.service_input1:
+                order.service_input1 = value
+                order.save(update_fields=['service_input1'])
 
     price = total_price
     if customer.balance >= price:

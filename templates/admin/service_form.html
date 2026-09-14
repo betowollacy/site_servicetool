@@ -83,6 +83,22 @@
                                 <option value="serial" {% if service.collect_fields == 'serial' %}selected{% endif %}>Serial Number</option>
                             </select>
                         </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label d-block">Dados adicionais na compra</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="collect_extras" id="extraAnydesk" value="anydesk" {% if service and 'anydesk' in service.collect_extras %}checked{% endif %}>
+                                <label class="form-check-label" for="extraAnydesk">Pedir acesso do AnyDesk (ID e senha)</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="collect_extras" id="extraLockPhoto" value="lock_photo" {% if service and 'lock_photo' in service.collect_extras %}checked{% endif %}>
+                                <label class="form-check-label" for="extraLockPhoto">Pedir foto da tela de bloqueio</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="collect_extras" id="extraWhatsapp" value="whatsapp" {% if service and 'whatsapp' in service.collect_extras %}checked{% endif %}>
+                                <label class="form-check-label" for="extraWhatsapp">Pedir WhatsApp do cliente</label>
+                            </div>
+                            <small class="text-muted">Marque quais destes dados devem ser solicitados na hora da compra.</small>
+                        </div>
                     </div>
                 </div>
 
