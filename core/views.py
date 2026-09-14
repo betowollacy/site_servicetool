@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 from django.conf import settings
 from django.contrib import messages
-from django.db.models import Q, Sum
+from django.db.models import Prefetch, Q, Sum
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -513,7 +513,9 @@ def customer_profile(request, customer):
 
 @_require_customer
 def customer_order_history(request, customer):
-    orders = CustomerOrder.objects.filter(customer=customer)
+    orders = CustomerOrder.objects.filter(customer=customer).prefetch_related(
+        Prefetch('order_inputs', queryset=OrderInput.objects.order_by('id')),
+    )
     ctx = {'orders': orders}
     ctx.update(_base_ctx(request))
     return render(request, 'customer/order_history.html', ctx)

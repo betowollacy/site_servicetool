@@ -119,11 +119,15 @@
                         <td data-label="Data">{{ order.created_at|date:"d-m-Y H:i" }}</td>
                         <td data-label="Serviço">{{ order.service_title }}</td>
                         <td data-label="Dados do pedido" class="order-data">
+                            {% if order.service_qnt %}<div><b>Quantidade:</b> {{ order.service_qnt }}</div>{% endif %}
+                            {% for item in order.order_inputs.all %}
+                            <div><b>{{ item.field_name }}:</b> {{ item.field_value }}</div>
+                            {% endfor %}
                             {% if order.replied_in|default:order.service_comments %}
                             <div class="gsm-reply-text">{{ order.replied_in|default:order.service_comments|richtext }}</div>
-                            {% elif order.service_input1 %}
+                            {% elif not order.service_qnt and not order.order_inputs.all and order.service_input1 %}
                             <span class="text-muted">Entrada: {{ order.service_input1 }}</span>
-                            {% else %}
+                            {% elif not order.service_qnt and not order.order_inputs.all %}
                             <span class="text-muted">Aguardando resposta</span>
                             {% endif %}
                         </td>
@@ -168,6 +172,19 @@
                                     </div>
 
                                     <div class="gsm-card gray">
+                                        <div class="gsm-lbl">Dados do pedido</div>
+                                        {% if order.service_qnt %}
+                                        <div class="gsm-reply-text"><b>Quantidade:</b> {{ order.service_qnt }}</div>
+                                        {% endif %}
+                                        {% for item in order.order_inputs.all %}
+                                        <div class="gsm-reply-text"><b>{{ item.field_name }}:</b> {{ item.field_value }}</div>
+                                        {% endfor %}
+                                        {% if not order.service_qnt and not order.order_inputs.all and order.service_input1 %}
+                                        <div class="gsm-reply-text"><b>Entrada:</b> {{ order.service_input1 }}</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="gsm-card gray">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <div class="gsm-lbl mb-0">Reply</div>
                                             {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
@@ -196,7 +213,7 @@
                         </div>
                     </div>
                     {% empty %}
-                    <tr><td colspan="6" class="text-center">Nenhum pedido encontrado.</td></tr>
+                    <tr><td colspan="7" class="text-center">Nenhum pedido encontrado.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
