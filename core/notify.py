@@ -130,10 +130,11 @@ def _split_creds(text):
     """
     if not text:
         return None, None
-    text = str(text).strip()
+    text = re.sub(r'<br\s*/?>', ' ', str(text), flags=re.IGNORECASE).strip()
     m = _PAIR_RE.match(text)
     if m:
-        return m.group(1).strip(), m.group(2).strip()
+        user, passw = m.group(1).strip(), m.group(2).strip()
+        return (user, passw) if user and passw else (None, None)
     user = passw = None
     for line in text.replace('\r', '').split('\n'):
         line = line.strip()
@@ -147,14 +148,14 @@ def _split_creds(text):
             m = _LABEL_PASS_RE.match(line)
             if m and m.group(1).strip():
                 passw = m.group(1).strip()
-    if user or passw:
+    if user and passw:
         return user, passw
     for sep in ('||', '|', ';'):
         parts = [p.strip() for p in text.split(sep) if p.strip()]
         if len(parts) >= 2:
             return parts[0], parts[1]
     m = re.match(r'^\s*([^:\s]+)\s*:\s*(.+?)\s*$', text)
-    if m:
+    if m and m.group(2).strip():
         return m.group(1).strip(), m.group(2).strip()
     return None, None
 
