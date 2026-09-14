@@ -1,6 +1,9 @@
 import base64
 import json
 import os
+import shutil
+import sqlite3
+import tempfile
 from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
@@ -1975,3 +1978,91 @@ class AdminApiAutoSyncTests(TestCase):
         self.assertEqual(by_ref['12'].service_group.slug, 'remote')
         self.assertEqual(by_ref['10'].service_type, 'Activation Service')
         self.assertEqual(by_ref['10'].service_group.slug, 'server')
+
+
+class AdminDbBackupTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='admindb', password='senha123', is_staff=True)
+        self.tmpdir = tempfile.mkdtemp()
+        self.db_file = os.path.join(self.tmpdir, 'test_db.sqlite')
+        conn = sqlite3.connect(self.db_file)
+        conn.execute('CREATE TABLE marker (id INTEGER PRIMARY KEY, value TEXT)')
+        conn.execute("INSERT INTO marker (value) VALUES ('origem')")
+        conn.commit()
+        conn.close()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _write_snapshot(self, value='restaurado'):
+        sn = tempfile.NamedTemporaryFile(dir=self.tmpdir, suffix='.sqlite', delete=False)
+        sn.close()
+        conn = sqlite3.connect(sn.name)
+        conn.execute('CREATE TABLE marker (id INTEGER PRIMARY KEY, value TEXT)')
+        conn.execute('INSERT INTO marker (value) VALUES (?)', (value,))
+        conn.commit()
+        conn.close()
+        with open(sn.name, 'rb') as fh:
+            data = fh.read()
+        os.remove(sn.name)
+        return data
+
+    def _marker_value(self):
+        conn = sqlite3.connect(self.db_file)
+        try:
+            row = conn.execute('SELECT value FROM marker').fetchone()
+            return row[0] if row else None
+        finally:
+            conn.close()
+
+    def test_export_requires_staff(self):
+        resp = self.client.get(reverse('admin_db_export'))
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('/login/', resp.url)
+
+    def _override(self):
+        return override_settings(
+            BASE_DIR=self.tmpdir,
+            **{'DATABASES.NAME': self.db_file},
+        )
+
+    def test_export_downloads_sqlite(self):
+        with self._override():
+            self.client.force_login(self.staff)
+            resp = self.client.get(reverse('admin_db_export'))
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp['Content-Disposition'][:10], 'attachment')
+            self.assertTrue(resp.content.startswith(b'SQLite format 3\x00'))
+            self.assertIn(b'origem', resp.content)
+
+    def test_import_restores_binary_snapshot(self):
+        data = self._write_snapshot('restaurado')
+        with self._override():
+            self.client.force_login(self.staff)
+            resp = self.client.post(reverse('admin_db_import'), {
+                'backup_file': SimpleUploadedFile('backup.sqlite', data, content_type='application/octet-stream'),
+            })
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(self._marker_value(), 'restaurado')
+            backups = os.path.join(self.tmpdir, 'backups')
+            self.assertTrue(os.path.isdir(backups) and os.listdir(backups))
+
+    def test_import_restores_sql_dump(self):
+        sql = ('CREATE TABLE marker (id INTEGER PRIMARY KEY, value TEXT);\n'
+               "INSERT INTO marker (value) VALUES ('viaSql');\n")
+        with self._override():
+            self.client.force_login(self.staff)
+            resp = self.client.post(reverse('admin_db_import'), {
+                'backup_file': SimpleUploadedFile('backup.sql', sql.encode('utf-8'), content_type='text/plain'),
+            })
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(self._marker_value(), 'viaSql')
+
+    def test_import_rejects_invalid_file(self):
+        with self._override():
+            self.client.force_login(self.staff)
+            resp = self.client.post(reverse('admin_db_import'), {
+                'backup_file': SimpleUploadedFile('backup.txt', b'nada a ver', content_type='text/plain'),
+            })
+            self.assertEqual(resp.status_code, 302)
+            self.assertEqual(self._marker_value(), 'origem')

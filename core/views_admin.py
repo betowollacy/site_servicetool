@@ -1,7 +1,11 @@
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
+import io
 import json
 import os
+import sqlite3
+import tempfile
+import time
 import unicodedata
 import uuid
 
@@ -11,7 +15,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import logout
 from django.db import transaction
 from django.db.models import Count, Q
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.text import slugify
@@ -1522,6 +1526,131 @@ def admin_api_map(request, api_id):
         obj.value = json.dumps(data)
         obj.save()
         messages.success(request, 'Palavras-chave de distribuição de "{}" salvas.'.format(api.api_name))
+    return redirect('admin_api_list')
+
+
+def _db_path():
+    name = settings.DATABASES['default']['NAME']
+    return name
+
+
+def _save_pre_restore_backup():
+    """Copia o banco atual para a pasta de backups antes de um restore."""
+    db_path = _db_path()
+    if not os.path.exists(db_path):
+        return ''
+    backup_dir = Path(settings.BASE_DIR) / 'backups'
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    src = sqlite3.connect(str(db_path))
+    dest_name = backup_dir / 'pre_restore_{}.sqlite'.format(time.strftime('%Y%m%d_%H%M%S'))
+    dest = sqlite3.connect(str(dest_name))
+    try:
+        with dest:
+            src.backup(dest)
+    finally:
+        src.close()
+        dest.close()
+    return dest_name
+
+
+@_staff
+def admin_db_export(request):
+    """Baixa um snapshot consistente do banco (SQLite) para o computador."""
+    db_path = _db_path()
+    if not os.path.exists(db_path):
+        messages.error(request, 'Banco de dados não encontrado em "{}".'.format(db_path))
+        return redirect('admin_api_list')
+    src = sqlite3.connect(str(db_path))
+    tmp = tempfile.NamedTemporaryFile(prefix='servicetool_backup_', suffix='.sqlite', delete=False)
+    tmp.close()
+    dest = sqlite3.connect(tmp.name)
+    try:
+        with dest:
+            src.backup(dest)
+    except Exception:
+        messages.error(request, 'Falha ao gerar o backup.')
+        return redirect('admin_api_list')
+    finally:
+        src.close()
+        dest.close()
+        if os.path.exists(tmp.name):
+            try:
+                os.remove(tmp.name)
+            except OSError:
+                pass
+    with open(tmp.name, 'rb') as fh:
+        data = fh.read()
+    os.remove(tmp.name)
+    response = HttpResponse(data, content_type='application/octet-stream')
+    stamp = time.strftime('%Y%m%d_%H%M%S')
+    response['Content-Disposition'] = 'attachment; filename="servicetool_backup_{}.sqlite"'.format(stamp)
+    return response
+
+
+@_staff
+def admin_db_import(request):
+    """Restaura o banco a partir de um arquivo enviado.
+
+    Aceita um snapshot binario .sqlite (gerado pelo botao de exportar) ou um
+    dump de texto .sql (CREATE TABLE/INSERT). Antes de restaurar, o banco
+    atual e salvo automaticamente na pasta backups/ do servidor.
+    """
+    if request.method != 'POST':
+        return redirect('admin_api_list')
+    f = request.FILES.get('backup_file')
+    if not f:
+        messages.error(request, 'Selecione um arquivo de backup.')
+        return redirect('admin_api_list')
+    data = f.read()
+    if not data:
+        messages.error(request, 'O arquivo está vazio.')
+        return redirect('admin_api_list')
+    db_path = _db_path()
+    pre_restore = _save_pre_restore_backup()
+    tmp_name = None
+    try:
+        is_binary = data[:16] == b'SQLite format 3\x00'
+        text = data.decode('utf-8', errors='replace')
+        is_sql = ('CREATE TABLE' in text.upper()) or text.lstrip().lower().startswith('pragma')
+        if not is_binary and not is_sql:
+            messages.error(request, 'Arquivo inválido: não parece um backup SQLite (.sqlite) nem um dump .sql.')
+            return redirect('admin_api_list')
+
+        if is_binary:
+            tmp = tempfile.NamedTemporaryFile(prefix='servicetool_restore_', suffix='.sqlite', delete=False)
+            tmp.write(data)
+            tmp.close()
+            tmp_name = tmp.name
+            src = sqlite3.connect(tmp_name)
+            src.execute('SELECT count(*) FROM sqlite_master').fetchone()
+            dst = sqlite3.connect(str(db_path))
+            try:
+                with dst:
+                    src.backup(dst)
+            finally:
+                src.close()
+                dst.close()
+        else:
+            conn = sqlite3.connect(str(db_path))
+            try:
+                conn.executescript(text)
+                conn.commit()
+            finally:
+                conn.close()
+        detail = ''
+        if pre_restore:
+            detail = ' O banco anterior foi salvo em "backups/{}".'.format(os.path.basename(str(pre_restore)))
+        messages.success(request, 'Backup importado com sucesso.{}'.format(detail))
+    except sqlite3.Error as exc:
+        messages.error(request, 'Falha ao importar o backup: {}'.format(exc))
+    except Exception as exc:
+        messages.error(request, 'Falha ao importar o backup: {}'.format(exc))
+    finally:
+        if tmp_name:
+            try:
+                os.remove(tmp_name)
+            except OSError:
+                pass
     return redirect('admin_api_list')
 
 

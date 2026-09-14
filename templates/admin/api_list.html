@@ -19,6 +19,21 @@
     </div>
 </div>
 
+<div class="card mb-3">
+    <div class="card-header">
+        <h6 class="mb-0"><i class="ti ti-database me-2"></i> Backup do banco de dados</h6>
+    </div>
+    <div class="card-body d-flex flex-wrap align-items-center gap-3">
+        <a href="{% url 'admin_db_export' %}" class="btn btn-success"><i class="ti ti-download me-2"></i> Exportar backup</a>
+        <form method="post" action="{% url 'admin_db_import' %}" enctype="multipart/form-data" class="d-flex flex-wrap align-items-center gap-2" onsubmit="return confirm('IMPORTANTE: importar SUBSTITUI todo o banco de dados atual pelos dados do arquivo. Continuar?')">
+            {% csrf_token %}
+            <input type="file" name="backup_file" accept=".sqlite,.sql,.db" class="form-control form-control-sm" style="max-width:320px" required>
+            <button type="submit" class="btn btn-warning"><i class="ti ti-upload me-2"></i> Importar backup</button>
+        </form>
+        <small class="text-muted">Importar substitui o banco inteiro. Antes de restaurar, o banco atual é salvo automaticamente em <code>backups/</code> no servidor.</small>
+    </div>
+</div>
+
 {% for api in apis %}
 <div class="card mb-3">
     <div class="card-header d-flex flex-wrap align-items-center gap-2" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#api-collapse-{{ api.id }}">
