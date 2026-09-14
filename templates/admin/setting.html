@@ -78,6 +78,23 @@
         </div>
     </div>
     <div class="card">
+        <div class="card-header"><h5>E-mail (notificação de pedidos concluídos)</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3"><label class="form-label">Servidor SMTP</label><input type="text" class="form-control" name="mailHost" value="{{ settings.mailHost }}" placeholder="mail.seusite.com.br"></div>
+                <div class="col-md-3 mb-3"><label class="form-label">Porta</label><input type="text" class="form-control" name="mailPort" value="{{ settings.mailPort }}" placeholder="587"></div>
+                <div class="col-md-3 mb-3"><label class="form-label">Usar TLS</label><select class="form-control" name="mailUseTls"><option value="1" {% if settings.mailUseTls == '1' %}selected{% endif %}>Sim</option><option value="0" {% if settings.mailUseTls == '0' %}selected{% endif %}>Não</option></select></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Usuário SMTP</label><input type="text" class="form-control" name="mailUser" value="{{ settings.mailUser }}" placeholder="contato@seusite.com.br"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Senha SMTP</label><input type="password" class="form-control" name="mailPass" value="{{ settings.mailPass }}"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">E-mail remetente</label><input type="text" class="form-control" name="mailFrom" value="{{ settings.mailFrom }}" placeholder="contato@seusite.com.br"></div>
+                <div class="col-md-6 mb-3"><label class="form-label">Nome do remetente</label><input type="text" class="form-control" name="mailFromName" value="{{ settings.mailFromName }}" placeholder="{{ settings.siteTitle }}">
+                    <div class="form-text">Ex.: nome da sua empresa (usado como remetente).</div>
+                </div>
+                <div class="col-12"><small class="text-muted">Quando um pedido do cliente finalizar com sucesso, o e-mail de conclusão será enviado para o endereço cadastrado do cliente. Deixe o servidor SMTP vazio para desativar o envio.</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
         <div class="card-body">
             <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-2"></i> Salvar Configurações</button>
         </div>

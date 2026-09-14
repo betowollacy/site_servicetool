@@ -2160,3 +2160,170 @@ class ServiceCollectExtrasTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.service.refresh_from_db()
         self.assertEqual(self.service.collect_extras, '')
+
+
+class OrderEmailTests(TestCase):
+    def setUp(self):
+        self.customer = Customer.objects.create(
+            name='Cliente Teste', email='cliente@teste.com', password=Customer.make_password('senha123'),
+            currency='BRL', balance=Decimal('100.00'),
+        )
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
+        self.service = ServiceList.objects.create(
+            service_type='IMEI Service', service_group=self.group, title='Unlock Tool Rent S-2',
+            original_price=Decimal('3.91'), status='Active', slug='rent-s2',
+        )
+        self.order = CustomerOrder.objects.create(
+            customer=self.customer, service=self.service, service_status='In Process',
+            service_type='imei_service', service_qnt='1', service_price=Decimal('3.91'),
+            service_title=self.service.title, payment_methode='Api', trx_id='5550001',
+        )
+
+    def test_split_creds_formats(self):
+        from core import notify
+        self.assertEqual(notify._split_creds('Usuario: user1 | Senha: pass1'), ('user1', 'pass1'))
+        self.assertEqual(notify._split_creds('Username: user1\nPassword: pass1'), ('user1', 'pass1'))
+        self.assertEqual(notify._split_creds('user1||pass1'), ('user1', 'pass1'))
+        self.assertEqual(notify._split_creds('user1:pass1'), ('user1', 'pass1'))
+        self.assertEqual(notify._split_creds('user1;pass1'), ('user1', 'pass1'))
+        self.assertEqual(notify._split_creds('apenas resposta sem senha'), (None, None))
+        self.assertEqual(notify._split_creds(''), (None, None))
+        self.assertEqual(notify._split_creds(None), (None, None))
+
+    def test_brl_and_dt_helpers(self):
+        from core import notify
+        self.assertEqual(notify._brl(Decimal('3.91')), 'R$ 3,91')
+        self.assertEqual(notify._brl(Decimal('1234.50')), 'R$ 1.234,50')
+        self.assertEqual(notify._brl(None), 'R$ 0,00')
+
+    def test_completed_email_content_with_creds(self):
+        from core import notify
+        self.order.replied_in = 'Usuario: userx | Senha: passx'
+        self.order.save(update_fields=['replied_in'])
+        mail = notify.completed_order_email(self.order)
+        self.assertIn('Pedido #{} concluído'.format(self.order.id), mail['subject'])
+        for token in [
+            'Olá, Cliente Teste', 'concluído com sucesso', 'Unlock Tool Rent S-2',
+            'Pedido: #{}'.format(self.order.id), 'Preço: R$ 3,91',
+            'Enviado em:', 'Respondido em:', 'Plataforma:', 'Concluído',
+            'Usuário: userx', 'Senha: passx', 'Ver histórico completo',
+            'Obrigado por escolher', 'Termos de Uso | Política de Reembolso | Política de Privacidade',
+            'Todos os direitos reservados.',
+        ]:
+            self.assertIn(token, mail['text'])
+        self.assertIn('userx', mail['html'])
+        self.assertIn('<a href="http://127.0.0.1:8000/customer/order-history/"', mail['html'])
+        self.assertIn('Concluído ✅', mail['html'])
+
+    def test_completed_email_fallback_to_full_reply(self):
+        from core import notify
+        self.order.replied_in = 'TrackID-ABC-123 apenas'
+        self.order.save(update_fields=['replied_in'])
+        mail = notify.completed_order_email(self.order)
+        self.assertIn('Resposta: TrackID-ABC-123 apenas', mail['text'])
+        self.assertNotIn('Usuário:', mail['text'])
+
+    def test_send_order_email_no_config_returns_false(self):
+        from core import notify
+        self.assertFalse(notify.send_order_email(self.order))
+
+    def test_send_order_email_uses_customer_email(self):
+        from core import notify
+        SystemSetting.objects.create(key='mailHost', value='smtp.example.com')
+        SystemSetting.objects.create(key='mailUser', value='contato@example.com')
+        SystemSetting.objects.create(key='mailPass', value='segredo')
+        SystemSetting.objects.create(key='mailFrom', value='contato@example.com')
+        with patch('core.notify.smtplib.SMTP') as smtp_cls:
+            sent = notify.send_order_email(self.order)
+        self.assertTrue(sent)
+        conn = smtp_cls.return_value
+        conn.starttls.assert_called_once()
+        conn.login.assert_called_once_with('contato@example.com', 'segredo')
+        conn.sendmail.assert_called_once()
+        self.assertEqual(conn.sendmail.call_args[0][1], [self.customer.email])
+        self.assertIn('cliente@teste.com', conn.sendmail.call_args[0][2])
+        conn.quit.assert_called_once()
+
+    def test_send_order_email_skips_login_without_user(self):
+        from core import notify
+        SystemSetting.objects.create(key='mailHost', value='smtp.example.com')
+        with patch('core.notify.smtplib.SMTP') as smtp_cls:
+            sent = notify.send_order_email(self.order)
+        self.assertTrue(sent)
+        conn = smtp_cls.return_value
+        conn.login.assert_not_called()
+        conn.sendmail.assert_called_once()
+
+    @patch('core.provider_api._request')
+    def test_sync_success_sends_email_once(self, req):
+        from core import notify
+        api = Api.objects.create(
+            api_name='Provider', api_type='gsm',
+            api_url='https://x.com.br/public', api_username='u', api_key='k', status='Active',
+        )
+        self.service.api = api
+        self.service.referenceid = '9001'
+        self.service.save(update_fields=['api', 'referenceid'])
+        req.return_value = {'SUCCESS': [{'STATUS': 4, 'CODE': 'Usuario: u | Senha: p'}], 'apiversion': '1.0'}
+        with patch('core.notify.send_telegram') as tg, patch('core.notify.send_order_email') as mail:
+            provider_api.sync_local_order(self.order)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.service_status, 'Success')
+        mail.assert_called_once()
+        self.assertEqual(mail.call_args.args[0].id, self.order.id)
+
+    @patch('core.provider_api._request')
+    def test_sync_resync_does_not_resend_email(self, req):
+        from core import notify
+        api = Api.objects.create(
+            api_name='Provider', api_type='gsm',
+            api_url='https://x.com.br/public', api_username='u', api_key='k', status='Active',
+        )
+        self.service.api = api
+        self.service.referenceid = '9001'
+        self.service.save(update_fields=['api', 'referenceid'])
+        req.return_value = {'SUCCESS': [{'STATUS': 4, 'CODE': 'Usuario: u | Senha: p'}], 'apiversion': '1.0'}
+        with patch('core.notify.send_telegram'), patch('core.notify.send_order_email') as mail:
+            provider_api.sync_local_order(self.order)
+            provider_api.sync_local_order(self.order)
+        mail.assert_called_once()
+
+    def test_deliver_from_inventory_sends_email(self):
+        from core import notify
+        inv = Inventory.objects.create(name='Estoque')
+        self.service.inventory = inv
+        self.service.save(update_fields=['inventory'])
+        InventoryData.objects.create(inventory=inv, code='Usuario: inv | Senha: inv99', status='Available')
+        with patch('core.notify.send_order_email') as mail:
+            ok, code = provider_api.deliver_from_inventory(self.order)
+        self.order.refresh_from_db()
+        self.assertTrue(ok)
+        self.assertEqual(self.order.service_status, 'Success')
+        mail.assert_called_once()
+        self.assertEqual(mail.call_args.args[0].id, self.order.id)
+
+    def test_admin_order_update_to_success_sends_email(self):
+        from core import notify
+        staff = User.objects.create_user(username='adminmail', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        with patch('core.notify.send_order_email') as mail:
+            resp = self.client.post(reverse('admin_order_update', args=[self.order.id]), {
+                'service_status': 'Success',
+            })
+        self.assertEqual(resp.status_code, 302)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.service_status, 'Success')
+        mail.assert_called_once()
+        self.assertEqual(mail.call_args.args[0].id, self.order.id)
+
+    def test_admin_order_update_does_not_resend_when_already_success(self):
+        from core import notify
+        self.order.service_status = 'Success'
+        self.order.save(update_fields=['service_status'])
+        staff = User.objects.create_user(username='adminmail2', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        with patch('core.notify.send_order_email') as mail:
+            self.client.post(reverse('admin_order_update', args=[self.order.id]), {
+                'service_status': 'Success',
+            })
+        mail.assert_not_called()

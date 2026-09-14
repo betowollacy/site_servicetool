@@ -599,6 +599,8 @@ def deliver_from_inventory(order):
     order.service_status = 'Success'
     order.service_comments = (order.service_comments or '') + ' Login/senha entregues do estoque #{}.'.format(item.id)
     order.save(update_fields=['replied_in', 'service_status', 'service_comments'])
+    from . import notify
+    notify.send_order_email(order)
     try:
         from .views_admin import _refresh_inventory_counts
         _refresh_inventory_counts(inventory)
@@ -748,4 +750,5 @@ def sync_local_order(order, notify_complete=True):
         if target == 'Success' and notify_complete:
             from . import notify
             notify.send_telegram(notify.completed_order_message(order))
+            notify.send_order_email(order)
     return True

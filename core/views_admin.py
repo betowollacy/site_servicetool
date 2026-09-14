@@ -111,10 +111,14 @@ def admin_order_update(request, order_id):
     order = CustomerOrder.objects.filter(id=order_id).first()
     if order and request.method == 'POST':
         new_status = request.POST.get('service_status')
+        was_success = order.service_status == 'Success'
         if new_status in SERVICE_STATUS_CHOICES:
             order.service_status = new_status
         order.replied_in = request.POST.get('replied_in', '') or order.replied_in
         order.save()
+        if order.service_status == 'Success' and not was_success:
+            from . import notify
+            notify.send_order_email(order)
         messages.success(request, 'Pedido atualizado com sucesso.')
     return redirect('admin_orders', status='waiting')
 
@@ -503,6 +507,7 @@ def admin_setting(request):
         'siteEmailAddress', 'sitePhoneNumber', 'siteAddress',
         'siteWhatsappUrl', 'siteTelegramUrl', 'siteFacebookUrl', 'siteTwitterUrl',
         'tgBotToken', 'tgChatId',
+        'mailHost', 'mailPort', 'mailUser', 'mailPass', 'mailFrom', 'mailFromName', 'mailUseTls',
     ]
     settings = {k: SystemSetting.get(k, '') for k in keys}
     if request.method == 'POST':
