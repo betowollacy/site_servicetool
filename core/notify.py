@@ -308,9 +308,13 @@ def send_order_email(order):
     msg.set_content(mail['text'])
     msg.add_alternative(mail['html'], subtype='html')
     try:
-        conn = smtplib.SMTP(host, port, timeout=20)
+        use_ssl = port == 465
+        if use_ssl:
+            conn = smtplib.SMTP_SSL(host, port, timeout=20)
+        else:
+            conn = smtplib.SMTP(host, port, timeout=20)
         try:
-            if use_tls:
+            if use_tls and not use_ssl:
                 conn.starttls()
             if user:
                 conn.login(user, password)

@@ -2255,6 +2255,24 @@ class OrderEmailTests(TestCase):
         conn.login.assert_not_called()
         conn.sendmail.assert_called_once()
 
+    def test_send_order_email_port_465_uses_ssl(self):
+        from core import notify
+        SystemSetting.objects.create(key='mailHost', value='smtp.hostinger.com')
+        SystemSetting.objects.create(key='mailPort', value='465')
+        SystemSetting.objects.create(key='mailUser', value='contato@teste.com')
+        SystemSetting.objects.create(key='mailPass', value='segredo')
+        SystemSetting.objects.create(key='mailFrom', value='contato@teste.com')
+        with patch('core.notify.smtplib.SMTP_SSL') as ssl_cls, patch('core.notify.smtplib.SMTP') as plain_cls:
+            sent = notify.send_order_email(self.order)
+        self.assertTrue(sent)
+        self.assertEqual(ssl_cls.call_args[0][:2], ('smtp.hostinger.com', 465))
+        plain_cls.assert_not_called()
+        conn = ssl_cls.return_value
+        conn.starttls.assert_not_called()
+        conn.login.assert_called_once_with('contato@teste.com', 'segredo')
+        conn.sendmail.assert_called_once()
+        self.assertEqual(conn.sendmail.call_args[0][1], [self.customer.email])
+
     @patch('core.provider_api._request')
     def test_sync_success_sends_email_once(self, req):
         from core import notify
