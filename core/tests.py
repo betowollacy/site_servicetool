@@ -2021,9 +2021,11 @@ class AdminDbBackupTests(TestCase):
         self.assertIn('/login/', resp.url)
 
     def _override(self):
+        db_default = settings.DATABASES['default'].copy()
+        db_default['NAME'] = self.db_file
         return override_settings(
             BASE_DIR=self.tmpdir,
-            **{'DATABASES.NAME': self.db_file},
+            DATABASES={'default': db_default},
         )
 
     def test_export_downloads_sqlite(self):
