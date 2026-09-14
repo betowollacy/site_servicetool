@@ -90,6 +90,9 @@
                 <div class="col-md-6 mb-3"><label class="form-label">Nome do remetente</label><input type="text" class="form-control" name="mailFromName" value="{{ settings.mailFromName }}" placeholder="{{ settings.siteTitle }}">
                     <div class="form-text">Ex.: nome da sua empresa (usado como remetente).</div>
                 </div>
+                <div class="col-12 mb-3"><label class="form-label">E-mail de notificação de novos pedidos</label><input type="text" class="form-control" name="orderNotifyTo" value="{{ settings.orderNotifyTo }}" placeholder="seuemail@exemplo.com">
+                    <div class="form-text">Quando um cliente fizer um pedido, aviso será enviado para este e-mail (sua caixa de entrada). Deixe vazio para desativar.</div>
+                </div>
                 <div class="col-12"><small class="text-muted">Quando um pedido do cliente finalizar com sucesso, o e-mail de conclusão será enviado para o endereço cadastrado do cliente. Deixe o servidor SMTP vazio para desativar o envio.</small></div>
             </div>
         </div>

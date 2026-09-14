@@ -2349,3 +2349,54 @@ class OrderEmailTests(TestCase):
                 'service_status': 'Success',
             })
         mail.assert_not_called()
+
+    def test_new_order_email_content(self):
+        from core import notify
+        OrderInput.objects.create(order=self.order, field_name='celular', field_value='11999999999')
+        mail = notify.new_order_email(self.order, paid=True)
+        self.assertEqual(mail['subject'], 'NOVO PEDIDO #{}'.format(self.order.id))
+        for token in [
+            'NOVO PEDIDO #{}'.format(self.order.id),
+            'Cliente: Cliente Teste', 'E-mail: cliente@teste.com',
+            'Serviço: Unlock Tool Rent S-2', 'celular: 11999999999',
+            'Valor: R$ 3,91', 'Pagamento: Pago via saldo', 'Status: In Process',
+        ]:
+            self.assertIn(token, mail['text'])
+        self.assertIn('cliente@teste.com', mail['html'])
+        self.assertIn('NOVO PEDIDO #{}'.format(self.order.id), mail['html'])
+
+    def test_new_order_email_unpaid(self):
+        from core import notify
+        mail = notify.new_order_email(self.order, paid=False)
+        self.assertIn('Pagamento: Aguardando pagamento', mail['text'])
+
+    def test_send_new_order_email_no_target_returns_false(self):
+        from core import notify
+        self.assertFalse(notify.send_new_order_email(self.order, paid=True))
+
+    def test_send_new_order_email_sends_to_target(self):
+        from core import notify
+        SystemSetting.objects.create(key='mailHost', value='smtp.example.com')
+        SystemSetting.objects.create(key='mailUser', value='contato@example.com')
+        SystemSetting.objects.create(key='mailPass', value='segredo')
+        SystemSetting.objects.create(key='mailFrom', value='contato@example.com')
+        SystemSetting.objects.create(key='orderNotifyTo', value='dono@exemplo.com')
+        with patch('core.notify.smtplib.SMTP') as smtp_cls:
+            sent = notify.send_new_order_email(self.order, paid=True)
+        self.assertTrue(sent)
+        conn = smtp_cls.return_value
+        conn.sendmail.assert_called_once()
+        self.assertEqual(conn.sendmail.call_args[0][1], ['dono@exemplo.com'])
+        self.assertIn('NOVO PEDIDO #{}'.format(self.order.id), conn.sendmail.call_args[0][2])
+        conn.login.assert_called_once_with('contato@example.com', 'segredo')
+
+    def test_debit_and_forward_sends_new_order_email(self):
+        from core.views import _debit_and_forward_order
+        with patch('core.views.provider_api.submit_local_order', return_value=(True, 'REF1')), \
+                patch('core.provider_api.sync_local_order', return_value=True), \
+                patch('core.notify.send_telegram'), \
+                patch('core.notify.send_new_order_email') as mail:
+            _debit_and_forward_order(self.order, self.customer)
+        mail.assert_called_once()
+        self.assertEqual(mail.call_args.args[0].id, self.order.id)
+        self.assertEqual(mail.call_args.args[1], True)

@@ -508,6 +508,7 @@ def admin_setting(request):
         'siteWhatsappUrl', 'siteTelegramUrl', 'siteFacebookUrl', 'siteTwitterUrl',
         'tgBotToken', 'tgChatId',
         'mailHost', 'mailPort', 'mailUser', 'mailPass', 'mailFrom', 'mailFromName', 'mailUseTls',
+        'orderNotifyTo',
     ]
     settings = {k: SystemSetting.get(k, '') for k in keys}
     if request.method == 'POST':

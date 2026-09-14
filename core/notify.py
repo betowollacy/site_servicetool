@@ -278,15 +278,11 @@ def completed_order_email(order):
     return {'subject': subject, 'text': text, 'html': html_body}
 
 
-def send_order_email(order):
-    """Envia o e-mail de conclusão ao cliente do pedido via SMTP.
+def _smtp_send(to, subject, text, html_body):
+    """Envia um e-mail pelo SMTP configurado. Retorna True se enviado.
 
-    Configurações (admin-panel > setting): mailHost, mailPort, mailUser, mailPass,
-    mailFrom, mailFromName e mailUseTls. Sem mailHost configurado, não envia
-    (retorna False sem erro).
-    """
-    customer = getattr(order, 'customer', None)
-    to = (customer.email if customer else '').strip()
+    Sem mailHost configurado, retorna False sem erro."""
+    to = (to or '').strip()
     if not to:
         return False
     host = SystemSetting.get('mailHost', '').strip()
@@ -301,21 +297,20 @@ def send_order_email(order):
     sender = SystemSetting.get('mailFrom', '').strip() or (user or to)
     from_name = SystemSetting.get('mailFromName', '').strip() or _site_name()
     use_tls = SystemSetting.get('mailUseTls', '1').strip().lower() in ('1', 'true', 'yes', 'on')
-    mail = completed_order_email(order)
     msg = EmailMessage()
-    msg['Subject'] = mail['subject']
+    msg['Subject'] = subject
     msg['From'] = '{} <{}>'.format(html.escape(from_name), sender)
     msg['To'] = to
-    msg.set_content(mail['text'])
-    msg.add_alternative(mail['html'], subtype='html')
+    msg.set_content(text)
+    if html_body:
+        msg.add_alternative(html_body, subtype='html')
     try:
-        use_ssl = port == 465
-        if use_ssl:
+        if port == 465:
             conn = smtplib.SMTP_SSL(host, port, timeout=20)
         else:
             conn = smtplib.SMTP(host, port, timeout=20)
         try:
-            if use_tls and not use_ssl:
+            if use_tls and port != 465:
                 conn.starttls()
             if user:
                 conn.login(user, password)
@@ -325,8 +320,77 @@ def send_order_email(order):
                 conn.quit()
             except Exception:
                 pass
-        logger.info('E-mail de conclusão enviado para %s (pedido #%s)', to, order.id)
+        logger.info('E-mail enviado para %s: %s', to, subject)
         return True
     except Exception as exc:
-        logger.warning('Falha ao enviar e-mail de conclusão do pedido #%s: %s', order.id, exc)
+        logger.warning('Falha ao enviar e-mail "%s" para %s: %s', subject, to, exc)
         return False
+
+
+def new_order_email(order, paid):
+    """Constrói o e-mail de novo pedido enviado ao dono da loja.""" 
+    site = _site_name()
+    subject = 'NOVO PEDIDO #{}'.format(order.id)
+    details = [
+        ('Cliente', order.customer.name or '-'),
+        ('E-mail', order.customer.email or '-'),
+        ('Serviço', order.service_title or (order.service.title if order.service else '') or '-'),
+    ]
+    for oi in order.order_inputs.all():
+        if oi.field_value:
+            details.append((oi.field_name, oi.field_value))
+    details += [
+        ('Valor', _brl(order.service_price)),
+        ('Pagamento', 'Pago via saldo' if paid else 'Aguardando pagamento'),
+        ('Status', STATUS_DISPLAY.get(order.service_status, order.service_status)),
+    ]
+    result = _order_result(order)
+    if result:
+        details.append(('Resultado', result))
+
+    text = '\n'.join(
+        ['NOVO PEDIDO #{}'.format(order.id), '-' * 30]
+        + ['{}: {}'.format(k, v) for k, v in details]
+    )
+    rows = ''.join(
+        '<tr>'
+        '<td style="padding:4px 14px 4px 0;color:#475569;font-weight:600;'
+        'white-space:nowrap;vertical-align:top;">{}</td>'
+        '<td style="padding:4px 0;color:#0f172a;">{}</td>'
+        '</tr>'.format(html.escape(k), html.escape(str(v)))
+        for k, v in details
+    )
+    html_body = (
+        '<html><body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">'
+        '<div style="max-width:600px;margin:0 auto;background:#ffffff;">'
+        '<div style="background:#111827;color:#ffffff;padding:22px;text-align:center;">'
+        '<span style="font-size:20px;font-weight:bold;">{site}</span></div>'
+        '<div style="padding:26px;">'
+        '<div style="font-size:18px;font-weight:bold;color:#111827;margin-bottom:14px;">NOVO PEDIDO #{oid}</div>'
+        '<table cellpadding="0" cellspacing="0" border="0">{rows}</table>'
+        '</div>'
+        '<div style="padding:16px;background:#f8fafc;border-top:1px solid #e2e8f0;'
+        'text-align:center;color:#64748b;font-size:12px;">'
+        '© {year} {site}. Todos os direitos reservados.</div>'
+        '</div></body></html>'
+    ).format(site=html.escape(site), oid=order.id, rows=rows, year=timezone.now().year)
+    return {'subject': subject, 'text': text, 'html': html_body}
+
+
+def send_new_order_email(order, paid):
+    """Envia o e-mail de novo pedido para o dono da loja (SystemSetting orderNotifyTo)."""
+    to = SystemSetting.get('orderNotifyTo', '').strip()
+    if not to:
+        return False
+    mail = new_order_email(order, paid)
+    return _smtp_send(to, mail['subject'], mail['text'], mail['html'])
+
+
+def send_order_email(order):
+    """Envia o e-mail de conclusão ao cliente do pedido via SMTP."""
+    customer = getattr(order, 'customer', None)
+    to = (customer.email if customer else '').strip()
+    if not to:
+        return False
+    mail = completed_order_email(order)
+    return _smtp_send(to, mail['subject'], mail['text'], mail['html'])

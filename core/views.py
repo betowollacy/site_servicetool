@@ -622,6 +622,7 @@ def _debit_and_forward_order(order, customer):
                 break
             time.sleep(4)
     notify.send_telegram(notify.new_order_message(order, paid=True))
+    notify.send_new_order_email(order, paid=True)
 
 
 @_require_customer
