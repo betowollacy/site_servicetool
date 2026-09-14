@@ -660,8 +660,13 @@ def submit_order(request, customer):
         elif not request.POST.get(extra['name'], '').strip():
             required_fields.append(extra['name'])
     photo_names = {x['name'] for x in extra_fields if x['code'] == 'lock_photo'}
-    errors = [f'Informe {field_name}.' for field_name in required_fields
-              if not (field_name in photo_names and request.FILES.get(field_name))]
+    errors = []
+    for field_name in required_fields:
+        if field_name in photo_names:
+            if not request.FILES.get(field_name):
+                errors.append(f'Informe {field_name}.')
+        elif not request.POST.get(field_name, '').strip():
+            errors.append(f'Informe {field_name}.')
     if errors:
         messages.error(request, ', '.join(errors))
         return redirect('service_view', service.slug)
