@@ -106,6 +106,13 @@ class ServiceGroup(models.Model):
         return self.name
 
 
+SERVICE_COLLECT_EXTRA_CHOICES = [
+    ('anydesk', 'Acesso do AnyDesk'),
+    ('lock_photo', 'Foto da tela de bloqueio'),
+    ('whatsapp', 'WhatsApp'),
+]
+
+
 class ServiceList(models.Model):
     SERVICE_TYPES = [
         ('Server Service', 'Server Service'),
@@ -128,11 +135,7 @@ class ServiceList(models.Model):
         ('user', 'Somente usuário'),
         ('email', 'Somente e-mail'),    ('serial', 'Serial Number'),
     ]
-    COLLECT_EXTRA_CHOICES = [
-        ('anydesk', 'Acesso do AnyDesk'),
-        ('lock_photo', 'Foto da tela de bloqueio'),
-        ('whatsapp', 'WhatsApp'),
-    ]
+    COLLECT_EXTRA_CHOICES = SERVICE_COLLECT_EXTRA_CHOICES
 
     service_type = models.CharField(max_length=50, choices=SERVICE_TYPES, default='Server Service')
     service_group = models.ForeignKey(ServiceGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='services')

@@ -21,8 +21,8 @@ from django.urls import reverse
 from django.utils.text import slugify
 
 from .models import (
-    Api, ACTIVATION_SERVICE_EXTRA_FIELDS, COLLECT_EXTRA_CHOICES, CREDIT_SERVICE_EXTRA_FIELDS,
-    METHOD_SERVICE_EXTRA_FIELDS,
+    Api, ACTIVATION_SERVICE_EXTRA_FIELDS, CREDIT_SERVICE_EXTRA_FIELDS,
+    METHOD_SERVICE_EXTRA_FIELDS, SERVICE_COLLECT_EXTRA_CHOICES,
     Currency, Customer, CustomerOrder, Inventory,
     InventoryData, Invoice, OrderInput, Page, PaymentGateway, RemoteServiceInput, RemoteServiceList,
     ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting, User,
@@ -593,7 +593,7 @@ def _apply_service_post(service, post):
     if post.get('collect_fields') in ('user', 'email', 'serial', 'both'):
         service.collect_fields = post['collect_fields']
     service.collect_extras = ','.join(
-        c for c in post.getlist('collect_extras') if c in dict(COLLECT_EXTRA_CHOICES)
+        c for c in post.getlist('collect_extras') if c in dict(SERVICE_COLLECT_EXTRA_CHOICES)
     )
     if post.get('carousel') in ('promocoes', 'desbloqueios'):
         service.carousel = post['carousel']
