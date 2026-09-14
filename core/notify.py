@@ -130,7 +130,7 @@ def _split_creds(text):
     """
     if not text:
         return None, None
-    text = re.sub(r'<br\s*/?>', ' ', str(text), flags=re.IGNORECASE).strip()
+    text = re.sub(r'<br\s*/?>', '\n', str(text), flags=re.IGNORECASE).strip()
     m = _PAIR_RE.match(text)
     if m:
         user, passw = m.group(1).strip(), m.group(2).strip()

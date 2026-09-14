@@ -18,6 +18,7 @@ def get_item(value, key):
 def richtext(value):
     if not value:
         return value
+    value = re.sub(r'<br\s*/?>', '\n', str(value), flags=re.IGNORECASE)
     html = urlize(value, autoescape=True)
     html = re.sub(r'<a (?![^>]*target=)', '<a target="_blank" rel="noopener" ', html)
     html = html.replace('\r\n', '\n').replace('\r', '\n').replace('\n', '<br>')
