@@ -1,4 +1,5 @@
 {% extends 'admin/base.html' %}
+{% load core_extras %}
 {% block content %}
 <div class="row mb-3">
     <div class="col-12">
@@ -35,6 +36,10 @@
             <form method="post" action="{% url 'admin_api_import' api.id %}" data-loading onsubmit="return confirm('Importar/atualizar os serviços do provedor?')">{% csrf_token %}
                 <button class="btn btn-sm btn-outline-primary"><i class="ti ti-download me-1"></i> Importar serviços</button>
             </form>
+            <form method="post" action="{% url 'admin_api_sync' api.id %}" data-loading onsubmit="return confirm('Importar o catálogo e vincular automaticamente na sua lista de serviços, distribuindo por palavra-chave?')">{% csrf_token %}
+                <button class="btn btn-sm btn-primary"><i class="ti ti-sync me-1"></i> Importar e vincular automático</button>
+            </form>
+            <button class="btn btn-sm btn-light-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#api-keywords-{{ api.id }}"><i class="ti ti-kbd me-1"></i> Palavras-chave</button>
             <a href="{% url 'admin_api_detail' api.id %}" class="btn btn-sm btn-light-secondary"><i class="ti ti-eye me-1"></i> Ver dados</a>
 <form method="post" action="{% url 'admin_api_delete' api.id %}" onsubmit="return confirm('Excluir a API {{ api.api_name }}? Os serviços vinculados serão desvinculados.')">{% csrf_token %}
                 <button class="btn btn-sm btn-outline-danger"><i class="ti ti-trash me-1"></i> Excluir</button>
@@ -63,6 +68,23 @@
             </div>
             <div class="card-footer"><button class="btn btn-primary"><i class="ti ti-device-floppy me-2"></i> Salvar</button></div>
         </form>
+        <div class="collapse" id="api-keywords-{{ api.id }}">
+            <form method="post" action="{% url 'admin_api_map' api.id %}">
+                {% csrf_token %}
+                <div class="card-body">
+                    <small class="text-muted d-block mb-2">Ao usar "Importar e vincular automático", cada serviço do provedor vai para a lista local cuja palavra-chave aparecer no nome (ex.: "Rent"/"6 Hours"/"Hours" → Aluguel). O que não bater com nenhuma palavra-chave segue pelo tipo do provedor (IMEI → lista IMEI, SERVER/REMOTE → Ativação). Separe por vírgula.</small>
+                    <div class="row">
+                        {% for svtype in auto_svtypes %}
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label mb-1">Lista {{ auto_svtype_labels|get_item:svtype }}</label>
+                            <input type="text" name="kw_{{ svtype }}" class="form-control form-control-sm font-monospace" value="{{ api_kw_strings|get_item:api.id|get_item:svtype }}" placeholder="Ex.: rent, 6 hours, hours">
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-footer"><button class="btn btn-sm btn-primary"><i class="ti ti-device-floppy me-2"></i> Salvar palavras-chave</button></div>
+            </form>
+        </div>
     </div>
 </div>
 {% empty %}

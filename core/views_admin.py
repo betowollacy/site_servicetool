@@ -1,6 +1,8 @@
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
+import json
 import os
+import unicodedata
 import uuid
 
 from django.conf import settings
@@ -16,6 +18,7 @@ from django.utils.text import slugify
 
 from .models import (
     Api, ACTIVATION_SERVICE_EXTRA_FIELDS, CREDIT_SERVICE_EXTRA_FIELDS,
+    METHOD_SERVICE_EXTRA_FIELDS,
     Currency, Customer, CustomerOrder, Inventory,
     InventoryData, Invoice, OrderInput, Page, PaymentGateway, RemoteServiceInput, RemoteServiceList,
     ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting, User,
@@ -1152,6 +1155,116 @@ REMOTE_TYPE_TO_LOCAL = {
     'SERVER': 'Server Service',
 }
 
+#: Listas locais (ServiceGroup.slug) usadas na distribuição automática por palavra-chave.
+AUTO_KEYWORD_SVTYPES = ('remote', 'imei', 'server', 'file', 'method')
+
+#: Tipo de serviço local de cada lista (ServiceGroup.slug).
+AUTO_GROUP_TYPE = {
+    'remote': 'Server Service',
+    'imei': 'IMEI Service',
+    'server': 'Activation Service',
+    'file': 'Server Service',
+    'method': 'Method Service',
+}
+
+#: Nome amigável de cada lista local.
+AUTO_GROUP_LABELS = {
+    'remote': 'Aluguel',
+    'imei': 'IMEI',
+    'server': 'Ativação',
+    'file': 'Arquivos',
+    'method': 'Métodos',
+}
+
+#: Palavras-chave padrão por lista local (sem acento, minúsculas).
+DEFAULT_AUTO_KEYWORDS = {
+    'remote': ['rent', '6 hours', 'hours'],
+    'imei': [],
+    'server': [],
+    'file': [],
+    'method': [],
+}
+
+#: Lista local de destino quando o serviço remoto não bate com nenhuma palavra-chave.
+AUTO_FALLBACK_BY_TYPE = {
+    'IMEI': 'imei',
+    'SERVER': 'server',
+    'REMOTE': 'server',
+    'CREDIT': 'server',
+}
+
+
+def _auto_norm(text):
+    return unicodedata.normalize('NFKD', text or '').encode('ascii', 'ignore').decode().lower()
+
+
+def _auto_keywords_for(api):
+    """Retorna {group_slug: [palavras-chave normalizadas]} da API, mesclado com o padrão."""
+    merged = {k: list(v) for k, v in DEFAULT_AUTO_KEYWORDS.items()}
+    raw = SystemSetting.get('apiAutoMap', '')
+    if raw:
+        try:
+            data = json.loads(raw)
+        except (TypeError, ValueError):
+            data = {}
+        entry = (data.get(str(api.id)) or {}) if api else {}
+        for svtype, kws in entry.items():
+            if svtype in merged:
+                merged[svtype] = [_auto_norm(k) for k in (kws or []) if str(k).strip()]
+    return merged
+
+
+def _upsert_remote_catalog(api):
+    """Baixa o catálogo do provedor e sincroniza RemoteServiceList.
+
+    Retorna (catalog, created, updated) onde 'created'/'updated' dizem respeito
+    apenas aos serviços remotos persistidos.
+    """
+    catalog = provider_api.fetch_catalog(api)
+    existing = {r.referenceid: r for r in RemoteServiceList.objects.filter(api=api)}
+    created = 0
+    updated = 0
+    for item in catalog:
+        rid = item['referenceid']
+        remote = existing.get(rid)
+        credit = Decimal(str(item['credit']) or '0')
+        fields = list(dict.fromkeys(item['fields']))
+        if remote is None:
+            remote = RemoteServiceList.objects.create(
+                api=api,
+                referenceid=rid,
+                SERVICENAME=item['name'],
+                SERVICETYPE=item['servicetype'],
+                CREDIT=credit,
+                added=True,
+            )
+            created += 1
+            sync = True
+        else:
+            changed = (
+                remote.SERVICENAME != item['name']
+                or remote.SERVICETYPE != item['servicetype']
+                or remote.CREDIT != credit
+                or not remote.added
+            )
+            if changed:
+                remote.SERVICENAME = item['name']
+                remote.SERVICETYPE = item['servicetype']
+                remote.CREDIT = credit
+                remote.added = True
+                remote.save(update_fields=['SERVICENAME', 'SERVICETYPE', 'CREDIT', 'added'])
+                updated += 1
+            sync = changed
+        if sync:
+            current = set(remote.service_fields.values_list('name', flat=True))
+            to_delete = current - set(fields)
+            if to_delete:
+                RemoteServiceInput.objects.filter(remote_service=remote, name__in=to_delete).delete()
+            for fname in fields:
+                if fname not in current:
+                    RemoteServiceInput.objects.create(remote_service=remote, name=fname)
+    return catalog, created, updated
+
 
 def _price_field(request, name, default=Decimal('0')):
     """Lê um campo decimal de formulário, retornando o valor padrão se inválido."""
@@ -1178,6 +1291,16 @@ def admin_api_list(request):
     linked_by_remote = {}
     for linked in ServiceList.objects.exclude(api__isnull=True).exclude(referenceid__isnull=True).exclude(referenceid=''):
         linked_by_remote.setdefault((linked.api_id, linked.referenceid), []).append(linked)
+    raw_map = SystemSetting.get('apiAutoMap', '')
+    auto_map_data = {}
+    if raw_map:
+        try:
+            auto_map_data = json.loads(raw_map)
+        except (TypeError, ValueError):
+            auto_map_data = {}
+    api_kw_strings = {}
+    for api in apis:
+        api_kw_strings[api.id] = {k: ', '.join(v) for k, v in _auto_keywords_for(api).items()}
     return render(request, 'admin/api_list.html', {
         'apis': apis,
         'local_services': local_services,
@@ -1185,6 +1308,10 @@ def admin_api_list(request):
         'linked_by_remote': linked_by_remote,
         'remote_type_to_local': REMOTE_TYPE_TO_LOCAL,
         'search_q': q,
+        'auto_map_data': auto_map_data,
+        'api_kw_strings': api_kw_strings,
+        'auto_svtypes': AUTO_KEYWORD_SVTYPES,
+        'auto_svtype_labels': AUTO_GROUP_LABELS,
     })
 
 
@@ -1268,54 +1395,133 @@ def admin_api_import(request, api_id):
     api = Api.objects.filter(id=api_id).first()
     if api:
         try:
-            catalog = provider_api.fetch_catalog(api)
+            catalog, created, updated = _upsert_remote_catalog(api)
         except provider_api.ProviderError as exc:
             messages.error(request, 'Falha ao importar: {}'.format(exc))
             return redirect('admin_api_list')
-        existing = {r.referenceid: r for r in RemoteServiceList.objects.filter(api=api)}
-        created = 0
-        updated = 0
-        for item in catalog:
-            rid = item['referenceid']
-            remote = existing.get(rid)
-            credit = Decimal(str(item['credit']) or '0')
-            fields = list(dict.fromkeys(item['fields']))
-            if remote is None:
-                remote = RemoteServiceList.objects.create(
-                    api=api,
-                    referenceid=rid,
-                    SERVICENAME=item['name'],
-                    SERVICETYPE=item['servicetype'],
-                    CREDIT=credit,
-                    added=True,
-                )
-                created += 1
-                sync = True
-            else:
-                changed = (
-                    remote.SERVICENAME != item['name']
-                    or remote.SERVICETYPE != item['servicetype']
-                    or remote.CREDIT != credit
-                    or not remote.added
-                )
-                if changed:
-                    remote.SERVICENAME = item['name']
-                    remote.SERVICETYPE = item['servicetype']
-                    remote.CREDIT = credit
-                    remote.added = True
-                    remote.save(update_fields=['SERVICENAME', 'SERVICETYPE', 'CREDIT', 'added'])
-                    updated += 1
-                sync = changed
-            if sync:
-                current = set(remote.service_fields.values_list('name', flat=True))
-                to_delete = current - set(fields)
-                if to_delete:
-                    RemoteServiceInput.objects.filter(remote_service=remote, name__in=to_delete).delete()
-                for fname in fields:
-                    if fname not in current:
-                        RemoteServiceInput.objects.create(remote_service=remote, name=fname)
         messages.success(request, 'Importados {} serviços do provedor ({} novos, {} atualizados).'.format(
             len(catalog), created, updated))
+    return redirect('admin_api_list')
+
+
+@_staff
+def admin_api_sync(request, api_id):
+    """Importa o catálogo do provedor e vincula na lista local automaticamente,
+    distribuindo cada serviço para a lista correta pelas palavras-chave
+    configuradas (ex.: 'Rent', '6 Hours', 'Hours' -> lista Aluguel)."""
+    api = Api.objects.filter(id=api_id).first()
+    if api is None:
+        return redirect('admin_api_list')
+    try:
+        catalog, remote_created, remote_updated = _upsert_remote_catalog(api)
+    except provider_api.ProviderError as exc:
+        messages.error(request, 'Falha ao importar: {}'.format(exc))
+        return redirect('admin_api_list')
+    keywords = _auto_keywords_for(api)
+    remotes = {r.referenceid: r for r in RemoteServiceList.objects.filter(api=api)}
+    created = 0
+    already = 0
+    skipped = 0
+    for item in catalog:
+        name = (item['name'] or '').strip()
+        rid = item['referenceid']
+        if not name:
+            skipped += 1
+            continue
+        target = None
+        rname_n = _auto_norm(name)
+        for group_slug, kws in keywords.items():
+            if any(kw and kw in rname_n for kw in kws):
+                target = group_slug
+                break
+        if target is None:
+            target = AUTO_FALLBACK_BY_TYPE.get(str(item['servicetype']).upper())
+        if target is None:
+            skipped += 1
+            continue
+        local = ServiceList.objects.filter(api=api, referenceid=rid).first()
+        if local is not None:
+            already += 1
+            continue
+        remote = remotes.get(rid)
+        group = ServiceGroup.objects.filter(slug=target).first()
+        if group is None:
+            group = ServiceGroup.objects.create(name=target, slug=target, status='Active')
+        local_type = AUTO_GROUP_TYPE.get(target, 'Server Service')
+        suggested = provider_api.suggested_price(api, item['credit']) if api else None
+        base_slug = slugify(name)[:50] or 'servico'
+        slug = base_slug
+        n = 2
+        while ServiceList.objects.filter(slug=slug).exists():
+            slug = '{}-{}'.format(base_slug, n)
+            n += 1
+        time_text = item['time'] or ''
+        local = ServiceList.objects.create(
+            service_type=local_type,
+            service_group=group,
+            title=name,
+            slug=slug,
+            status='Active',
+            duration=time_text,
+            delivery_time=time_text,
+            price_type='fixed_price',
+            original_price=suggested if suggested is not None else Decimal('0'),
+            min_qnt='1',
+            max_qnt='',
+            process_type='Auto',
+            api=api,
+            api_enabled=True,
+            referenceid=rid,
+            collect_login=True,
+            collect_fields='both',
+        )
+        if remote is not None:
+            names = list(remote.service_fields.values_list('name', flat=True))
+        else:
+            names = list(item['fields'])
+        for fname in names:
+            ServiceInput.objects.create(service=local, name=fname)
+        if local_type == 'Credit Service':
+            extras = CREDIT_SERVICE_EXTRA_FIELDS
+        elif local_type == 'Activation Service':
+            extras = ACTIVATION_SERVICE_EXTRA_FIELDS
+        elif local_type == 'Method Service':
+            extras = METHOD_SERVICE_EXTRA_FIELDS
+        else:
+            extras = ()
+        for extra in extras:
+            if extra not in names:
+                ServiceInput.objects.get_or_create(service=local, name=extra)
+        created += 1
+    messages.success(request,
+        'Vinculação automática de "{}" concluída: {} serviços novos criados, {} já vinculados, {} sem lista. '
+        'Catálogo remoto: {} novos, {} atualizados.'.format(
+            api.api_name, created, already, skipped, remote_created, remote_updated))
+    return redirect('admin_api_list')
+
+
+@_staff
+def admin_api_map(request, api_id):
+    """Grava as palavras-chave de distribuição de uma API (por lista local)."""
+    api = Api.objects.filter(id=api_id).first()
+    if api and request.method == 'POST':
+        raw = SystemSetting.get('apiAutoMap', '')
+        data = {}
+        if raw:
+            try:
+                data = json.loads(raw)
+            except (TypeError, ValueError):
+                data = {}
+        entry = {}
+        for svtype in AUTO_KEYWORD_SVTYPES:
+            text = (request.POST.get('kw_{}'.format(svtype)) or '')
+            kws = [k.strip() for k in text.replace(';', ',').split(',') if k.strip()]
+            entry[svtype] = kws
+        data[str(api.id)] = entry
+        obj, _ = SystemSetting.objects.get_or_create(key='apiAutoMap', defaults={'value': ''})
+        obj.value = json.dumps(data)
+        obj.save()
+        messages.success(request, 'Palavras-chave de distribuição de "{}" salvas.'.format(api.api_name))
     return redirect('admin_api_list')
 
 

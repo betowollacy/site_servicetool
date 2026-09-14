@@ -8,6 +8,13 @@ register = template.Library()
 
 
 @register.filter(is_safe=True)
+def get_item(value, key):
+    if isinstance(value, dict):
+        return value.get(key, '')
+    return value
+
+
+@register.filter(is_safe=True)
 def richtext(value):
     if not value:
         return value

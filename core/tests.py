@@ -1854,3 +1854,124 @@ class AdminSettingUploadTests(TestCase):
             {'image': SimpleUploadedFile('logo.png', b'\x89PNG\r\n\x1a\n', content_type='image/png')},
         )
         self.assertEqual(resp.status_code, 400)
+
+
+class AdminApiAutoSyncTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='adminsync', password='senha123', is_staff=True)
+        self.api = Api.objects.create(
+            api_name='RITUNLOCKER', api_url='https://ritunlocker.net/public',
+            api_username='user', api_key='KEY', status='Active',
+            price_rate=Decimal('5.35'), price_markup=Decimal('30'),
+        )
+        self.group_remote = ServiceGroup.objects.create(name='Aluguel', slug='remote', status='Active')
+        self.group_imei = ServiceGroup.objects.create(name='IMEI', slug='imei', status='Active')
+        self.group_server = ServiceGroup.objects.create(name='Ativação', slug='server', status='Active')
+        SystemSetting.objects.filter(key='apiAutoMap').delete()
+
+    def tearDown(self):
+        SystemSetting.objects.filter(key='apiAutoMap').delete()
+
+    def _login(self):
+        self.client.force_login(self.staff)
+
+    def _catalog(self):
+        return [
+            {'referenceid': '10', 'name': 'UnlockTool 6 Hours', 'servicetype': 'SERVER',
+             'credit': 12, 'group': 'Ferramentas', 'time': '6 Hours', 'fields': []},
+            {'referenceid': '11', 'name': 'Consult IMEI Report', 'servicetype': 'IMEI',
+             'credit': 2, 'group': 'Consultas', 'time': '', 'fields': ['IMEI']},
+            {'referenceid': '12', 'name': 'Tool Monthly Rent', 'servicetype': 'SERVER',
+             'credit': 40, 'group': 'Ferramentas', 'time': '30 Days', 'fields': ['ID', 'LINK']},
+            {'referenceid': '13', 'name': 'Credits Pack 1K', 'servicetype': 'SERVER',
+             'credit': 5, 'group': 'Creditos', 'time': '', 'fields': []},
+        ]
+
+    @patch('core.provider_api.fetch_catalog')
+    def test_sync_distributes_by_keyword_and_fallback(self, fetch):
+        fetch.return_value = self._catalog()
+        self._login()
+        resp = self.client.post(reverse('admin_api_sync', args=[self.api.id]))
+        self.assertEqual(resp.status_code, 302)
+        services = ServiceList.objects.filter(api=self.api).order_by('referenceid')
+        self.assertEqual(services.count(), 4)
+        by_ref = {s.referenceid: s for s in services}
+        self.assertEqual(by_ref['10'].service_type, 'Server Service')
+        self.assertEqual(by_ref['10'].service_group.slug, 'remote')
+        self.assertEqual(by_ref['10'].duration, '6 Hours')
+        self.assertEqual(by_ref['10'].process_type, 'Auto')
+        self.assertEqual(by_ref['11'].service_type, 'IMEI Service')
+        self.assertEqual(by_ref['11'].service_group.slug, 'imei')
+        self.assertEqual(by_ref['12'].service_type, 'Server Service')
+        self.assertEqual(by_ref['12'].service_group.slug, 'remote')
+        self.assertEqual(by_ref['13'].service_type, 'Activation Service')
+        self.assertEqual(by_ref['13'].service_group.slug, 'server')
+        self.assertEqual(list(by_ref['11'].service_fields.values_list('name', flat=True)), ['IMEI'])
+        self.assertEqual(list(by_ref['12'].service_fields.values_list('name', flat=True)), ['ID', 'LINK'])
+        self.assertEqual(by_ref['12'].original_price, Decimal('278.20'))
+
+    @patch('core.provider_api.fetch_catalog')
+    def test_sync_does_not_overwrite_existing_linked(self, fetch):
+        fetch.return_value = [{'referenceid': '12', 'name': 'Tool Monthly Rent',
+                               'servicetype': 'SERVER', 'credit': 40, 'group': 'Ferramentas',
+                               'time': '', 'fields': []}]
+        existing = ServiceList.objects.create(
+            api=self.api, referenceid='12', title='Meu Titulo Editado', slug='meu-titulo',
+            status='Active', service_type='Server Service', service_group=self.group_remote,
+        )
+        self._login()
+        resp = self.client.post(reverse('admin_api_sync', args=[self.api.id]))
+        self.assertEqual(resp.status_code, 302)
+        existing.refresh_from_db()
+        self.assertEqual(existing.title, 'Meu Titulo Editado')
+
+    @patch('core.provider_api.fetch_catalog')
+    def test_sync_upserts_remote_catalog(self, fetch):
+        fetch.return_value = self._catalog()
+        self._login()
+        self.client.post(reverse('admin_api_sync', args=[self.api.id]))
+        self.assertEqual(RemoteServiceList.objects.filter(api=self.api).count(), 4)
+        remote = RemoteServiceList.objects.get(api=self.api, referenceid='12')
+        self.assertEqual(remote.SERVICENAME, 'Tool Monthly Rent')
+        self.assertEqual(list(remote.service_fields.values_list('name', flat=True)), ['ID', 'LINK'])
+
+    @patch('core.provider_api.fetch_catalog')
+    def test_sync_provider_error_redirects_without_creating(self, fetch):
+        from core.provider_api import ProviderError
+        fetch.side_effect = ProviderError('API URL nao configurada.')
+        self._login()
+        resp = self.client.post(reverse('admin_api_sync', args=[self.api.id]))
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(ServiceList.objects.filter(api=self.api).count(), 0)
+        self.assertEqual(RemoteServiceList.objects.filter(api=self.api).count(), 0)
+
+    def test_api_map_saves_keywords_per_api(self):
+        self._login()
+        resp = self.client.post(reverse('admin_api_map', args=[self.api.id]), {
+            'kw_remote': 'Rent, 6 Hours, Hours',
+            'kw_imei': '',
+            'kw_server': 'ativac',
+            'kw_file': '',
+            'kw_method': '',
+        })
+        self.assertEqual(resp.status_code, 302)
+        data = json.loads(SystemSetting.get('apiAutoMap'))
+        self.assertEqual(data[str(self.api.id)]['remote'], ['Rent', '6 Hours', 'Hours'])
+        self.assertEqual(data[str(self.api.id)]['server'], ['ativac'])
+
+    @patch('core.provider_api.fetch_catalog')
+    def test_sync_uses_custom_keywords_from_map(self, fetch):
+        fetch.return_value = self._catalog()
+        SystemSetting.objects.create(
+            key='apiAutoMap',
+            value=json.dumps({str(self.api.id): {'remote': ['monthly'], 'imei': [], 'server': [], 'file': [], 'method': []}}),
+        )
+        self._login()
+        self.client.post(reverse('admin_api_sync', args=[self.api.id]))
+        services = ServiceList.objects.filter(api=self.api).order_by('referenceid')
+        by_ref = {s.referenceid: s for s in services}
+        # '12' tem 'Monthly' -> Aluguel; '10' saiu do padrao e cai no fallback SERVER -> Ativacao
+        self.assertEqual(by_ref['12'].service_type, 'Server Service')
+        self.assertEqual(by_ref['12'].service_group.slug, 'remote')
+        self.assertEqual(by_ref['10'].service_type, 'Activation Service')
+        self.assertEqual(by_ref['10'].service_group.slug, 'server')
