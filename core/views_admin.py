@@ -1120,10 +1120,11 @@ def admin_currency_update(request, currency_id):
 @_staff
 def admin_gateway_list(request):
     return render(request, 'admin/gateway_list.html', {
-        'gateways': PaymentGateway.objects.filter(name__iexact='Asaas'),
+        'gateways': PaymentGateway.objects.filter(name__in=['Asaas', 'Binance', 'Vepay', 'bKash']),
         'currencies': Currency.objects.filter(status='Active'),
         'webhook_asaas': request.build_absolute_uri(reverse('asaas_webhook')),
         'webhook_binance': request.build_absolute_uri(reverse('binance_webhook')),
+        'webhook_vepay': request.build_absolute_uri(reverse('vepay_webhook', args=['SEU-TOKEN'])),
     })
 
 
@@ -1142,12 +1143,20 @@ def admin_gateway_update(request, gateway_id):
         if request.POST.get('status') in ('Active', 'Inactive'):
             g.status = request.POST['status']
         for f in ['bkash_app_key', 'bkash_app_secret', 'bkash_username', 'bkash_password',
-                  'binance_api_key', 'binance_secret_key', 'asaas_api_key']:
+                  'binance_api_key', 'binance_secret_key', 'asaas_api_key',
+                  'vepay_api_key', 'vepay_receiving_number', 'vepay_base_url', 'vepay_webhook_token']:
             if request.POST.get(f) is not None:
                 setattr(g, f, request.POST[f])
         if request.POST.get('binance_private_key') is not None:
             g.binance_private_key = request.POST['binance_private_key']
+        rate = request.POST.get('vepay_rate')
+        if rate is not None and rate != '':
+            try:
+                g.vepay_rate = Decimal(rate)
+            except Exception:
+                pass
         g.asaas_sandbox = request.POST.get('asaas_sandbox') == 'on'
+        g.vepay_sandbox = request.POST.get('vepay_sandbox') == 'on'
         g.save()
         messages.success(request, 'Gateway atualizado com sucesso.')
     return redirect('admin_gateway_list')

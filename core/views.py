@@ -17,7 +17,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from . import asaas, binance, notify, provider_api, public_api
+from . import asaas, binance, notify, provider_api, public_api, vepay
 from .models import (
     Api, ApiLog, Currency, Customer, CustomerOrder, GatewayLog, Invoice,
     METHOD_SERVICE_EXTRA_FIELDS, OrderInput, Page, PaymentDeposit, PaymentGateway,
@@ -125,7 +125,7 @@ def _base_ctx(request):
         'sliders': Slider.objects.filter(status='Active').order_by('id'),
         'groups': groups,
         'category_links': category_links,
-        'activeGateway': PaymentGateway.objects.filter(name__iexact='Asaas', status='Active'),
+        'activeGateway': PaymentGateway.objects.filter(name__in=['Asaas', 'Binance', 'Vepay'], status='Active'),
     }
 
 
@@ -753,7 +753,7 @@ def checkout(request, customer, invoice_id):
     ctx = {
         'invoice': invoice,
         'currency': currency,
-        'activeGateway': PaymentGateway.objects.filter(name__iexact='Asaas', status='Active'),
+        'activeGateway': PaymentGateway.objects.filter(name__in=['Asaas', 'Binance', 'Vepay'], status='Active'),
     }
     ctx.update(_base_ctx(request))
     return render(request, 'customer/checkout.html', ctx)
@@ -766,7 +766,11 @@ def gateway_pay(request, customer, invoice_id):
         gateway_name = request.POST.get('payment_methode', '').strip()
         if gateway_name.lower() == 'asaas':
             return _pay_with_asaas(request, customer, invoice)
-        messages.error(request, 'Selecione o pagamento via PIX com Asaas.')
+        if gateway_name.lower() == 'binance':
+            return _pay_with_binance(request, customer, invoice)
+        if gateway_name.lower() == 'vepay':
+            return _pay_with_vepay(request, customer, invoice)
+        messages.error(request, 'Selecione um gateway de pagamento válido.')
         return redirect('checkout', invoice_id=invoice.id)
     return redirect('checkout', invoice_id=invoice.id)
 
@@ -847,6 +851,37 @@ def _pay_with_binance(request, customer, invoice):
         checkout_url=data.get('checkoutUrl') or '',
         gateway_note=data.get('prepayId') or '',
         gateway_data=json.dumps(data, ensure_ascii=False)[:4000],
+        status='Pending',
+        invoice=invoice,
+    )
+    invoice.payment_gateway = gateway.name
+    invoice.save(update_fields=['payment_gateway'])
+    return redirect('payment_page', invoice_id=invoice.id)
+
+
+def _pay_with_vepay(request, customer, invoice):
+    gateway = PaymentGateway.objects.filter(name__iexact='Vepay', status='Active').first()
+    if not gateway or not (gateway.vepay_api_key or '').strip():
+        messages.error(request, 'Gateway Vepay nao configurado. Adicione as credenciais no painel.')
+        return redirect('checkout', invoice_id=invoice.id)
+    try:
+        data = vepay.create_payment(invoice, gateway)
+    except Exception as exc:
+        GatewayLog.objects.create(
+            payment_gateway='Vepay', payment_for=f'Invoice #{invoice.id}',
+            payment_amount=invoice.invoice_amount, customer=customer,
+            customer_name=customer.name, invoice=invoice, invoice_status='Unpaid',
+            create_payment=str(exc)[:1000],
+        )
+        messages.error(request, 'Falha ao gerar pagamento no Vepay. Tente novamente.')
+        return redirect('checkout', invoice_id=invoice.id)
+    PaymentDeposit.objects.create(
+        name='Vepay - Multicaixa Express',
+        gateway_amount=invoice.invoice_amount,
+        gateway_payment_id=data.get('reference') or data.get('id') or '',
+        checkout_url=data.get('checkout_url') or '',
+        gateway_note=str(data.get('amount_kz') or ''),
+        gateway_data=json.dumps(data.get('data') or {}, ensure_ascii=False)[:4000],
         status='Pending',
         invoice=invoice,
     )
@@ -980,6 +1015,30 @@ def binance_webhook(request):
     biz_status = biz.get('bizStatus') or biz.get('tradeStatus') or ''
     if merchant_trade_no and biz_status == 'PAY_SUCCESS':
         deposit = PaymentDeposit.objects.filter(gateway_payment_id=merchant_trade_no).order_by('-id').first()
+        if deposit:
+            _mark_paid(deposit, payload)
+    return HttpResponse('ok')
+
+
+@csrf_exempt
+@require_POST
+def vepay_webhook(request, token):
+    gateway = PaymentGateway.objects.filter(name__iexact='Vepay', status='Active').first()
+    if not gateway:
+        return HttpResponse('ok')
+    expected = (gateway.vepay_webhook_token or '').strip()
+    if expected and token != expected:
+        return HttpResponse('invalid token', status=401)
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        payload = {}
+    if not isinstance(payload, dict):
+        return HttpResponse('ok')
+    reference = payload.get('reference') or payload.get('payment_id') or payload.get('id') or ''
+    status = str(payload.get('status') or payload.get('event') or payload.get('state') or '').lower()
+    if reference and status in ('paid', 'success', 'successful', 'accepted', 'confirmed', 'completed', 'approved'):
+        deposit = PaymentDeposit.objects.filter(gateway_payment_id=reference).order_by('-id').first()
         if deposit:
             _mark_paid(deposit, payload)
     return HttpResponse('ok')

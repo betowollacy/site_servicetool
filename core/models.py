@@ -424,6 +424,16 @@ class PaymentGateway(models.Model):
     binance_private_key = models.TextField(blank=True, null=True)
     asaas_api_key = models.CharField(max_length=500, blank=True, null=True)
     asaas_sandbox = models.BooleanField(default=True)
+    vepay_api_key = models.CharField(max_length=255, blank=True, null=True)
+    vepay_receiving_number = models.CharField(max_length=20, blank=True, null=True,
+                                              help_text='Número MULTICAIXA Express de destino (pré-cadastrado no Vepay).')
+    vepay_rate = models.DecimalField(max_digits=12, decimal_places=4, default=Decimal('0.0000'),
+                                     help_text='Câmbio BRL→Kwanza usado para cobrar no Multicaixa Express. 0 = desativado.')
+    vepay_base_url = models.CharField(max_length=255, blank=True, null=True,
+                                      help_text='URL base da API Vepay (ex.: https://api.vepay.forkao.com).')
+    vepay_webhook_token = models.CharField(max_length=64, blank=True, null=True,
+                                           help_text='Token usado na URL do webhook Vepay (configure a mesma URL no console Vepay).')
+    vepay_sandbox = models.BooleanField(default=True)
 
     class Meta:
         db_table = 'payment_gateways'

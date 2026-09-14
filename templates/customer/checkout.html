@@ -40,10 +40,10 @@
                             {% endif %}
                             {% endfor %}
                         </table>
-                        <div class="mb-3">
+                        <div class="mb-3" id="cpf-block">
                             <label class="form-label fw-semibold">CPF ou CNPJ (para o pagamento PIX)</label>
                             <input type="text" name="cpf_cnpj" class="form-control" maxlength="18" value="{{ customer.cpf_cnpj|default:'' }}" placeholder="000.000.000-00">
-                            <div class="form-text">Obrigatório para cobranças via Asaas. Só dígitos.</div>
+                            <div class="form-text">Obrigatório para cobranças via Asaas. Só dígitos. Não é necessário para Binance Pay.</div>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -57,7 +57,7 @@
                                         <span class="checkbox-icon">
                                             <img src="{% if gateway.NAME == 'Asaas' %}{% static 'resource/pix.svg' %}{% else %}{{ gateway.LOGO }}{% endif %}" alt="{% if gateway.NAME == 'Asaas' %}PIX{% endif %}" height="40" width="60" class="rounded">
                                         </span>
-                                        <span class="checkbox-label mt-1">{{ gateway.NAME }}</span>
+                                        <span class="checkbox-label mt-1">{{ gateway.NAME }}{% if gateway.NAME == 'Vepay' %}<br><small>Multicaixa Express</small>{% endif %}</span>
                                     </span>
                                 </label>
                             </div>
@@ -73,4 +73,16 @@
         </div>
     </div>
 </div>
+<script>
+(function () {
+    var inputs = document.querySelectorAll('input[name="payment_methode"]');
+    function toggleCpf() {
+        var checked = document.querySelector('input[name="payment_methode"]:checked');
+        var block = document.getElementById('cpf-block');
+        if (block) { block.style.display = checked && checked.value === 'Asaas' ? '' : 'none'; }
+    }
+    inputs.forEach(function (r) { r.addEventListener('change', toggleCpf); });
+    toggleCpf();
+})();
+</script>
 {% endblock %}

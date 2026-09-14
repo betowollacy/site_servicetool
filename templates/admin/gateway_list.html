@@ -51,6 +51,22 @@
                             <p class="small text-muted mb-1">Webhook URL (configurar na Binance Pay):</p>
                             <code>{{ webhook_binance }}</code>
                         </div>
+{% elif g.NAME == 'Vepay' %}
+                        <div class="col-md-6 mb-3"><label class="form-label">Vepay API Key</label><input type="text" name="vepay_api_key" class="form-control" value="{{ g.vepay_api_key|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Número de recebimento (MCX Express)</label><input type="text" name="vepay_receiving_number" class="form-control" value="{{ g.vepay_receiving_number|default:'' }}" placeholder="9XXXXXXXX"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Câmbio 1 BRL = X Kwanzas</label><input type="text" name="vepay_rate" class="form-control" value="{{ g.vepay_rate|floatformat:4 }}"><div class="form-text">Usado para cobrar no Multicaixa Express. Ex.: 100 = R$ 3,91 vira Kz 391.</div></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">URL base da API Vepay</label><input type="text" name="vepay_base_url" class="form-control" value="{{ g.vepay_base_url|default:'' }}" placeholder="https://api.vepay.forkao.com"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">Token de segurança do webhook</label><input type="text" name="vepay_webhook_token" class="form-control" value="{{ g.vepay_webhook_token|default:'' }}" placeholder="ex.: meu-token-secreto"></div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check form-switch mt-2">
+                                <input type="checkbox" class="form-check-input" name="vepay_sandbox" id="sandbox-vepay-{{ g.id }}" {% if g.vepay_sandbox %}checked{% endif %}>
+                                <label class="form-check-label" for="sandbox-vepay-{{ g.id }}">Usar ambiente Sandbox (teste)</label>
+                            </div>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <p class="small text-muted mb-1">Webhook URL (preencha o token acima e configure no console Vepay):</p>
+                            <code>{{ webhook_vepay }}</code>
+                        </div>
                         {% else %}
                         <div class="col-md-6 mb-3"><label class="form-label">Chave da API</label><input type="text" name="bkash_app_key" class="form-control" value="{{ g.bkash_app_key|default:'' }}"></div>
                         <div class="col-md-6 mb-3"><label class="form-label">Segredo da API</label><input type="text" name="bkash_app_secret" class="form-control" value="{{ g.bkash_app_secret|default:'' }}"></div>

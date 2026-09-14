@@ -99,6 +99,7 @@ path('admin-panel/apis/<int:api_id>/import/', views_admin.admin_api_import,
     path('customer/pay/<int:invoice_id>/status/', views.payment_status, name='payment_status'),
     path('payment/asaas/webhook/', views.asaas_webhook, name='asaas_webhook'),
     path('payment/binance/webhook/', views.binance_webhook, name='binance_webhook'),
+    path('payment/vepay/webhook/<str:token>/', views.vepay_webhook, name='vepay_webhook'),
     path('customer/submit-order/', views.submit_order, name='submit_order'),
 
     path('page/<slug:slug>/', views.page_view, name='page_view'),

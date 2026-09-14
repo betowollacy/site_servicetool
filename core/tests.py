@@ -2400,3 +2400,159 @@ class OrderEmailTests(TestCase):
         mail.assert_called_once()
         self.assertEqual(mail.call_args.args[0].id, self.order.id)
         self.assertEqual(mail.call_args.kwargs.get('paid'), True)
+
+
+class VepayUnitTests(TestCase):
+    def test_amount_conversion(self):
+        from core import vepay
+        self.assertEqual(vepay._amount_kz(Decimal('3.91'), Decimal('100')), 391)
+        self.assertEqual(vepay._amount_kz(Decimal('3.91'), Decimal('50')), 196)
+        self.assertEqual(vepay._amount_kz(Decimal('0.00'), Decimal('100')), 0)
+
+    def test_create_payment_sends_expected_request(self):
+        from core import vepay
+        gateway = PaymentGateway.objects.create(
+            name='Vepay', status='Active', vepay_api_key='chave-teste',
+            vepay_receiving_number='923456789', vepay_rate=Decimal('100.0000'),
+            vepay_base_url='https://api.vepay.forkao.com', vepay_webhook_token='tok',
+        )
+        invoice = Invoice(invoice_amount=Decimal('3.91'))
+        captured = {}
+
+        class FakeResp:
+            def read(self):
+                return json.dumps({'checkout_url': 'https://checkout.vepay.forkao.com/p/1', 'id': 'pay_9'}).encode('utf-8')
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        def fake_urlopen(req, timeout=40):
+            captured['headers'] = req.headers
+            captured['body'] = json.loads(req.data)
+            captured['url'] = req.full_url
+            return FakeResp()
+
+        with patch('core.vepay.urllib.request.urlopen', side_effect=fake_urlopen):
+            result = vepay.create_payment(invoice, gateway)
+        self.assertEqual(captured['url'], 'https://api.vepay.forkao.com/v1/payments')
+        self.assertEqual(captured['headers']['Authorization'], 'Bearer chave-teste')
+        self.assertEqual(captured['headers']['Content-type'], 'application/json')
+        self.assertEqual(captured['body']['amount'], 391)
+        self.assertEqual(captured['body']['phone'], '923456789')
+        self.assertIsInstance(captured['body']['reference'], str)
+        self.assertEqual(result['checkout_url'], 'https://checkout.vepay.forkao.com/p/1')
+        self.assertEqual(result['amount_kz'], 391)
+
+    def test_create_payment_requires_config(self):
+        from core import vepay
+        gateway = PaymentGateway.objects.create(name='Vepay', status='Active')
+        invoice = Invoice(invoice_amount=Decimal('10.00'))
+        with self.assertRaises(vepay.VepayError):
+            vepay.create_payment(invoice, gateway)
+
+
+class EndToEndVepayPaymentTests(TestCase):
+    def setUp(self):
+        Currency.objects.create(code='BRL', name='Brazilian Real', icon='R$', rate=Decimal('1.0000'), status='Active')
+        self.gateway = PaymentGateway.objects.create(
+            name='Vepay', status='Active', vepay_api_key='chave-teste',
+            vepay_receiving_number='923456789', vepay_rate=Decimal('100.0000'),
+            vepay_base_url='https://api.vepay.forkao.com', vepay_webhook_token='toksegredo',
+        )
+        self.customer = Customer.objects.create(
+            name='Cliente Angola', email='angola@teste.com', mobile='923456789',
+            password=Customer.make_password('senha123'), currency='BRL',
+        )
+        self.invoice = Invoice.objects.create(
+            customer=self.customer, customer_name=self.customer.name,
+            invoice_for='Deposit', invoice_amount=Decimal('50.00'),
+            customer_currency='BRL', invoice_status='Unpaid', invoice_title='Adicionar Saldo',
+        )
+
+    def _login(self):
+        session = self.client.session
+        session['customer_id'] = self.customer.id
+        session.save()
+
+    def _create_deposit(self):
+        ref = 'INV{}T0001'.format(self.invoice.id)
+        return PaymentDeposit.objects.create(
+            name='Vepay - Multicaixa Express', gateway_amount=self.invoice.invoice_amount,
+            gateway_payment_id=ref, gateway_note='5000', status='Pending', invoice=self.invoice,
+        )
+
+    def test_checkout_lists_vepay_and_binance(self):
+        PaymentGateway.objects.create(name='Binance', status='Active')
+        self._login()
+        resp = self.client.get(reverse('checkout', args=[self.invoice.id]))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn('Vepay', html)
+        self.assertIn('Multicaixa Express', html)
+        self.assertIn('Binance', html)
+
+    def test_pay_with_vepay_creates_deposit_and_redirects(self):
+        from core import vepay
+        self._login()
+        with patch('core.views.vepay.create_payment', return_value={
+            'id': 'pay_123', 'reference': 'INV9T0002', 'amount_kz': 5000,
+            'checkout_url': 'https://checkout.vepay.forkao.com/p/1', 'data': {'id': 'pay_123'},
+        }):
+            resp = self.client.post(reverse('gateway_pay', args=[self.invoice.id]), {
+                'payment_methode': 'Vepay',
+            })
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn(reverse('payment_page', args=[self.invoice.id]), resp.url)
+        deposit = PaymentDeposit.objects.latest('id')
+        self.assertEqual(deposit.name, 'Vepay - Multicaixa Express')
+        self.assertEqual(deposit.gateway_note, '5000')
+        self.assertEqual(deposit.gateway_payment_id, 'INV9T0002')
+        self.assertEqual(deposit.checkout_url, 'https://checkout.vepay.forkao.com/p/1')
+        self.invoice.refresh_from_db()
+        self.assertEqual(self.invoice.payment_gateway, 'Vepay')
+
+    def test_pay_with_vepay_requires_configured_gateway(self):
+        self.gateway.vepay_api_key = ''
+        self.gateway.save(update_fields=['vepay_api_key'])
+        self._login()
+        resp = self.client.post(reverse('gateway_pay', args=[self.invoice.id]), {
+            'payment_methode': 'Vepay',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(PaymentDeposit.objects.count(), 0)
+
+    def test_webhook_marks_paid_and_credits_balance(self):
+        deposit = self._create_deposit()
+        url = reverse('vepay_webhook', args=['toksegredo'])
+        resp = self.client.post(url, data=json.dumps({
+            'reference': deposit.gateway_payment_id, 'status': 'paid',
+        }), content_type='application/json')
+        self.assertEqual(resp.status_code, 200)
+        deposit.refresh_from_db()
+        self.invoice.refresh_from_db()
+        self.customer.refresh_from_db()
+        self.assertEqual(deposit.status, 'Paid')
+        self.assertEqual(self.invoice.invoice_status, 'Paid')
+        self.assertEqual(self.customer.balance, Decimal('50.00'))
+
+    def test_webhook_rejects_wrong_token(self):
+        self._create_deposit()
+        resp = self.client.post(reverse('vepay_webhook', args=['errado']), data=json.dumps({
+            'reference': 'X', 'status': 'paid',
+        }), content_type='application/json')
+        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(PaymentDeposit.objects.latest('id').status, 'Pending')
+
+    def test_webhook_ignores_pending(self):
+        deposit = self._create_deposit()
+        resp = self.client.post(reverse('vepay_webhook', args=['toksegredo']), data=json.dumps({
+            'reference': deposit.gateway_payment_id, 'status': 'pending',
+        }), content_type='application/json')
+        self.assertEqual(resp.status_code, 200)
+        deposit.refresh_from_db()
+        self.assertEqual(deposit.status, 'Pending')
+        self.customer.refresh_from_db()
+        self.assertEqual(self.customer.balance, Decimal('0.00'))
