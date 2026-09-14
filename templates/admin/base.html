@@ -114,6 +114,34 @@
         <script src="{% static 'backend/js/select2.min.js' %}"></script>
         <script>
             feather.replace();
+            // Acordeao do menu admin independente de onde o toque/clique cai
+            // (o script do tema quebra ao tocar na seta: aplica pc-trigger no span
+            // e o submenu nao abre - muito comum em celular).
+            document.addEventListener('click', function (e) {
+                var hit = e.target && e.target.closest ? e.target.closest('.pc-sidebar .pc-navbar > .pc-item.pc-hasmenu') : null;
+                if (!hit) return;
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                var li = $(hit).closest('.pc-hasmenu');
+                var wasOpen = li.hasClass('pc-trigger');
+                li.find('.pc-arrow').removeClass('pc-trigger');
+                $('.pc-sidebar .pc-navbar > .pc-item.pc-hasmenu.pc-trigger').each(function () {
+                    if (this === li[0]) return;
+                    var o = $(this);
+                    o.removeClass('pc-trigger');
+                    o.children('.pc-submenu').slideUp(150);
+                });
+                var sub = li.children('.pc-submenu');
+                if (sub.length) {
+                    if (wasOpen) {
+                        li.removeClass('pc-trigger');
+                        sub.slideUp(150);
+                    } else {
+                        li.addClass('pc-trigger');
+                        sub.slideDown(150);
+                    }
+                }
+            }, true);
             if ($.fn.dataTable) {
                 $('table.dataTable').DataTable({ stateSave: true, language: { search: 'Buscar', lengthMenu: 'Mostrar _MENU_ por página', info: 'Mostrando _START_ a _END_ de _TOTAL_', paginate: { next: 'Próximo', previous: 'Anterior' } } });
             }
