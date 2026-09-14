@@ -1618,9 +1618,12 @@ def admin_db_import(request):
 
         # monta o banco a importar num arquivo temporario novo (schema limpo)
         tmp = tempfile.NamedTemporaryFile(prefix='servicetool_restore_', suffix='.sqlite', delete=False)
-        tmp.write(data)
         tmp.close()
         tmp_name = tmp.name
+        if is_binary:
+            with open(tmp_name, 'wb') as fh:
+                fh.write(data)
+        # dump .sql roda sobre arquivo vazio: sqlite cria um banco novo ao conectar
         src = sqlite3.connect(tmp_name)
         if is_binary:
             src.execute('SELECT count(*) FROM sqlite_master').fetchone()
