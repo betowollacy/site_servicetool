@@ -67,7 +67,6 @@ class Command(BaseCommand):
         gateways = [
             ('Asaas', 'BRL', '0.00', '/static/resource/asaas.svg'),
             ('Binance', 'USDT', '0.00', '/static/resource/binance_logo.png'),
-            ('Vepay', 'KZ', '0.00', '/static/resource/vepay.svg'),
             ('bKash', 'BRL', '0.00', '/static/resource/bkash_logo.png'),
         ]
         for name, currency, charge, logo in gateways:
