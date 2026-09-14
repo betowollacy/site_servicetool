@@ -66,22 +66,18 @@ def admin_dashboard(request):
 def admin_orders(request, status):
     db_status, label = STATUS_MAP.get(status, ('Waiting Action', 'Aguardando Ação'))
     orders = list(CustomerOrder.objects.filter(service_status=db_status)
-                  .select_related('customer', 'service__inventory'))
+                  .select_related('customer', 'service__inventory')
+                  .prefetch_related('order_inputs'))
     CustomerOrder.objects.filter(service_status=db_status, seen='false').update(seen='true')
     inv_ids = {o.service.inventory_id for o in orders if o.service and o.service.inventory_id}
     avail = dict(
         InventoryData.objects.filter(inventory_id__in=inv_ids, status='Available')
         .values('inventory_id').annotate(c=Count('id')).values_list('inventory_id', 'c')
     )
-    descriptions = dict(
-        OrderInput.objects.filter(field_name='Descreva o serviço')
-        .values_list('order_id', 'field_value')
-    )
     for order in orders:
         inv = order.service.inventory if order.service else None
         order.inventory_id_for_delivery = inv.id if inv else None
         order.available_count = avail.get(inv.id, 0) if inv else 0
-        order.service_description = descriptions.get(order.id, '')
     ctx = {
         'status': status,
         'status_label': label,
