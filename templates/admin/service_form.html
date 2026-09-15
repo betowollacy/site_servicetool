@@ -85,6 +85,12 @@
                                 </div>
                                 <div class="col-md-6">
                                     <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="collect_data" id="collectSenha" value="senha" {% if service and 'senha' in service.collect_data_list %}checked{% endif %}>
+                                        <label class="form-check-label" for="collectSenha">Senha</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
                                         <input class="form-check-input" type="checkbox" name="collect_data" id="collectSerial" value="serial" {% if service and 'serial' in service.collect_data_list %}checked{% endif %}>
                                         <label class="form-check-label" for="collectSerial">Serial Number</label>
                                     </div>

@@ -27,7 +27,7 @@ from .models import (
     Currency, Customer, CustomerOrder, Inventory,
     InventoryData, Invoice, OrderInput, Page, PaymentDeposit, PaymentGateway, RemoteServiceInput, RemoteServiceList,
     ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting, User,
-    collect_data_codes,
+    collect_data_codes, collect_field_code_by_name,
 )
 from . import asaas, provider_api, public_api
 
@@ -1144,6 +1144,14 @@ def _save_fields(service, fields_text):
         line = line.strip()
         if line:
             ServiceInput.objects.create(service=service, name=line)
+    # Campos equivalentes aos dados do painel (ex.: 'E-mail', 'Senha') só ficam
+    # salvos quando a checkbox correspondente está marcada; caso contrário são
+    # removidos para a compra respeitar a regra configurada.
+    checked = set(collect_data_codes(service.collect_data))
+    for si in service.service_fields.all():
+        code = collect_field_code_by_name(si.name)
+        if code is not None and code not in checked:
+            si.delete()
 
 
 def _save_uploaded_thumbnail(service, files, request=None):

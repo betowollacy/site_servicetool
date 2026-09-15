@@ -1256,6 +1256,82 @@ class CreditServiceFormTests(TestCase):
         self.assertNotIn('Senha', inputs)
 
 
+class ServiceFieldPanelRulesTests(TestCase):
+    """A compra deve respeitar as checkboxes 'Dados a solicitar' do painel,
+    mesmo quando o produto importado da API trouxe linhas extras de login
+    ('E-mail', 'Senha'...) nas Campos de Entrada."""
+
+    def setUp(self):
+        Currency.objects.create(code='BRL', name='Brazilian Real', icon='R$', rate=Decimal('1.0000'), status='Active')
+        self.customer = Customer.objects.create(
+            name='Cliente Regra', email='regra@teste.com', mobile='11999999999',
+            password=Customer.make_password('senha123'), currency='BRL',
+            balance=Decimal('100.00'),
+        )
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
+        self.service = ServiceList.objects.create(
+            service_type='Credit Service', service_group=self.group,
+            title='Tool Créditos', original_price=Decimal('10.00'),
+            status='Active', slug='tool-creditos', collect_data='user',
+        )
+        for name in ('Usuário', 'E-mail', 'Senha'):
+            ServiceInput.objects.create(service=self.service, name=name)
+
+    def _login(self):
+        session = self.client.session
+        session['customer_id'] = self.customer.id
+        session.save()
+
+    def test_imported_email_and_password_rows_follow_panel_checkboxes(self):
+        self._login()
+        resp = self.client.get(reverse('service_view', args=[self.service.slug]))
+        html = resp.content.decode()
+        self.assertIn('name="Usuário"', html)
+        self.assertIn('name="Quantidade de Créditos"', html)
+        self.assertNotIn('name="E-mail"', html)
+        self.assertNotIn('E-mail da Ferramenta', html)
+        self.assertNotIn('name="Senha"', html)
+
+    def test_checked_senha_shows_senha_field(self):
+        self.service.collect_data = 'user,senha'
+        self.service.save(update_fields=['collect_data'])
+        self._login()
+        resp = self.client.get(reverse('service_view', args=[self.service.slug]))
+        html = resp.content.decode()
+        self.assertIn('name="Usuário"', html)
+        self.assertIn('name="Senha"', html)
+        self.assertNotIn('E-mail da Ferramenta', html)
+
+    def test_submit_ignores_unchecked_email(self):
+        self._login()
+        resp = self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+            'Quantidade de Créditos': '2',
+            'Usuário': 'ferramenta.login',
+        })
+        self.assertEqual(resp.status_code, 302)
+        order = CustomerOrder.objects.latest('id')
+        inputs = {i.field_name for i in order.order_inputs.all()}
+        self.assertIn('Usuário', inputs)
+        self.assertNotIn('E-mail', inputs)
+        self.assertNotIn('Senha', inputs)
+        self.assertEqual(order.service_qnt, '2')
+
+    def test_admin_save_prunes_unchecked_panel_fields(self):
+        staff = User.objects.create_user(username='adminregras', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        resp = self.client.post(reverse('admin_service_edit', args=['credit', self.service.id]), {
+            'title': self.service.title,
+            'fields': 'Usuário\nE-mail da Ferramenta\nSenha',
+            'collect_data': ['user'],
+        })
+        self.assertEqual(resp.status_code, 302)
+        names = list(ServiceInput.objects.filter(service=self.service).values_list('name', flat=True))
+        self.assertIn('Usuário', names)
+        self.assertNotIn('E-mail da Ferramenta', names)
+        self.assertNotIn('Senha', names)
+
+
 class ActivationServiceTests(TestCase):
     def setUp(self):
         Currency.objects.create(code='BRL', name='Brazilian Real', icon='R$', rate=Decimal('1.0000'), status='Active')

@@ -112,6 +112,7 @@ class ServiceGroup(models.Model):
 SERVICE_COLLECT_DATA_CHOICES = [
     ('user', 'Usuário'),
     ('email', 'E-mail'),
+    ('senha', 'Senha'),
     ('serial', 'Serial Number'),
     ('ecid', 'Ecid'),
     ('anydesk', 'Pedir acesso do AnyDesk (ID e senha)'),
@@ -124,6 +125,7 @@ SERVICE_COLLECT_DATA_CHOICES = [
 COLLECT_FIELD_TYPES = {
     'user': 'text',
     'email': 'text',
+    'senha': 'text',
     'serial': 'text',
     'ecid': 'text',
     'anydesk': 'text',
@@ -136,6 +138,7 @@ COLLECT_FIELD_TYPES = {
 COLLECT_FIELD_NAMES = {
     'user': 'Usuário',
     'email': 'E-mail da Ferramenta',
+    'senha': 'Senha',
     'serial': 'Serial Number',
     'ecid': 'Ecid',
     'anydesk': 'Acesso do AnyDesk',
@@ -143,6 +146,20 @@ COLLECT_FIELD_NAMES = {
     'lock_photo': 'Foto da tela de bloqueio',
     'upload_photo': 'Foto',
     'upload_logo': 'Logo',
+}
+
+# Alias de nomes de campo equivalentes a cada código de 'Dados a solicitar'.
+# Campos importados da API (ex.: 'E-mail', 'Senha') recebem esses nomes nas
+# 'Campos de Entrada'; ao renderizar, eles seguem as checkboxes do painel e
+# não duplicam o pedido de dados quando desmarcados.
+COLLECT_FIELD_ALIASES = {
+    'user': ('Usuário', 'Usuario', 'Usuário da Ferramenta'),
+    'email': ('E-mail', 'Email', 'E-mail da Ferramenta', 'Email da Ferramenta', 'E-mail da ferramenta'),
+    'senha': ('Senha', 'Password', 'Senha da Ferramenta', 'Senha do Acesso', 'Password da Ferramenta'),
+    'serial': ('Serial Number', 'Serial', 'Serial No', 'Número de Série', 'Numero de Serie'),
+    'ecid': ('Ecid', 'ECID'),
+    'anydesk': ('Acesso do AnyDesk', 'AnyDesk', 'ID e senha do AnyDesk'),
+    'whatsapp': ('WhatsApp', 'Whatsapp', 'Número de WhatsApp'),
 }
 
 # Compatibilidade: opções do antigo campo `collect_extras` (não usado mais).
@@ -155,6 +172,17 @@ SERVICE_COLLECT_EXTRA_CHOICES = [
 
 def collect_data_codes(value):
     return [c.strip() for c in (value or '').split(',') if c.strip()]
+
+
+def collect_field_code_by_name(name):
+    """Dado um nome de campo (ex.: 'E-mail'), devolve o código do painel que o
+    gerencia (ex.: 'email'), ou None se for um campo livre personalizado."""
+    key = (name or '').strip().lower()
+    for code, aliases in COLLECT_FIELD_ALIASES.items():
+        for alias in aliases:
+            if alias.lower() == key:
+                return code
+    return None
 
 
 class ServiceList(models.Model):

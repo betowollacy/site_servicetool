@@ -23,8 +23,9 @@ from . import asaas, binance, notify, provider_api, public_api
 from .models import (
     Api, ApiLog, Currency, Customer, CustomerOrder, GatewayLog, Invoice,
     METHOD_SERVICE_EXTRA_FIELDS, OrderInput, Page, PaymentDeposit, PaymentGateway,
-    PasswordReset, ServiceGroup, ServiceInput, ServiceList, Slider, Statement,
-    SystemSetting, TempRegister, collect_data_codes,
+    PasswordReset, SERVICE_COLLECT_DATA_CHOICES, ServiceGroup, ServiceInput,
+    ServiceList, Slider, Statement, SystemSetting, TempRegister,
+    collect_data_codes, collect_field_code_by_name,
 )
 
 CATEGORY_SLUGS = {
@@ -185,20 +186,30 @@ def category(request, slug):
 
 
 def _service_input_fields(service):
-    """Campos de texto exibidos na compra. Além dos campos cadastrados
-    (service_fields), inclui os dados marcados nas checkboxes do painel
-    (Usuário, E-mail, Serial, Ecid, AnyDesk, WhatsApp) e os campos
-    padrão de cada tipo de serviço."""
-    names = list(service.service_fields.values_list('name', flat=True))
-    if service.service_type == 'Credit Service':
-        if 'Quantidade de Créditos' not in names:
-            names.append('Quantidade de Créditos')
-    for code in collect_data_codes(service.collect_data):
-        if ServiceList.collect_field_type(code) != 'text':
+    """Campos de texto exibidos na compra.
+
+    Respeita as regras do painel ('Dados a solicitar na compra'):
+    os dados marcados nas checkboxes determinam os campos padrão (Usuário,
+    E-mail, Senha, Serial, Ecid, AnyDesk, WhatsApp); campos equivalentes
+    vindos da importação de API ('E-mail', 'Senha'...) seguem a checkbox e
+    não aparecem quando desmarcados. Os demais campos livres continuam sendo
+    controlados pelas 'Campos de Entrada' do painel."""
+    checked = set(collect_data_codes(service.collect_data))
+    names = []
+    for code, _label in SERVICE_COLLECT_DATA_CHOICES:
+        if code not in checked or ServiceList.collect_field_type(code) != 'text':
             continue
         fname = ServiceList.collect_field_name(code)
         if fname and fname not in names:
             names.append(fname)
+    for name in service.service_fields.values_list('name', flat=True):
+        if collect_field_code_by_name(name) is not None:
+            continue
+        if name not in names:
+            names.append(name)
+    if service.service_type == 'Credit Service':
+        if 'Quantidade de Créditos' not in names:
+            names.append('Quantidade de Créditos')
     if service.service_type == 'IMEI Service':
         if not names:
             names.append('IMEI')
