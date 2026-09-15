@@ -91,10 +91,8 @@ AXES_ENABLED = True
 AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = 2   # horas de bloqueio
 AXES_RESET_ON_SUCCESS = True
-AXES_ONLY_USER_FAILURES = False
 AXES_LOCKOUT_PARAMETERS = ['ip_address']
 AXES_VERBOSE = False
-AXES_PROXY_COUNT = 1
 
 def _axes_client_ip(request):
     xff = request.META.get('HTTP_X_FORWARDED_FOR', '') or ''
