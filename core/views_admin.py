@@ -321,6 +321,19 @@ def admin_dashboard(request):
         entry['revenue'] = row['revenue']
         entry['profit'] = row['revenue'] - row['cost']
 
+    admin_flow = []
+    admin_spent = Decimal('0.00')
+    for order in orders:
+        if not _is_admin_direct(order):
+            continue
+        spent = order.service_price or Decimal('0.00')
+        admin_spent += spent
+        admin_flow.append({
+            'order': order,
+            'spent': spent,
+            'result': order.replied_in or order.service_comments or '-',
+        })
+
     flow = []
     for order in orders[:15]:
         is_direct = _is_admin_direct(order)
@@ -359,6 +372,8 @@ def admin_dashboard(request):
         'asaas_balance_error': asaas_balance_error,
         'profit': profit,
         'direct_count': direct_count,
+        'admin_flow': admin_flow,
+        'admin_spent': admin_spent.quantize(Decimal('0.00')),
         'api_summary': [api_summary[a] for a in api_summary],
         'api_balances': api_balances,
         'top_tools': top_tools,
