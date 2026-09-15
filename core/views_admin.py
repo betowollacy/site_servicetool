@@ -29,7 +29,7 @@ from .models import (
     ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting, User,
     collect_data_codes, collect_field_code_by_name,
 )
-from . import asaas, provider_api, public_api
+from . import asaas, notify, provider_api, public_api
 
 STATUS_MAP = {
     'waiting': ('Waiting Action', 'Aguardando Ação'),
@@ -819,6 +819,8 @@ def admin_administrator(request):
             order.save(update_fields=['service_status', 'process_type'])
             messages.warning(request, 'Pedido #{} criado, mas o servico nao e automatico. Edite manualmente.'.format(order.id))
         request.session['last_admin_order'] = order.id
+        notify.send_telegram(notify.new_order_message(order, paid=True))
+        notify.send_new_order_email(order, paid=True)
         if pref_order:
             return redirect('admin_administrator')
         return redirect(reverse('admin_administrator') + '?service={}'.format(service.id))
@@ -975,6 +977,8 @@ def admin_direct_order(request):
             order.process_type = 'Manual'
             order.save(update_fields=['service_status', 'process_type'])
             messages.warning(request, 'Pedido #{} criado, mas o serviço não é automático. Edite manualmente.'.format(order.id))
+        notify.send_telegram(notify.new_order_message(order, paid=True))
+        notify.send_new_order_email(order, paid=True)
         return redirect(reverse('admin_direct_order') + '?service={}'.format(service.id if service else ''))
 
     api_ready = bool(service) and provider_api.provider_for_order(CustomerOrder(service=service)) is not None
