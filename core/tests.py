@@ -17,8 +17,8 @@ from django.utils import timezone
 from core import asaas, provider_api
 from core.models import (
     Api, Currency, Customer, CustomerOrder, Inventory, InventoryData, Invoice, OrderInput,
-    PaymentDeposit, PaymentGateway, RemoteServiceInput, RemoteServiceList, ServiceGroup,
-    ServiceInput, ServiceList, Statement, SystemSetting, User,
+    PasswordReset, PaymentDeposit, PaymentGateway, RemoteServiceInput, RemoteServiceList,
+    ServiceGroup, ServiceInput, ServiceList, Statement, SystemSetting, TempRegister, User,
 )
 
 
@@ -2446,3 +2446,126 @@ class OrderEmailTests(TestCase):
         mail.assert_called_once()
         self.assertEqual(mail.call_args.args[0].id, self.order.id)
         self.assertEqual(mail.call_args.kwargs.get('paid'), True)
+
+
+class AuthFlowTests(TestCase):
+
+    def _register(self, **overrides):
+        data = {'name': 'Cliente Teste', 'email': 'cliente@teste.com', 'password': 'Senha123@'}
+        data.update(overrides)
+        sent = []
+        with patch('core.notify._smtp_send', side_effect=lambda to, subject, text, html: sent.append(text) or True) as send:
+            resp = self.client.post(reverse('register'), data)
+        return resp, sent, send
+
+    def _confirm(self, code=None):
+        if code is None:
+            temp = TempRegister.objects.filter(email='cliente@teste.com').first()
+            code = temp.token if temp else ''
+        return self.client.post(reverse('verify_email'), {'action': 'verify', 'code': code}, follow=True)
+
+    def test_register_only_requires_name_email_password(self):
+        resp, sent, send = self._register()
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('/verify-email/', resp['Location'])
+        temp = TempRegister.objects.get(email='cliente@teste.com')
+        self.assertRegex(temp.token, r'^\d{6}$')
+        self.assertFalse(Customer.objects.filter(email='cliente@teste.com').exists())
+        self.assertNotIn('MÓVEL', sent[0].upper())
+        self.assertNotIn('CPF', sent[0].upper())
+        self.assertIn(temp.token, sent[0])
+
+    def test_register_rejects_missing_fields(self):
+        resp, _, _ = self._register(name='')
+        self.assertContains(resp, 'Nome, e-mail e senha são obrigatórios.')
+
+    def test_register_rejects_short_password(self):
+        resp, _, _ = self._register(password='short')
+        self.assertContains(resp, 'A senha deve ter pelo menos 8 caracteres.')
+
+    def test_register_rejects_duplicate_email(self):
+        Customer.objects.create(
+            name='Antigo', email='cliente@teste.com',
+            password=Customer.make_password('Senha123@'), currency='BRL',
+        )
+        resp, _, _ = self._register()
+        self.assertContains(resp, 'E-mail já cadastrado.')
+
+    def test_verify_email_creates_active_account_and_logs_in(self):
+        self._register()
+        resp = self._confirm()
+        customer = Customer.objects.get(email='cliente@teste.com')
+        self.assertEqual(customer.status, 'Active')
+        self.assertTrue(customer.check_password('Senha123@'))
+        self.assertFalse(TempRegister.objects.filter(email='cliente@teste.com').exists())
+        self.assertEqual(self.client.session.get('customer_id'), customer.id)
+        self.client.get(reverse('logout'))
+        ok = self.client.post(reverse('login'), {'email': 'cliente@teste.com', 'password': 'Senha123@'})
+        self.assertEqual(ok.status_code, 302)
+
+    def test_verify_email_rejects_wrong_code(self):
+        self._register()
+        resp = self._confirm(code='000000')
+        self.assertContains(resp, 'Código inválido.')
+        self.assertFalse(Customer.objects.filter(email='cliente@teste.com').exists())
+
+    def test_verify_email_requires_pending_registration(self):
+        resp = self.client.get(reverse('verify_email'))
+        self.assertIn(reverse('homepage'), resp['Location'])
+
+    def test_verify_email_resend_updates_code(self):
+        self._register()
+        with patch('core.notify._smtp_send', return_value=True):
+            resp = self.client.post(reverse('verify_email'), {'action': 'resend'}, follow=True)
+        self.assertContains(resp, 'Novo código enviado')
+        temp = TempRegister.objects.get(email='cliente@teste.com')
+        self.assertRegex(temp.token, r'^\d{6}$')
+
+
+class ForgotPasswordFlowTests(TestCase):
+
+    def setUp(self):
+        self.customer = Customer.objects.create(
+            name='Cliente Teste', email='cliente@teste.com',
+            password=Customer.make_password('Senha123@'), currency='BRL', status='Active',
+        )
+
+    def _smtp_fake(self, sent):
+        return patch(
+            'core.notify._smtp_send',
+            side_effect=lambda to, subject, text, html: sent.append(text) or True,
+        )
+
+    def test_forgot_password_sends_email_and_resets(self):
+        sent = []
+        with self._smtp_fake(sent):
+            resp = self.client.post(reverse('forgot_password'), {'action': 'request', 'email': 'cliente@teste.com'})
+        self.assertEqual(resp.status_code, 302)
+        reset = PasswordReset.objects.get(email='cliente@teste.com')
+        self.assertIn(reset.token, sent[0])
+        code = self.client.session.get('forgot_password_code', reset.token)
+        with self._smtp_fake(sent):
+            bad = self.client.post(reverse('forgot_password'), {'action': 'verify', 'code': '000000'})
+        self.assertContains(bad, 'Código inválido.')
+        with self._smtp_fake(sent):
+            ok = self.client.post(reverse('forgot_password'), {'action': 'verify', 'code': code})
+        self.assertEqual(ok.status_code, 302)
+        with self._smtp_fake(sent):
+            done = self.client.post(reverse('forgot_password'), {
+                'action': 'reset', 'new_password': 'NovaSenha456@', 'confirm_password': 'NovaSenha456@',
+            })
+        self.assertContains(done, 'Senha redefinida!')
+        self.customer.refresh_from_db()
+        self.assertTrue(self.customer.check_password('NovaSenha456@'))
+        self.assertFalse(PasswordReset.objects.filter(email='cliente@teste.com').exists())
+
+    def test_forgot_password_unknown_email_rejected(self):
+        with self._smtp_fake([]):
+            resp = self.client.post(reverse('forgot_password'), {'action': 'request', 'email': 'nao@existe.com'})
+        self.assertContains(resp, 'E-mail não encontrado ou conta inativa.')
+
+    def test_forgot_password_throttles_resend(self):
+        PasswordReset.objects.create(customer=self.customer, email='cliente@teste.com', token='111111')
+        with self._smtp_fake([]):
+            resp = self.client.post(reverse('forgot_password'), {'action': 'request', 'email': 'cliente@teste.com'})
+        self.assertContains(resp, 'Já enviamos um código recentemente.')

@@ -4,6 +4,7 @@ import random
 import string
 import time
 import uuid
+from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
@@ -14,6 +15,7 @@ from django.db.models import Prefetch, Q, Sum
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -21,8 +23,8 @@ from . import asaas, binance, notify, provider_api, public_api
 from .models import (
     Api, ApiLog, Currency, Customer, CustomerOrder, GatewayLog, Invoice,
     METHOD_SERVICE_EXTRA_FIELDS, OrderInput, Page, PaymentDeposit, PaymentGateway,
-    ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting,
-    collect_data_codes,
+    PasswordReset, ServiceGroup, ServiceInput, ServiceList, Slider, Statement,
+    SystemSetting, TempRegister, collect_data_codes,
 )
 
 CATEGORY_SLUGS = {
@@ -276,29 +278,91 @@ def login_view(request):
     return redirect('homepage')
 
 
+def _mask_email(email):
+    parts = (email or '').split('@')
+    if len(parts) == 2 and len(parts[0]) > 2:
+        return parts[0][:2] + '***@' + parts[1]
+    return email or ''
+
+
+def _generate_code():
+    return ''.join(random.choices(string.digits, k=6))
+
+
+VERIFY_SESSION_KEY = 'verify_email'
+
+
 def register_view(request):
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         email = request.POST.get('email', '').strip()
-        mobile = request.POST.get('mobile', '').strip()
         password = request.POST.get('password', '')
-        cpf_cnpj = request.POST.get('cpf_cnpj', '').strip()
-        currency = 'BRL'
+        if not (name and email and password):
+            ctx = {'register_error': 'Nome, e-mail e senha são obrigatórios.'}
+            ctx.update(_base_ctx(request))
+            return render(request, 'frontend/homepage.html', ctx)
         if Customer.objects.filter(email__iexact=email).exists():
             ctx = {'register_error': 'E-mail já cadastrado.'}
             ctx.update(_base_ctx(request))
             return render(request, 'frontend/homepage.html', ctx)
-        if not (name and email and mobile and password):
-            ctx = {'register_error': 'Todos os campos são obrigatórios.'}
+        if len(password) < 8:
+            ctx = {'register_error': 'A senha deve ter pelo menos 8 caracteres.'}
             ctx.update(_base_ctx(request))
             return render(request, 'frontend/homepage.html', ctx)
-        Customer.objects.create(
-            name=name, email=email, mobile=mobile, cpf_cnpj=cpf_cnpj or None,
-            password=Customer.make_password(password), currency=currency,
+        TempRegister.objects.filter(email__iexact=email).delete()
+        code = _generate_code()
+        TempRegister.objects.create(
+            name=name, email=email, password=Customer.make_password(password),
+            currency='BRL', token=code,
         )
-        messages.success(request, 'Cadastro realizado com sucesso. Faça login.')
-        return redirect('homepage')
+        request.session[VERIFY_SESSION_KEY + '_email'] = email
+        if not notify.send_code_email(email, code, 'verify'):
+            ctx = {'register_error': 'Não foi possível enviar o e-mail de verificação. Tente novamente mais tarde.'}
+            ctx.update(_base_ctx(request))
+            return render(request, 'frontend/homepage.html', ctx)
+        return redirect('verify_email')
     return redirect('homepage')
+
+
+def verify_email(request):
+    email = request.session.get(VERIFY_SESSION_KEY + '_email', '')
+    temp = TempRegister.objects.filter(email__iexact=email).first() if email else None
+    if not temp:
+        messages.error(request, 'Nenhum cadastro pendente de verificação.')
+        return redirect('homepage')
+    if temp.created_at < timezone.now() - timedelta(hours=24):
+        temp.delete()
+        request.session.pop(VERIFY_SESSION_KEY + '_email', None)
+        messages.error(request, 'O código de verificação expirou. Faça o cadastro novamente.')
+        return redirect('homepage')
+    if request.method == 'POST':
+        action = request.POST.get('action', 'verify')
+        if action == 'resend':
+            code = _generate_code()
+            temp.token = code
+            temp.save(update_fields=['token'])
+            if notify.send_code_email(temp.email, code, 'verify'):
+                messages.success(request, 'Novo código enviado para {}.'.format(_mask_email(temp.email)))
+            else:
+                messages.error(request, 'Não foi possível enviar o e-mail. Tente novamente mais tarde.')
+            return redirect('verify_email')
+        code_input = request.POST.get('code', '').strip()
+        if not code_input or code_input != temp.token:
+            messages.error(request, 'Código inválido. Verifique e tente novamente.')
+            return redirect('verify_email')
+        customer = Customer.objects.create(
+            name=temp.name, email=temp.email, password=temp.password,
+            currency=temp.currency, status='Active',
+        )
+        temp.delete()
+        request.session.pop(VERIFY_SESSION_KEY + '_email', None)
+        request.session['customer_id'] = customer.id
+        request.session.set_expiry(0)
+        messages.success(request, 'E-mail confirmado! Cadastro realizado com sucesso.')
+        return redirect('homepage')
+    ctx = {'verify_email': _mask_email(temp.email)}
+    ctx.update(_base_ctx(request))
+    return render(request, 'customer/verify_email.html', ctx)
 
 
 def logout_view(request):
@@ -310,24 +374,13 @@ def logout_view(request):
 # Forgot Password
 # --------------------------------------------------------------------------- #
 
-def _generate_code():
-    return ''.join(random.choices(string.digits, k=6))
-
-
 FORGOT_SESSION_KEY = 'forgot_password'
 
 
 def forgot_password(request):
     step = request.session.get(FORGOT_SESSION_KEY + '_step', 'request')
-    code = request.session.get(FORGOT_SESSION_KEY + '_code', '')
     email = request.session.get(FORGOT_SESSION_KEY + '_email', '')
-    masked_email = ''
-    if email:
-        parts = email.split('@')
-        if len(parts) == 2 and len(parts[0]) > 2:
-            masked_email = parts[0][:2] + '***' + '@' + parts[1]
-        else:
-            masked_email = email
+    masked_email = _mask_email(email)
 
     if request.method == 'POST':
         action = request.POST.get('action', 'request')
@@ -340,18 +393,29 @@ def forgot_password(request):
                 ctx = {'step': 'request'}
                 ctx.update(_base_ctx(request))
                 return render(request, 'customer/forgot_password.html', ctx)
+            recent = PasswordReset.objects.filter(email__iexact=email_input).order_by('-created_at').first()
+            if recent and recent.created_at > timezone.now() - timedelta(seconds=60):
+                messages.error(request, 'Já enviamos um código recentemente. Aguarde 1 minuto e tente novamente.')
+                ctx = {'step': 'request'}
+                ctx.update(_base_ctx(request))
+                return render(request, 'customer/forgot_password.html', ctx)
             new_code = _generate_code()
+            PasswordReset.objects.create(customer=customer, email=email_input, token=new_code)
             request.session[FORGOT_SESSION_KEY + '_code'] = new_code
             request.session[FORGOT_SESSION_KEY + '_email'] = email_input
             request.session[FORGOT_SESSION_KEY + '_step'] = 'verify'
-            messages.success(request, f'Código enviado para {email_input}. (Código de teste: {new_code})')
+            if notify.send_code_email(email_input, new_code, 'reset'):
+                messages.success(request, f'Código enviado para {_mask_email(email_input)}.')
+            else:
+                messages.error(request, 'Não foi possível enviar o e-mail. Tente novamente mais tarde.')
             return redirect('forgot_password')
 
         elif action == 'verify' or step == 'verify':
             code_input = request.POST.get('code', '').strip()
-            if code_input != code:
+            session_code = request.session.get(FORGOT_SESSION_KEY + '_code', '')
+            reset = PasswordReset.objects.filter(email__iexact=email, token=code_input).first()
+            if not code_input or code_input != session_code or not reset:
                 messages.error(request, 'Código inválido.')
-                masked_email = email
                 ctx = {'step': 'verify', 'masked_email': masked_email}
                 ctx.update(_base_ctx(request))
                 return render(request, 'customer/forgot_password.html', ctx)
@@ -363,18 +427,19 @@ def forgot_password(request):
             confirm_password = request.POST.get('confirm_password', '')
             if len(new_password) < 8:
                 messages.error(request, 'A senha deve ter pelo menos 8 caracteres.')
-                ctx = {'step': 'reset', 'code': code}
+                ctx = {'step': 'reset'}
                 ctx.update(_base_ctx(request))
                 return render(request, 'customer/forgot_password.html', ctx)
             if new_password != confirm_password:
                 messages.error(request, 'As senhas não coincidem.')
-                ctx = {'step': 'reset', 'code': code}
+                ctx = {'step': 'reset'}
                 ctx.update(_base_ctx(request))
                 return render(request, 'customer/forgot_password.html', ctx)
             customer = Customer.objects.filter(email__iexact=email).first()
             if customer:
                 customer.password = Customer.make_password(new_password)
                 customer.save(update_fields=['password'])
+                PasswordReset.objects.filter(customer=customer, email__iexact=email).delete()
             for key in list(request.session.keys()):
                 if key.startswith(FORGOT_SESSION_KEY):
                     del request.session[key]
@@ -390,7 +455,7 @@ def forgot_password(request):
     if step == 'verify':
         ctx = {'step': 'verify', 'masked_email': masked_email}
     elif step == 'reset':
-        ctx = {'step': 'reset', 'code': code}
+        ctx = {'step': 'reset'}
     else:
         ctx = {'step': 'request'}
     ctx.update(_base_ctx(request))

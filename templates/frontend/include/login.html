@@ -59,20 +59,13 @@
                                         <label for="regEmail" class="form-label fw-semibold mb-1">E-mail</label>
                                         <input type="email" name="email" class="form-control email-input" id="regEmail" placeholder="Seu E-mail" autocomplete="off" required>
                                     </div>
-                                    <div class="mb-3">
-                                        <label for="regMobile" class="form-label fw-semibold mb-1">Celular</label>
-                                        <input type="tel" name="mobile" class="form-control" id="regMobile" placeholder="Seu Celular" autocomplete="off" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label for="regCpf" class="form-label fw-semibold mb-1">CPF ou CNPJ</label>
-                                        <input type="text" name="cpf_cnpj" class="form-control" id="regCpf" placeholder="000.000.000-00" autocomplete="off" maxlength="18">
-                                    </div>
                                     <div class="mb-4">
                                         <label for="regPassword" class="form-label fw-semibold mb-1">Senha</label>
                                         <div class="position-relative">
-                                            <input type="password" name="password" class="form-control pe-5" id="regPassword" placeholder="Crie sua senha" autocomplete="off" required minlength="8">
+                                            <input type="password" name="password" class="form-control pe-5" id="regPassword" placeholder="Crie sua senha (mín. 8 caracteres)" autocomplete="off" required minlength="8">
                                             <button type="button" class="btn btn-link position-absolute top-50 end-0 translate-middle-y px-3 text-secondary toggle-password" data-target="#regPassword" aria-label="Show password" style="background:none"><i class="bi bi-eye"></i></button>
                                         </div>
+                                        <div class="form-text mt-2">Após o cadastro, você receberá um código de verificação no seu e-mail.</div>
                                     </div>
                                     <button type="submit" class="btn btn-primary w-100 rounded-1">Cadastrar</button>
                                 </form>

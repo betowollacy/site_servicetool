@@ -1,0 +1,48 @@
+{% extends 'frontend/base.html' %}
+{% load static %}
+{% block seo %}
+<title>Confirme seu E-mail - {{ siteTitle }}</title>
+{% endblock %}
+{% block content %}
+<div class="container py-5" style="max-width: 480px;">
+    <nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>'">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'homepage' %}" class="breadcrumb-item active">Início</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Cadastro</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-body p-4">
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+
+            <h5 class="fw-semibold mb-1">Confirme seu e-mail</h5>
+            <p class="text-body-secondary mb-4">Enviamos um código de 6 dígitos para <b>{{ verify_email }}</b>. Digite o código abaixo para ativar sua conta.</p>
+
+            <form method="post" action="{% url 'verify_email' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="verify">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Código de verificação</label>
+                    <input type="text" name="code" class="form-control text-center" maxlength="6" pattern="\d{6}" placeholder="000000" required autofocus inputmode="numeric" autocomplete="one-time-code">
+                </div>
+                <button type="submit" class="btn btn-primary w-100 rounded-2">Confirmar Cadastro</button>
+            </form>
+
+            <form method="post" action="{% url 'verify_email' %}" class="text-center mt-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="resend">
+                <button type="submit" class="btn btn-link text-body-secondary text-decoration-none">Não recebi o código. Enviar novamente</button>
+            </form>
+
+            <div class="text-center mt-2">
+                <a href="{% url 'homepage' %}" class="text-body-secondary text-decoration-none">Voltar ao início</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

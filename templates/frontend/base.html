@@ -252,6 +252,16 @@
                     $("#view-register").addClass("d-none").removeClass("show");
                 });
             }
+            {% if register_error or login_error %}
+            if (window.bootstrap && bootstrap.Modal) {
+                var errorView = "{% if register_error %}register{% else %}login{% endif %}";
+                $("#servicetoolAuthModal").on("shown.bs.modal", function () {
+                    $("#servicetoolAuthModal .auth-view").removeClass("show").addClass("d-none");
+                    $("#view-" + errorView).removeClass("d-none").addClass("show");
+                });
+                bootstrap.Modal.getOrCreateInstance($("#servicetoolAuthModal")[0]).show();
+            }
+            {% endif %}
             function applyTheme(theme, persist){
                 theme = (theme === "dark") ? "dark" : "light";
                 document.documentElement.setAttribute("data-bs-theme", theme);

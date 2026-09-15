@@ -394,3 +394,51 @@ def send_order_email(order):
         return False
     mail = completed_order_email(order)
     return _smtp_send(to, mail['subject'], mail['text'], mail['html'])
+
+
+def send_code_email(to, code, purpose):
+    """Envia um e-mail com código de 6 dígitos.
+    purpose: 'verify' (confirmação de cadastro) ou 'reset' (recuperação de senha)."""
+    to = (to or '').strip()
+    code = (code or '').strip()
+    if not to or not code:
+        return False
+    site = _site_name()
+    if purpose == 'verify':
+        subject = 'Confirme seu e-mail - {site}'.format(site=site)
+        headline = 'Confirme seu e-mail'
+        intro = 'Use o código abaixo para confirmar o seu cadastro em {site}:'
+    else:
+        subject = 'Recuperação de senha - {site}'.format(site=site)
+        headline = 'Recuperar senha'
+        intro = 'Use o código abaixo para redefinir a senha da sua conta em {site}:'
+    text = '\n'.join([
+        intro.format(site=site),
+        '',
+        'Seu código: {code}'.format(code=code),
+        '',
+        'Se não foi você quem pediu, ignore este e-mail.',
+    ])
+    html_body = (
+        '<html><body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">'
+        '<div style="max-width:520px;margin:0 auto;background:#ffffff;">'
+        '<div style="background:#111827;color:#ffffff;padding:22px;text-align:center;">'
+        '<span style="font-size:20px;font-weight:bold;">{site}</span></div>'
+        '<div style="padding:28px;text-align:center;">'
+        '<div style="font-size:18px;font-weight:bold;color:#111827;margin-bottom:10px;">{headline}</div>'
+        '<p style="color:#475569;margin:0 0 18px;">{intro}</p>'
+        '<div style="display:inline-block;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;'
+        'padding:16px 28px;font-size:28px;font-weight:bold;letter-spacing:6px;color:#111827;">{code}</div>'
+        '<p style="color:#64748b;font-size:12px;margin-top:22px;">Se não foi você quem pediu, ignore este e-mail.</p>'
+        '</div>'
+        '<div style="padding:16px;background:#f8fafc;border-top:1px solid #e2e8f0;'
+        'text-align:center;color:#64748b;font-size:12px;">© {year} {site}.</div>'
+        '</div></body></html>'
+    ).format(
+        site=html.escape(site),
+        headline=headline,
+        intro=intro.format(site=html.escape(site)),
+        code=html.escape(code),
+        year=timezone.now().year,
+    )
+    return _smtp_send(to, subject, text, html_body)

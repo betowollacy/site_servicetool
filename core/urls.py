@@ -82,6 +82,7 @@ path('admin-panel/apis/<int:api_id>/import/', views_admin.admin_api_import,
     path('service/<slug:slug>/', views.server_view, name='service_view'),
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
+    path('verify-email/', views.verify_email, name='verify_email'),
     path('logout/', views.logout_view, name='logout'),
     path('forgot-password/', views.forgot_password, name='forgot_password'),
 
