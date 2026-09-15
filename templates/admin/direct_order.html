@@ -1,0 +1,170 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class='row mb-3'>
+    <div class='col-12'>
+        <h4 class='mb-0'>Pedido Direto na API</h4>
+        <small class='text-muted'>Área exclusiva do painel — o pedido é registrado como <b>{{ admin_customer.name }}</b> ({{ admin_customer.email }}) e usa o saldo da API do provedor, sem debitar saldo de cliente.</small>
+    </div>
+</div>
+{% if messages %}
+{% for message in messages %}
+{% if message.tags == 'error' %}
+    <div class='alert alert-danger'>{{ message }}</div>
+{% elif message.tags == 'warning' %}
+    <div class='alert alert-warning'>{{ message }}</div>
+{% else %}
+    <div class='alert alert-success'>{{ message }}</div>
+{% endif %}
+{% endfor %}
+{% endif %}
+<div class='row g-3'>
+    <div class='col-lg-4'>
+        <div class='card mb-3'>
+            <div class='card-body'>
+                <h6 class='fw-bold mb-3'>Saldo nas APIs</h6>
+                {% for item in api_balances %}
+                <div class='d-flex justify-content-between align-items-center py-2 border-bottom'>
+                    <div>
+                        <div class='fw-semibold'>{{ item.api.api_name }}</div>
+                        {% if item.api.api_url %}
+                        <small class='text-muted'>{{ item.api.api_url }}</small>
+                        {% endif %}
+                    </div>
+                    <div class='text-end'>
+                        {% if item.error %}
+                        <span class='text-danger small' title='{{ item.error }}'>Falha ao consultar</span>
+                        {% else %}
+                        <span class='fw-bold'>R$ {{ item.balance|floatformat:2 }}</span>
+                        {% if item.currency %}<small class='text-muted d-block'>{{ item.currency }}</small>{% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class='text-muted small'>Nenhuma API ativa cadastrada.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class='card mb-3'>
+            <div class='card-body'>
+                <h6 class='fw-bold mb-3'>Buscar serviço</h6>
+                <form method='get' class='row g-2'>
+                    <div class='col-12'>
+                        <select name='api' class='form-select'>
+                            <option value=''>Todas as APIs</option>
+                            {% for item in api_balances %}
+                            <option value='{{ item.api.id }}' {% if api_filter == item.api.id %}selected{% endif %}>{{ item.api.api_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class='col-12'>
+                        <input type='text' name='q' class='form-control' placeholder='Buscar por nome do serviço' value='{{ q }}'>
+                    </div>
+                    <div class='col-12'>
+                        <button class='btn btn-outline-primary w-100'>Buscar</button>
+                    </div>
+                </form>
+                <div class='mt-3 small'>
+                    <span class='text-muted'>Serviços encontrados:</span> <b>{{ services|length }}</b>
+                </div>
+                <div class='list-group list-group-flush mt-2' style='max-height:320px;overflow:auto'>
+                    {% for s in services %}
+                    <a href='{% url 'admin_direct_order' %}?{% if q %}q={{ q|urlencode }}&{% endif %}{% if api_filter %}api={{ api_filter }}&{% endif %}service={{ s.id }}' class='list-group-item list-group-item-action {% if service and service.id == s.id %}active{% endif %}'>
+                        <div class='d-flex justify-content-between align-items-center'>
+                            <div class='small'>{{ s.title }}</div>
+                            <span class='badge bg-light text-dark border'>{{ s.api.api_name }}</span>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class='text-muted'>Nenhum serviço ativo com API encontrado.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {% if service %}
+        <div class='card'>
+            <div class='card-body'>
+                <h6 class='fw-bold mb-3'>Serviço selecionado</h6>
+                <div class='mb-1'><b>Serviço:</b> {{ service.title }}</div>
+                <div class='mb-1'><b>API:</b> {{ service.api.api_name }}</div>
+                <div class='mb-1'>Custo na API: <b>R$ {{ api_price|floatformat:2 }}</b> {% if service.original_price %}<small class='text-muted'>(preço local: {{ service.original_price|floatformat:2 }})</small>{% endif %}</div>
+                {% if not api_ready %}
+                <div class='alert alert-warning py-2 mt-2 mb-0'>Serviço não habilitado para API automática — marque <b>API habilitada</b> e preencha o <b>ID do produto</b> no cadastro do serviço, senão o pedido ficará manual (Waiting Action).</div>
+                {% endif %}
+                <small class='text-muted d-block mt-2'>O pedido usa o saldo da API do provedor — nada é debitado do saldo do cliente no site.</small>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class='col-lg-8'>
+        <div class='card mb-3'>
+            <div class='card-body'>
+                <h6 class='fw-bold mb-3'>Enviar pedido{% if service %} — {{ service.title }}{% endif %}</h6>
+                {% if service %}
+                <form method='post'>
+                    {% csrf_token %}
+                    <input type='hidden' name='serviceID' value='{{ service.id }}'>
+                    {% for obj in input_objects %}
+                    <div class='mb-3'>
+                        <label class='form-label'>{{ obj.name }}</label>
+                        <input type='{% if obj.is_qnt %}number{% else %}text{% endif %}' class='form-control' name='{{ obj.name }}' value='{{ obj.value }}' {% if obj.is_qnt %}min='1' step='1'{% endif %} {% if not obj.is_qnt %}required{% endif %}>
+                    </div>
+                    {% endfor %}
+                    <button type='submit' class='btn btn-primary w-100'>Enviar pedido à API</button>
+                </form>
+                {% else %}
+                <div class='text-muted'>Busque e selecione um serviço para enviar o pedido direto na API.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class='card'>
+            <div class='card-body'>
+                <h6 class='fw-bold mb-3'>Solicitações recentes (status)</h6>
+                {% if history %}
+                <div class='table-responsive'>
+                    <table class='table table-sm table-hover align-middle mb-0'>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Serviço</th>
+                                <th>Status</th>
+                                <th>Ref</th>
+                                <th>Resultado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for o in history %}
+                            <tr>
+                                <td>{{ o.id }}</td>
+                                <td class='small'>{{ o.service_title }}</td>
+                                <td>
+                                    {% if o.service_status == 'Success' %}
+                                    <span class='badge bg-success'>Success</span>
+                                    {% elif o.service_status == 'In Process' %}
+                                    <span class='badge bg-info'>In Process</span>
+                                    {% elif o.service_status == 'Waiting Action' %}
+                                    <span class='badge bg-warning text-dark'>Waiting Action</span>
+                                    {% elif o.service_status == 'Rejected' %}
+                                    <span class='badge bg-danger'>Rejected</span>
+                                    {% else %}
+                                    <span class='badge bg-secondary'>{{ o.service_status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class='small'>{{ o.trx_id|default:'-' }}</td>
+                                <td class='small text-muted'>{{ o.replied_in|default:o.service_comments|default:'(aguardando o provedor)' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class='text-muted'>Nenhuma solicitação enviada ainda por este administrador.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

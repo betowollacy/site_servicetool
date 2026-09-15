@@ -784,6 +784,165 @@ def admin_administrator(request):
     return render(request, 'admin/administrator.html', ctx)
 
 @_staff
+def admin_direct_order(request):
+    """Pedido direto na API do provedor, exclusivo do painel administrativo.
+
+    Area simplificada: o administrador logado envia o pedido direto na API do
+    provedor (sem refazer pedido de cliente) e acompanha o status das
+    solicitacoes. O pedido fica registrado no cadastro do proprio admin."""
+    from .views import _invoice_type_key, _service_input_fields
+
+    def _parse_int(value):
+        try:
+            return int(str(value or '').strip())
+        except (TypeError, ValueError):
+            return None
+
+    admin_customer, _ = Customer.objects.get_or_create(
+        email=request.user.email or '',
+        defaults={
+            'name': request.user.get_full_name() or request.user.username or 'Administrador',
+            'password': Customer.make_password(uuid.uuid4().hex),
+            'currency': 'BRL',
+            'role': 'Web Owner',
+            'api_allow': 'off',
+        },
+    )
+
+    q = (request.GET.get('q') or '').strip()
+    api_filter = _parse_int(request.GET.get('api'))
+    services = ServiceList.objects.filter(
+        status='Active', api__isnull=False, api__status='Active',
+    ).select_related('api').order_by('title')
+    if q:
+        services = services.filter(title__icontains=q)
+    if api_filter:
+        services = services.filter(api_id=api_filter)
+    services = services[:100]
+
+    api_balances = []
+    for api in Api.objects.filter(status='Active').order_by('api_name'):
+        info = None
+        error = None
+        try:
+            info = provider_api.account_info(api)
+        except Exception as exc:  # noqa: BLE001 - saldo é opcional no painel
+            error = str(exc)
+        api_balances.append({
+            'api': api,
+            'balance': _api_credit_decimal(info),
+            'error': error,
+            'currency': (info or {}).get('currency', ''),
+        })
+
+    service_id = request.POST.get('serviceID') or request.GET.get('service') or ''
+    service = ServiceList.objects.select_related('api').filter(id=_parse_int(service_id)).first()
+
+    api_price = None
+    if service:
+        remote = RemoteServiceList.objects.filter(
+            api=service.api, referenceid=(service.referenceid or '').strip(),
+        ).first()
+        api_price = remote.CREDIT if remote and remote.CREDIT else service.api.reseller_price
+
+    input_objects = []
+    if service:
+        for name in _service_input_fields(service):
+            is_qnt = 'quantidade' in name.lower() or name.lower().startswith(('qtd', 'qty', 'qnt'))
+            input_objects.append({'name': name, 'value': '', 'is_qnt': is_qnt})
+
+    if request.method == 'POST':
+        if provider_api.maintenance_active():
+            messages.error(request, 'Site em manutenção. Pedidos na API pausados — desative a manutenção para enviar.')
+            return redirect('admin_direct_order')
+        errors = []
+        if service is None or service.api_id is None or not (service.referenceid or '').strip():
+            errors.append('Selecione um serviço vinculado a uma API com ID do produto.')
+        elif not provider_api.provider_for_order(CustomerOrder(service=service)):
+            errors.append('Serviço não habilitado para API automática: marque API habilitada e preencha o ID do produto no cadastro do serviço.')
+        fields = {}
+        qnt = 1
+        if service:
+            for obj in input_objects:
+                name = obj['name']
+                if obj['is_qnt']:
+                    qnt = _parse_int(request.POST.get(name)) or 1
+                    if qnt < 1:
+                        qnt = 1
+                    continue
+                value = request.POST.get(name, '').strip()
+                if not value:
+                    errors.append('Informe {}.'.format(name))
+                else:
+                    fields[name] = value
+        if errors:
+            for msg in errors:
+                messages.error(request, msg)
+            return redirect(reverse('admin_direct_order') + '?service={}'.format(service.id if service else ''))
+        if admin_customer.status != 'Active':
+            admin_customer.status = 'Active'
+            admin_customer.save(update_fields=['status'])
+
+        cost = (api_price or service.original_price) * qnt
+        order = CustomerOrder.objects.create(
+            customer=admin_customer,
+            service=service,
+            service_status='In Process',
+            service_type=_invoice_type_key(service.service_type),
+            service_price=cost,
+            service_qnt=str(qnt),
+            service_title=service.title,
+            process_type='Auto',
+        )
+        for name, value in fields.items():
+            OrderInput.objects.create(order=order, field_name=name, field_value=value)
+            if not order.service_input1:
+                order.service_input1 = value
+                order.save(update_fields=['service_input1'])
+
+        forwarded, msg = provider_api.submit_local_order(order)
+        order.refresh_from_db()
+        if forwarded is False:
+            order.service_status = 'Rejected'
+            order.service_comments = msg or 'Falha ao enviar para a API.'
+            order.save(update_fields=['service_status', 'service_comments'])
+            messages.error(request, 'Falha no pedido #{}: {}'.format(order.id, order.service_comments))
+        elif forwarded is True:
+            provider_api.sync_local_order(order, notify_complete=False)
+            order.refresh_from_db()
+            result = order.replied_in or order.service_comments or '-'
+            messages.success(request, 'Pedido #{} enviado a API (ref: {}). Status: {}. Resultado: {}'.format(
+                order.id, order.trx_id or '-', order.service_status, result))
+        else:
+            order.service_status = 'Waiting Action'
+            order.process_type = 'Manual'
+            order.save(update_fields=['service_status', 'process_type'])
+            messages.warning(request, 'Pedido #{} criado, mas o serviço não é automático. Edite manualmente.'.format(order.id))
+        return redirect(reverse('admin_direct_order') + '?service={}'.format(service.id if service else ''))
+
+    api_ready = bool(service) and provider_api.provider_for_order(CustomerOrder(service=service)) is not None
+
+    history = (CustomerOrder.objects
+               .filter(customer=admin_customer)
+               .select_related('service')
+               .order_by('-id')[:15])
+
+    ctx = {
+        'admin_customer': admin_customer,
+        'q': q,
+        'api_filter': api_filter,
+        'services': services,
+        'api_balances': api_balances,
+        'service': service,
+        'api_price': api_price,
+        'input_objects': input_objects,
+        'api_ready': api_ready,
+        'history': history,
+    }
+    return render(request, 'admin/direct_order.html', ctx)
+
+
+@_staff
 def admin_setting(request):
     keys = [
         'siteTitle', 'siteMetaTitle', 'siteMetaDes', 'siteKeyword', 'siteLogo', 'siteFav',

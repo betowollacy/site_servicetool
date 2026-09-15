@@ -2667,6 +2667,90 @@ class SingleSessionTests(TestCase):
         self.assertIn(reverse('homepage'), resp['Location'])
 
 
+class AdminDirectOrderTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(
+            username='admindirect', password='senha123', is_staff=True,
+            email='dono@painel.com',
+        )
+        self.api = Api.objects.create(
+            api_name='API Teste', status='Active',
+            price_rate=Decimal('5.5000'), reseller_price=Decimal('1.00'),
+            api_url='https://api.teste.com', api_key='api-key-teste',
+            api_username='usuario-teste',
+        )
+        RemoteServiceList.objects.create(
+            api=self.api, referenceid='R-TEST', SERVICETYPE='server_service',
+            SERVICENAME='Aluguel 1 Dia', CREDIT=Decimal('1.00'),
+        )
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group,
+            title='Aluguel 1 Dia', slug='aluguel-1-dia', status='Active',
+            original_price=Decimal('10.00'), api=self.api, api_enabled=True,
+            referenceid='R-TEST', process_type='Auto',
+        )
+
+    @patch('core.views_admin.provider_api.account_info',
+           return_value={'credit': '33.00', 'creditraw': 33.0, 'mail': 'conta@api.com', 'currency': 'USD'})
+    def test_page_lists_apis_balances_and_services(self, _mock):
+        self.client.force_login(self.staff)
+        resp = self.client.get(reverse('admin_direct_order'))
+        self.assertEqual(resp.status_code, 200)
+        ctx = resp.context
+        self.assertEqual(ctx['admin_customer'].email, 'dono@painel.com')
+        self.assertTrue(any(
+            item['api'].id == self.api.id and item['balance'] == Decimal('33.00')
+            for item in ctx['api_balances']
+        ))
+        self.assertContains(resp, 'Aluguel 1 Dia')
+        self.assertContains(resp, '33.00')
+        self.assertContains(resp, 'API Teste')
+
+    @patch('core.views_admin.provider_api.account_info',
+           return_value={'credit': '10', 'creditraw': 10.0, 'mail': 'conta@api.com', 'currency': 'USD'})
+    @patch('core.views_admin.provider_api.submit_local_order', return_value=(True, 'REF-DIRETO'))
+    @patch('core.views_admin.provider_api.sync_local_order', return_value=True)
+    def test_post_registers_order_for_logged_admin(self, _sync, _submit, _acc):
+        self.client.force_login(self.staff)
+        resp = self.client.post(reverse('admin_direct_order'), {'serviceID': self.service.id})
+        self.assertEqual(resp.status_code, 302)
+        order = CustomerOrder.objects.get()
+        self.assertEqual(order.customer.email, 'dono@painel.com')
+        self.assertEqual(order.service_id, self.service.id)
+        self.assertEqual(order.process_type, 'Auto')
+        self.assertEqual(order.service_price, Decimal('1.00'))  # 1 credit x qnt 1 (custo em creditos)
+        resp2 = self.client.get(reverse('admin_direct_order'))
+        self.assertIn(order, list(resp2.context['history']))
+
+    @patch('core.views_admin.provider_api.account_info',
+           return_value={'credit': '10', 'creditraw': 10.0, 'mail': 'conta@api.com', 'currency': 'USD'})
+    def test_post_maintains_selected_service_on_error(self, _acc):
+        self.client.force_login(self.staff)
+        blocked = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group,
+            title='Sem API', slug='sem-api', status='Active',
+            original_price=Decimal('9.00'), api=self.api, api_enabled=False,
+        )
+        resp = self.client.post(reverse('admin_direct_order'), {'serviceID': blocked.id})
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('service={}'.format(blocked.id), resp.url)
+        self.assertEqual(CustomerOrder.objects.count(), 0)
+
+    def test_post_blocked_during_maintenance(self):
+        SystemSetting.objects.create(key='siteMaintenanceMode', value='on')
+        self.addCleanup(SystemSetting.objects.filter(key='siteMaintenanceMode').delete)
+        self.client.force_login(self.staff)
+        resp = self.client.post(reverse('admin_direct_order'), {'serviceID': self.service.id})
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(CustomerOrder.objects.count(), 0)
+
+    def test_requires_staff(self):
+        resp = self.client.get(reverse('admin_direct_order'))
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('django-admin/login', resp.url)
+
+
 class AdminDashboardTests(TestCase):
     def setUp(self):
         self.staff = User.objects.create_user(username='admindash', password='senha123', is_staff=True)
