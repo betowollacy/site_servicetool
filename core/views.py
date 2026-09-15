@@ -231,7 +231,6 @@ def server_view(request, slug):
         'serviceData': service,
         'serviceInputs': _service_input_objects(service),
         'collect_extras': _service_extra_fields(service),
-        'requested_login': 'user' in collect_data_codes(service.collect_data) or 'email' in collect_data_codes(service.collect_data),
         'serviceTags': tags,
         'Price': service.original_price,
         'keyWord': ','.join(t for t in [service.kw1, service.kw2, service.kw3, service.kw4, service.kw5] if t),

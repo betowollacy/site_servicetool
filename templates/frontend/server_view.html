@@ -115,15 +115,6 @@
                         <div class="show-error-message"></div>
 
                         {% if customer %}
-                        {% if serviceData.service_type == 'Activation Service' and requested_login %}
-                        <div class="alert alert-warning d-flex gap-2 align-items-start rounded-0 mb-3" id="activation-notice">
-                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-                            <div>
-                                <strong>Atenção:</strong> para ativar este serviço, o cliente precisa estar cadastrado na ferramenta.
-                                Se ainda não estiver cadastrado, cadastre-se ou envie os seus dados (usuário e e-mail da ferramenta) para realizarmos o seu cadastro.
-                            </div>
-                        </div>
-                        {% endif %}
                         <form method="post" action="{% url 'submit_order' %}" id="orderForm" enctype="multipart/form-data">
                             {% csrf_token %}
                             <input type="hidden" name="serviceID" value="{{ serviceData.id }}">

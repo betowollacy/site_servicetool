@@ -1242,7 +1242,7 @@ class ActivationServiceTests(TestCase):
         self.assertIn('E-mail da Ferramenta', html)
         self.assertNotIn('name="Senha"', html)
         self.assertNotIn('Quantidade de Créditos', html)
-        self.assertIn('o cliente precisa estar cadastrado na ferramenta', html)
+        self.assertNotIn('o cliente precisa estar cadastrado na ferramenta', html)
 
     def test_activation_category_page_exists(self):
         resp = self.client.get(reverse('category', args=['activation-service']))
