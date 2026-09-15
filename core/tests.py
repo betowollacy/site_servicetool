@@ -1132,7 +1132,7 @@ class CreditServiceFormTests(TestCase):
         self.service = ServiceList.objects.create(
             service_type='Credit Service', service_group=self.group,
             title='Phoenix Tool Créditos', original_price=Decimal('10.00'),
-            status='Active', slug='phoenix-creditos',
+            status='Active', slug='phoenix-creditos', collect_data='user,email',
         )
 
     def _login(self):
@@ -1216,7 +1216,7 @@ class ActivationServiceTests(TestCase):
         self.service = ServiceList.objects.create(
             service_type='Activation Service', service_group=self.group,
             title='Ativação Phoenix', original_price=Decimal('12.00'),
-            status='Active', slug='ativacao-phoenix',
+            status='Active', slug='ativacao-phoenix', collect_data='user,email',
         )
 
     def _login(self):
@@ -1274,29 +1274,29 @@ class ActivationServiceTests(TestCase):
         self.assertEqual(inputs.get('E-mail da Ferramenta'), 'conta@ferramenta.com')
         self.assertNotIn('Senha', inputs)
 
-    def test_service_view_hides_user_email_when_collect_login_off(self):
+    def test_service_view_hides_user_email_when_nothing_checked(self):
         self._login()
-        self.service.collect_login = False
-        self.service.save(update_fields=['collect_login'])
+        self.service.collect_data = ''
+        self.service.save(update_fields=['collect_data'])
         resp = self.client.get(reverse('service_view', args=[self.service.slug]))
         html = resp.content.decode()
         self.assertNotIn('name="Usuário"', html)
         self.assertNotIn('E-mail da Ferramenta', html)
         self.assertNotIn('o cliente precisa estar cadastrado na ferramenta', html)
 
-    def test_service_view_offers_only_username_when_collect_fields_user(self):
+    def test_service_view_offers_only_username_when_only_user_checked(self):
         self._login()
-        self.service.collect_fields = 'user'
-        self.service.save(update_fields=['collect_fields'])
+        self.service.collect_data = 'user'
+        self.service.save(update_fields=['collect_data'])
         resp = self.client.get(reverse('service_view', args=[self.service.slug]))
         html = resp.content.decode()
         self.assertIn('name="Usuário"', html)
         self.assertNotIn('E-mail da Ferramenta', html)
 
-    def test_submit_order_requires_only_username_when_collect_fields_user(self):
+    def test_submit_order_requires_only_username_when_only_user_checked(self):
         self._login()
-        self.service.collect_fields = 'user'
-        self.service.save(update_fields=['collect_fields'])
+        self.service.collect_data = 'user'
+        self.service.save(update_fields=['collect_data'])
         resp = self.client.post(reverse('submit_order'), {'serviceID': self.service.id})
         self.assertEqual(resp.status_code, 302)
         self.assertEqual(CustomerOrder.objects.count(), 0)
@@ -1310,10 +1310,10 @@ class ActivationServiceTests(TestCase):
         self.assertIn('Usuário', inputs)
         self.assertNotIn('E-mail da Ferramenta', inputs)
 
-    def test_submit_order_requires_email_only_when_collect_fields_email(self):
+    def test_submit_order_requires_email_only_when_only_email_checked(self):
         self._login()
-        self.service.collect_fields = 'email'
-        self.service.save(update_fields=['collect_fields'])
+        self.service.collect_data = 'email'
+        self.service.save(update_fields=['collect_data'])
         resp = self.client.post(reverse('submit_order'), {
             'serviceID': self.service.id,
             'E-mail da Ferramenta': 'conta@ferramenta.com',
@@ -1328,15 +1328,15 @@ class ActivationServiceTests(TestCase):
         staff = User.objects.create_user(username='adminfields', password='senha123', is_staff=True)
         self.client.force_login(staff)
         resp = self.client.post(reverse('admin_service_set_fields', args=['activation', self.service.id]),
-                                {'collect_fields': 'user'})
+                                {'collect_data': ['user', 'email']})
         self.assertEqual(resp.status_code, 302)
         self.service.refresh_from_db()
-        self.assertEqual(self.service.collect_fields, 'user')
+        self.assertEqual(self.service.collect_data, 'user,email')
 
-    def test_submit_order_without_login_when_collect_login_off(self):
+    def test_submit_order_without_login_when_nothing_checked(self):
         self._login()
-        self.service.collect_login = False
-        self.service.save(update_fields=['collect_login'])
+        self.service.collect_data = ''
+        self.service.save(update_fields=['collect_data'])
         resp = self.client.post(reverse('submit_order'), {
             'serviceID': self.service.id,
         })
@@ -1352,12 +1352,14 @@ class ActivationServiceTests(TestCase):
         resp = self.client.post(reverse('admin_service_toggle_login', args=['activation', self.service.id]))
         self.assertEqual(resp.status_code, 302)
         self.service.refresh_from_db()
-        self.assertFalse(self.service.collect_login)
+        self.assertNotIn('user', self.service.collect_data_list)
+        self.assertNotIn('email', self.service.collect_data_list)
         resp = self.client.post(reverse('admin_service_toggle_login', args=['activation', self.service.id]))
         self.service.refresh_from_db()
-        self.assertTrue(self.service.collect_login)
+        self.assertIn('user', self.service.collect_data_list)
+        self.assertIn('email', self.service.collect_data_list)
 
-    def test_service_form_saves_collect_login_off(self):
+    def test_service_form_saves_nothing_when_no_boxes_checked(self):
         staff = User.objects.create_user(username='adminform', password='senha123', is_staff=True)
         self.client.force_login(staff)
         resp = self.client.post(reverse('admin_service_new', args=['activation']), {
@@ -1367,7 +1369,7 @@ class ActivationServiceTests(TestCase):
         })
         self.assertEqual(resp.status_code, 302)
         service = ServiceList.objects.get(title='Ativação Sem Login')
-        self.assertFalse(service.collect_login)
+        self.assertEqual(service.collect_data, '')
 
 
 class ImeiOrderFlowTests(TestCase):
@@ -2083,7 +2085,7 @@ class ServiceCollectExtrasTests(TestCase):
             service_type='Server Service', service_group=self.group,
             title='Aluguel Remoto', original_price=Decimal('10.00'),
             status='Active', slug='aluguel-remoto',
-            collect_login=False, collect_extras='anydesk,lock_photo,whatsapp',
+            collect_data='anydesk,lock_photo,whatsapp',
         )
 
     def _login(self):
@@ -2104,7 +2106,7 @@ class ServiceCollectExtrasTests(TestCase):
 
     def test_server_view_hides_unchecked_extras(self):
         self._login()
-        self.service.collect_extras = 'whatsapp'
+        self.service.collect_data = 'whatsapp'
         self.service.save()
         resp = self.client.get(reverse('service_view', args=[self.service.slug]))
         html = resp.content.decode()
@@ -2138,17 +2140,61 @@ class ServiceCollectExtrasTests(TestCase):
         self.assertTrue(os.path.exists(photo_path))
         os.remove(photo_path)
 
+    def test_server_view_renders_checked_uploads(self):
+        self._login()
+        self.service.collect_data = 'upload_photo,upload_logo'
+        self.service.save()
+        resp = self.client.get(reverse('service_view', args=[self.service.slug]))
+        html = resp.content.decode()
+        self.assertIn('name="Foto"', html)
+        self.assertIn('name="Logo"', html)
+
+    def test_submit_order_stores_upload_photo_and_logo(self):
+        self._login()
+        self.service.collect_data = 'upload_photo,upload_logo'
+        self.service.save()
+        photo = SimpleUploadedFile('foto.png', b'fakeimage', content_type='image/png')
+        logo = SimpleUploadedFile('logo.png', b'fakelogo', content_type='image/png')
+        resp = self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+            'Foto': photo,
+            'Logo': logo,
+        })
+        self.assertEqual(resp.status_code, 302)
+        order = CustomerOrder.objects.latest('id')
+        inputs = {i.field_name: i.field_value for i in order.order_inputs.all()}
+        self.assertTrue(inputs['Foto'].startswith('/media/orders/'))
+        self.assertTrue(inputs['Logo'].startswith('/media/orders/'))
+        for url in (inputs['Foto'], inputs['Logo']):
+            path = os.path.join(settings.MEDIA_ROOT, url.replace('/media/', ''))
+            self.assertTrue(os.path.exists(path))
+            os.remove(path)
+
     @patch('core.views_admin.provider_api.auto_link_service', return_value=(None, 0))
     def test_admin_service_edit_saves_extras(self, _auto):
         staff = User.objects.create_user(username='adminextra', password='senha123', is_staff=True)
         self.client.force_login(staff)
         resp = self.client.post(reverse('admin_service_edit', args=['server', self.service.id]), {
             'title': 'Aluguel Remoto',
-            'collect_extras': ['anydesk', 'whatsapp'],
+            'collect_data': ['anydesk', 'whatsapp'],
         })
         self.assertEqual(resp.status_code, 302)
         self.service.refresh_from_db()
-        self.assertEqual(self.service.collect_extras, 'anydesk,whatsapp')
+        self.assertEqual(self.service.collect_data, 'anydesk,whatsapp')
+
+    @patch('core.views_admin.provider_api.auto_link_service', return_value=(None, 0))
+    def test_admin_service_edit_saves_all_nine_boxes(self, _auto):
+        staff = User.objects.create_user(username='adminnine', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        codes = ['user', 'email', 'serial', 'ecid', 'anydesk', 'lock_photo',
+                 'whatsapp', 'upload_photo', 'upload_logo']
+        resp = self.client.post(reverse('admin_service_edit', args=['server', self.service.id]), {
+            'title': 'Aluguel Remoto',
+            'collect_data': codes,
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.service.refresh_from_db()
+        self.assertEqual(self.service.collect_data, ','.join(codes))
 
     @patch('core.views_admin.provider_api.auto_link_service', return_value=(None, 0))
     def test_admin_service_edit_clears_extras(self, _auto):
@@ -2159,7 +2205,7 @@ class ServiceCollectExtrasTests(TestCase):
         })
         self.assertEqual(resp.status_code, 302)
         self.service.refresh_from_db()
-        self.assertEqual(self.service.collect_extras, '')
+        self.assertEqual(self.service.collect_data, '')
 
 
 class OrderEmailTests(TestCase):

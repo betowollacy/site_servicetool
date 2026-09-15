@@ -22,10 +22,11 @@ from django.utils.text import slugify
 
 from .models import (
     Api, ACTIVATION_SERVICE_EXTRA_FIELDS, CREDIT_SERVICE_EXTRA_FIELDS,
-    METHOD_SERVICE_EXTRA_FIELDS, SERVICE_COLLECT_EXTRA_CHOICES,
+    METHOD_SERVICE_EXTRA_FIELDS, SERVICE_COLLECT_DATA_CHOICES,
     Currency, Customer, CustomerOrder, Inventory,
     InventoryData, Invoice, OrderInput, Page, PaymentGateway, RemoteServiceInput, RemoteServiceList,
     ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting, User,
+    collect_data_codes,
 )
 from . import provider_api, public_api
 
@@ -591,11 +592,8 @@ def _apply_service_post(service, post):
     if post.get('status'):
         service.status = post['status']
     service.api_enabled = bool(post.get('api_enabled'))
-    service.collect_login = bool(post.get('collect_login'))
-    if post.get('collect_fields') in ('user', 'email', 'serial', 'both'):
-        service.collect_fields = post['collect_fields']
-    service.collect_extras = ','.join(
-        c for c in post.getlist('collect_extras') if c in dict(SERVICE_COLLECT_EXTRA_CHOICES)
+    service.collect_data = ','.join(
+        c for c in post.getlist('collect_data') if c in dict(SERVICE_COLLECT_DATA_CHOICES)
     )
     if post.get('carousel') in ('promocoes', 'desbloqueios'):
         service.carousel = post['carousel']
@@ -736,12 +734,17 @@ def admin_service_toggle_login(request, svtype, service_id):
         messages.error(request, 'Serviço não encontrado.')
         return redirect('admin_service_list', svtype)
     if request.method == 'POST':
-        service.collect_login = not service.collect_login
-        service.save(update_fields=['collect_login'])
-        if service.collect_login:
-            messages.success(request, f'"{service.title}" agora pede usuário/e-mail do cliente na compra.')
+        codes = collect_data_codes(service.collect_data)
+        has_login = 'user' in codes or 'email' in codes
+        if has_login:
+            service.collect_data = ','.join(c for c in codes if c not in ('user', 'email'))
         else:
+            service.collect_data = ','.join(codes + ['user', 'email'])
+        service.save(update_fields=['collect_data'])
+        if has_login:
             messages.warning(request, f'"{service.title}" não pede mais usuário/e-mail do cliente na compra.')
+        else:
+            messages.success(request, f'"{service.title}" agora pede usuário/e-mail do cliente na compra.')
     return redirect('admin_service_list', svtype)
 
 
@@ -752,11 +755,13 @@ def admin_service_set_fields(request, svtype, service_id):
     if not service:
         messages.error(request, 'Serviço não encontrado.')
         return redirect('admin_service_list', svtype)
-    if request.method == 'POST' and request.POST.get('collect_fields') in ('user', 'email', 'serial', 'both'):
-        service.collect_fields = request.POST['collect_fields']
-        service.save(update_fields=['collect_fields'])
-        labels = {'user': 'somente o usuário', 'email': 'somente o e-mail da ferramenta', 'serial': 'somente o Serial Number', 'both': 'usuário e e-mail da ferramenta'}
-        messages.success(request, f'"{service.title}" agora solicita {labels[service.collect_fields]}.')
+    if request.method == 'POST':
+        codes = [c for c in request.POST.getlist('collect_data') if c in dict(SERVICE_COLLECT_DATA_CHOICES)]
+        service.collect_data = ','.join(codes)
+        service.save(update_fields=['collect_data'])
+        labels = dict(SERVICE_COLLECT_DATA_CHOICES)
+        names = [labels[c] for c in codes]
+        messages.success(request, f'"{service.title}" agora solicita: {", ".join(names) or "nada à parte"}.')
     return redirect('admin_service_list', svtype)
 
 
@@ -1481,8 +1486,7 @@ def admin_api_sync(request, api_id):
             api=api,
             api_enabled=True,
             referenceid=rid,
-            collect_login=True,
-            collect_fields='both',
+            collect_data='user,email',
         )
         if remote is not None:
             names = list(remote.service_fields.values_list('name', flat=True))

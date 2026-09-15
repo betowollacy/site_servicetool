@@ -115,7 +115,7 @@
                         <div class="show-error-message"></div>
 
                         {% if customer %}
-                        {% if serviceData.service_type == 'Activation Service' and serviceData.collect_login %}
+                        {% if serviceData.service_type == 'Activation Service' and requested_login %}
                         <div class="alert alert-warning d-flex gap-2 align-items-start rounded-0 mb-3" id="activation-notice">
                             <i class="bi bi-exclamation-triangle-fill fs-5"></i>
                             <div>
@@ -174,17 +174,17 @@
                                     <input type="file" class="form-control" name="{{ extra.name }}" id="extra_lock_photo" accept="image/*" required>
                                     <small class="text-muted">Envie uma foto da tela de bloqueio do aparelho.</small>
                                 </div>
-                                {% elif extra.code == 'anydesk' %}
+                                {% elif extra.code == 'upload_photo' %}
                                 <div class="mb-3">
-                                    <label class="form-label" for="extra_anydesk">Informe <b>Acesso do AnyDesk</b></label>
-                                    <input type="text" class="form-control" name="{{ extra.name }}" id="extra_anydesk" placeholder="ID e senha do AnyDesk" required>
-                                    <small class="text-muted">Envie o ID e a senha de acesso do AnyDesk.</small>
+                                    <label class="form-label" for="extra_upload_photo">Envie <b>Foto</b></label>
+                                    <input type="file" class="form-control" name="{{ extra.name }}" id="extra_upload_photo" accept="image/*" required>
+                                    <small class="text-muted">Anexe a foto solicitada.</small>
                                 </div>
-                                {% elif extra.code == 'whatsapp' %}
+                                {% elif extra.code == 'upload_logo' %}
                                 <div class="mb-3">
-                                    <label class="form-label" for="extra_whatsapp">Informe <b>WhatsApp</b></label>
-                                    <input type="text" class="form-control" name="{{ extra.name }}" id="extra_whatsapp" placeholder="Número com DDD" required>
-                                    <small class="text-muted">Envie um número de WhatsApp com DDD para contato.</small>
+                                    <label class="form-label" for="extra_upload_logo">Envie <b>Logo</b></label>
+                                    <input type="file" class="form-control" name="{{ extra.name }}" id="extra_upload_logo" accept="image/*" required>
+                                    <small class="text-muted">Anexe o logo solicitado.</small>
                                 </div>
                                 {% endif %}
                                 {% endfor %}

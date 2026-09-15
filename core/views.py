@@ -22,6 +22,7 @@ from .models import (
     Api, ApiLog, Currency, Customer, CustomerOrder, GatewayLog, Invoice,
     METHOD_SERVICE_EXTRA_FIELDS, OrderInput, Page, PaymentDeposit, PaymentGateway,
     ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting,
+    collect_data_codes,
 )
 
 CATEGORY_SLUGS = {
@@ -166,28 +167,20 @@ def category(request, slug):
 
 
 def _service_input_fields(service):
-    """Campos de entrada do servico. Credit pede quantidade + usuario + email;
-    Activation pede usuario + email para cadastro/ativacao. collect_login liga a
-    solicitacao e collect_fields escolhe usuario, email ou ambos."""
+    """Campos de texto exibidos na compra. Além dos campos cadastrados
+    (service_fields), inclui os dados marcados nas checkboxes do painel
+    (Usuário, E-mail, Serial, Ecid, AnyDesk, WhatsApp) e os campos
+    padrão de cada tipo de serviço."""
     names = list(service.service_fields.values_list('name', flat=True))
-    requested = []
-    if service.collect_login:
-        if service.collect_fields == 'email':
-            requested.append('E-mail da Ferramenta')
-        elif service.collect_fields == 'user':
-            requested.append('Usuário')
-        elif service.collect_fields == 'serial':
-            requested.append('Serial Number')
-        else:
-            requested += ['Usuário', 'E-mail da Ferramenta']
     if service.service_type == 'Credit Service':
         if 'Quantidade de Créditos' not in names:
             names.append('Quantidade de Créditos')
-    elif service.service_type == 'Activation Service':
-        pass
-    for extra in requested:
-        if service.service_type in ('Credit Service', 'Activation Service') and extra not in names:
-            names.append(extra)
+    for code in collect_data_codes(service.collect_data):
+        if ServiceList.collect_field_type(code) != 'text':
+            continue
+        fname = ServiceList.collect_field_name(code)
+        if fname and fname not in names:
+            names.append(fname)
     if service.service_type == 'IMEI Service':
         if not names:
             names.append('IMEI')
@@ -208,13 +201,13 @@ def _service_input_objects(service):
 
 
 def _service_extra_fields(service):
-    """Campos adicionais marcados no painel (AnyDesk/WhatsApp/foto) a solicitar na compra."""
-    labels = dict(ServiceList.COLLECT_EXTRA_CHOICES)
+    """Campos de upload (arquivo) marcados no painel (foto da tela, foto, logo)
+    a solicitar na compra."""
     extras = []
-    for code in service.collect_extras.split(','):
-        code = code.strip()
-        if code in labels:
-            extras.append({'code': code, 'name': labels[code]})
+    for code in collect_data_codes(service.collect_data):
+        if ServiceList.collect_field_type(code) != 'file':
+            continue
+        extras.append({'code': code, 'name': ServiceList.collect_field_name(code)})
     return extras
 
 
@@ -238,6 +231,7 @@ def server_view(request, slug):
         'serviceData': service,
         'serviceInputs': _service_input_objects(service),
         'collect_extras': _service_extra_fields(service),
+        'requested_login': 'user' in collect_data_codes(service.collect_data) or 'email' in collect_data_codes(service.collect_data),
         'serviceTags': tags,
         'Price': service.original_price,
         'keyWord': ','.join(t for t in [service.kw1, service.kw2, service.kw3, service.kw4, service.kw5] if t),
@@ -640,29 +634,20 @@ def submit_order(request, customer):
         messages.error(request, 'Site em manutenção. Pedidos pausados no momento.')
         return redirect('homepage')
 
-    required_fields = []
     requested = []
-    if service.collect_login:
-        if service.collect_fields == 'email':
-            requested.append('E-mail da Ferramenta')
-        elif service.collect_fields == 'user':
-            requested.append('Usuário')
-        elif service.collect_fields == 'serial':
-            requested.append('Serial Number')
-        else:
-            requested += ['Usuário', 'E-mail da Ferramenta']
+    for code in collect_data_codes(service.collect_data):
+        if ServiceList.collect_field_type(code) != 'text':
+            continue
+        fname = ServiceList.collect_field_name(code)
+        if fname and fname not in requested:
+            requested.append(fname)
+    required_fields = []
     if service.service_type == 'Credit Service':
-        required_fields = ['Quantidade de Créditos'] + requested
-    elif service.service_type == 'Activation Service':
-        required_fields = requested
-    extra_fields = _service_extra_fields(service)
-    for extra in extra_fields:
-        if extra['code'] == 'lock_photo':
-            if not request.FILES.get(extra['name']):
-                required_fields.append(extra['name'])
-        elif not request.POST.get(extra['name'], '').strip():
-            required_fields.append(extra['name'])
-    photo_names = {x['name'] for x in extra_fields if x['code'] == 'lock_photo'}
+        required_fields.append('Quantidade de Créditos')
+    required_fields += requested
+    file_fields = _service_extra_fields(service)
+    required_fields += [x['name'] for x in file_fields]
+    photo_names = {x['name'] for x in file_fields}
     errors = []
     for field_name in required_fields:
         if field_name in photo_names:
@@ -704,11 +689,8 @@ def submit_order(request, customer):
         if not order.service_input1:
             order.service_input1 = value
             order.save(update_fields=['service_input1'])
-    for extra in extra_fields:
-        if extra['code'] == 'lock_photo':
-            value = _save_order_photo(request.FILES.get(extra['name']))
-        else:
-            value = request.POST.get(extra['name'], '').strip()
+    for extra in file_fields:
+        value = _save_order_photo(request.FILES.get(extra['name']))
         if value:
             OrderInput.objects.create(order=order, field_name=extra['name'], field_value=value)
             if not order.service_input1:

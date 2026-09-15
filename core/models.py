@@ -106,11 +106,54 @@ class ServiceGroup(models.Model):
         return self.name
 
 
+# Códigos de dados que podem ser solicitados na compra do serviço.
+# 'text' vira um campo de texto; 'file' vira um upload de arquivo.
+SERVICE_COLLECT_DATA_CHOICES = [
+    ('user', 'Usuário'),
+    ('email', 'E-mail'),
+    ('serial', 'Serial Number'),
+    ('ecid', 'Ecid'),
+    ('anydesk', 'Pedir acesso do AnyDesk (ID e senha)'),
+    ('lock_photo', 'Pedir foto da tela de bloqueio'),
+    ('whatsapp', 'Pedir WhatsApp do cliente'),
+    ('upload_photo', 'Enviar foto'),
+    ('upload_logo', 'Enviar logo'),
+]
+
+COLLECT_FIELD_TYPES = {
+    'user': 'text',
+    'email': 'text',
+    'serial': 'text',
+    'ecid': 'text',
+    'anydesk': 'text',
+    'whatsapp': 'text',
+    'lock_photo': 'file',
+    'upload_photo': 'file',
+    'upload_logo': 'file',
+}
+
+COLLECT_FIELD_NAMES = {
+    'user': 'Usuário',
+    'email': 'E-mail da Ferramenta',
+    'serial': 'Serial Number',
+    'ecid': 'Ecid',
+    'anydesk': 'Acesso do AnyDesk',
+    'whatsapp': 'WhatsApp',
+    'lock_photo': 'Foto da tela de bloqueio',
+    'upload_photo': 'Foto',
+    'upload_logo': 'Logo',
+}
+
+# Compatibilidade: opções do antigo campo `collect_extras` (não usado mais).
 SERVICE_COLLECT_EXTRA_CHOICES = [
     ('anydesk', 'Acesso do AnyDesk'),
     ('lock_photo', 'Foto da tela de bloqueio'),
     ('whatsapp', 'WhatsApp'),
 ]
+
+
+def collect_data_codes(value):
+    return [c.strip() for c in (value or '').split(',') if c.strip()]
 
 
 class ServiceList(models.Model):
@@ -135,7 +178,8 @@ class ServiceList(models.Model):
         ('user', 'Somente usuário'),
         ('email', 'Somente e-mail'),    ('serial', 'Serial Number'),
     ]
-    COLLECT_EXTRA_CHOICES = SERVICE_COLLECT_EXTRA_CHOICES
+    COLLECT_DATA_CHOICES = SERVICE_COLLECT_DATA_CHOICES
+    COLLECT_EXTRA_CHOICES = SERVICE_COLLECT_EXTRA_CHOICES  # legado
 
     service_type = models.CharField(max_length=50, choices=SERVICE_TYPES, default='Server Service')
     service_group = models.ForeignKey(ServiceGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='services')
@@ -178,6 +222,20 @@ class ServiceList(models.Model):
     collect_login = models.BooleanField(default=True, verbose_name='Pedir usuário/e-mail na compra')
     collect_fields = models.CharField(max_length=10, choices=COLLECT_FIELDS_CHOICES, default='both', verbose_name='Dados a solicitar na compra')
     collect_extras = models.CharField(max_length=120, blank=True, default='', choices=COLLECT_EXTRA_CHOICES, verbose_name='Dados adicionais a solicitar na compra')
+    collect_data = models.CharField(max_length=300, blank=True, default='', verbose_name='Dados a solicitar na compra')
+
+    @property
+    def collect_data_list(self):
+        return collect_data_codes(self.collect_data)
+
+    @staticmethod
+    def collect_field_name(code):
+        return COLLECT_FIELD_NAMES.get(code, '')
+
+    @staticmethod
+    def collect_field_type(code):
+        return COLLECT_FIELD_TYPES.get(code, 'text')
+
     inventory = models.ForeignKey('Inventory', on_delete=models.SET_NULL, null=True, blank=True, related_name='services')
     referenceid = models.CharField(max_length=255, blank=True, null=True)
     CAROUSEL_CHOICES = [

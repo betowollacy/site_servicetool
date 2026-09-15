@@ -68,8 +68,8 @@
                         {% if s.service_type == 'Activation Service' or s.service_type == 'Credit Service' %}
                         <form method="post" action="{% url 'admin_service_toggle_login' svtype s.id %}">
                             {% csrf_token %}
-                            <div class="form-check form-switch m-0 d-inline-block" title="{% if s.collect_login %}Pedindo usuário/e-mail na compra - clique para desligar{% else %}Sem pedir usuário/e-mail - clique para ligar{% endif %}">
-                                <input class="form-check-input" type="checkbox" {% if s.collect_login %}checked{% endif %} onchange="this.form.submit()">
+                            <div class="form-check form-switch m-0 d-inline-block" title="{% if 'user' in s.collect_data_list or 'email' in s.collect_data_list %}Pedindo usuário/e-mail na compra - clique para desligar{% else %}Sem pedir usuário/e-mail - clique para ligar{% endif %}">
+                                <input class="form-check-input" type="checkbox" {% if 'user' in s.collect_data_list or 'email' in s.collect_data_list %}checked{% endif %} onchange="this.form.submit()">
                             </div>
                         </form>
                         {% else %}
@@ -77,19 +77,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if s.service_type == 'Activation Service' or s.service_type == 'Credit Service' %}
-                        <form method="post" action="{% url 'admin_service_set_fields' svtype s.id %}">
-                            {% csrf_token %}
-                            <select name="collect_fields" class="form-select form-select-sm" style="max-width:140px" onchange="this.form.submit()" title="Quais dados solicitar na compra">
-                                <option value="both" {% if s.collect_fields == 'both' %}selected{% endif %}>Usuário e e-mail</option>
-                                <option value="user" {% if s.collect_fields == 'user' %}selected{% endif %}>Só usuário</option>
-                                <option value="email" {% if s.collect_fields == 'email' %}selected{% endif %}>Só e-mail</option>
-                                <option value="serial" {% if s.collect_fields == 'serial' %}selected{% endif %}>Serial Number</option>
-                            </select>
-                        </form>
-                        {% else %}
-                        <span class="text-muted">—</span>
-                        {% endif %}
+                        <a href="{% url 'admin_service_edit' svtype s.id %}" class="btn btn-sm btn-light-primary" title="Configurar quais dados solicitar na compra"><i class="ti ti-settings"></i> Dados</a>
                     </td>
                     <td class="text-nowrap">
                         <div class="d-flex gap-1">

@@ -69,35 +69,64 @@
                             </div>
                         </div>
                         <div class="col-12 mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" name="collect_login" id="collectLogin" value="1" {% if not service or service.collect_login %}checked{% endif %}>
-                                <label class="form-check-label" for="collectLogin">Pedir usuário/e-mail do cliente na compra (Ativações e Créditos). Desmarque para vender sem solicitar esses dados.</label>
+                            <label class="form-label d-block">Quais dados solicitar na compra</label>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="collect_data" id="collectUser" value="user" {% if service and 'user' in service.collect_data_list %}checked{% endif %}>
+                                        <label class="form-check-label" for="collectUser">Usuário</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="collect_data" id="collectEmail" value="email" {% if service and 'email' in service.collect_data_list %}checked{% endif %}>
+                                        <label class="form-check-label" for="collectEmail">E-mail</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="collect_data" id="collectSerial" value="serial" {% if service and 'serial' in service.collect_data_list %}checked{% endif %}>
+                                        <label class="form-check-label" for="collectSerial">Serial Number</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="collect_data" id="collectEcid" value="ecid" {% if service and 'ecid' in service.collect_data_list %}checked{% endif %}>
+                                        <label class="form-check-label" for="collectEcid">Ecid</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="collect_data" id="collectAnydesk" value="anydesk" {% if service and 'anydesk' in service.collect_data_list %}checked{% endif %}>
+                                        <label class="form-check-label" for="collectAnydesk">Pedir acesso do AnyDesk (ID e senha)</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="collect_data" id="collectLockPhoto" value="lock_photo" {% if service and 'lock_photo' in service.collect_data_list %}checked{% endif %}>
+                                        <label class="form-check-label" for="collectLockPhoto">Pedir foto da tela de bloqueio</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="collect_data" id="collectWhatsapp" value="whatsapp" {% if service and 'whatsapp' in service.collect_data_list %}checked{% endif %}>
+                                        <label class="form-check-label" for="collectWhatsapp">Pedir WhatsApp do cliente</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="collect_data" id="collectUploadPhoto" value="upload_photo" {% if service and 'upload_photo' in service.collect_data_list %}checked{% endif %}>
+                                        <label class="form-check-label" for="collectUploadPhoto">Enviar foto</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="collect_data" id="collectUploadLogo" value="upload_logo" {% if service and 'upload_logo' in service.collect_data_list %}checked{% endif %}>
+                                        <label class="form-check-label" for="collectUploadLogo">Enviar logo</label>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Quais dados solicitar na compra</label>
-                            <select class="form-select" name="collect_fields">
-                                <option value="both" {% if not service or service.collect_fields == 'both' %}selected{% endif %}>Usuário e e-mail</option>
-                                <option value="user" {% if service.collect_fields == 'user' %}selected{% endif %}>Somente usuário</option>
-                                <option value="email" {% if service.collect_fields == 'email' %}selected{% endif %}>Somente e-mail</option>
-                                <option value="serial" {% if service.collect_fields == 'serial' %}selected{% endif %}>Serial Number</option>
-                            </select>
-                        </div>
-                        <div class="col-12 mb-3">
-                            <label class="form-label d-block">Dados adicionais na compra</label>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" name="collect_extras" id="extraAnydesk" value="anydesk" {% if service and 'anydesk' in service.collect_extras %}checked{% endif %}>
-                                <label class="form-check-label" for="extraAnydesk">Pedir acesso do AnyDesk (ID e senha)</label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" name="collect_extras" id="extraLockPhoto" value="lock_photo" {% if service and 'lock_photo' in service.collect_extras %}checked{% endif %}>
-                                <label class="form-check-label" for="extraLockPhoto">Pedir foto da tela de bloqueio</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="collect_extras" id="extraWhatsapp" value="whatsapp" {% if service and 'whatsapp' in service.collect_extras %}checked{% endif %}>
-                                <label class="form-check-label" for="extraWhatsapp">Pedir WhatsApp do cliente</label>
-                            </div>
-                            <small class="text-muted">Marque quais destes dados devem ser solicitados na hora da compra.</small>
+                            <small class="text-muted">Somente os itens marcados aparecem no formulário de compra.</small>
                         </div>
                     </div>
                 </div>
