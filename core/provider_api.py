@@ -754,7 +754,7 @@ def sync_local_order(order, notify_complete=True):
         return True
 
     from .notify import _split_creds
-    old_reply = ((order.replied_in or '') or (order.service_comments or '')).strip()
+    old_reply = ((order.service_comments or '') or (order.replied_in or '')).strip()
     _, had_password = _split_creds(old_reply)
     was_success = order.service_status == 'Success'
     changed = False
@@ -776,7 +776,7 @@ def sync_local_order(order, notify_complete=True):
         # Notifica na conclusao e tambem quando a senha chega depois (provider
         # lento): pedido ja Success que so agora recebeu a senha.
         _, now_password = _split_creds(
-            ((order.replied_in or '') or (order.service_comments or '')).strip())
+            ((order.service_comments or '') or (order.replied_in or '')).strip())
         gained_password = was_success and target == 'Success' and not had_password and now_password
         if target == 'Success' and notify_complete and ((not was_success) or gained_password):
             from . import notify

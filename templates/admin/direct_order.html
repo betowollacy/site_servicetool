@@ -154,7 +154,7 @@
                                     {% endif %}
                                 </td>
                                 <td class='small'>{{ o.trx_id|default:'-' }}</td>
-                                <td class='small text-muted'>{{ o.replied_in|default:o.service_comments|default:'(aguardando o provedor)' }}</td>
+                                <td class='small text-muted'>{{ o.service_comments|default:o.replied_in|default:'(aguardando o provedor)' }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

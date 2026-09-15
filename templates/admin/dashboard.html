@@ -456,7 +456,7 @@
                             <td class="text-end fw-semibold">R$ {{ a.spent|floatformat:2 }}</td>
                             <td><span class="badge bg-light-primary">{{ a.order.service_status }}</span></td>
                             <td class="small" style="max-width:340px">
-                                {% if a.order.replied_in %}<span class="text-success"><i class="ti ti-circle-check"></i> {{ a.order.replied_in }}</span>
+                                {% if a.order.service_comments %}<span class="text-success"><i class="ti ti-circle-check"></i> {{ a.order.service_comments }}</span>
                                 {% else %}{{ a.result }}{% endif %}
                             </td>
                         </tr>

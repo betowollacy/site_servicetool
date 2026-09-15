@@ -120,7 +120,7 @@
                     <div class='d-flex justify-content-between align-items-start gap-2'>
                         <div>
                             <div><b>Pedido #{{ last_order.id }}</b> <span class='badge bg-secondary'>{{ last_order.service_status }}</span></div>
-                            <div class='mt-1'><b>Resposta:</b> {{ last_order.replied_in|default:last_order.service_comments|default:'(aguardando o provedor)' }}</div>
+                            <div class='mt-1'><b>Resposta:</b> {{ last_order.service_comments|default:last_order.replied_in|default:'(aguardando o provedor)' }}</div>
                         </div>
                         <form method='post' action='{% url 'admin_order_delete' last_order.id %}' onsubmit='return confirm(&quot;Excluir o pedido #{{ last_order.id }}? Esta acao nao pode ser desfeita.&quot;)'>
                             {% csrf_token %}

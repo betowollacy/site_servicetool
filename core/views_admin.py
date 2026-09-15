@@ -343,7 +343,7 @@ def admin_dashboard(request):
         admin_flow.append({
             'order': order,
             'spent': spent,
-            'result': order.replied_in or order.service_comments or '-',
+            'result': order.service_comments or order.replied_in or '-',
         })
     admin_services = sorted(admin_services.values(), key=lambda s: s['title'].lower())
     admin_svc_filter = _parse_int(request.GET.get('svc'))

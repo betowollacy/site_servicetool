@@ -46,7 +46,7 @@ class Command(BaseCommand):
             pending += [
                 o for o in recent_success
                 if (o.trx_id or '').strip()
-                and not _split_creds(((o.replied_in or '') or (o.service_comments or '')).strip())[1]
+                and not _split_creds(((o.service_comments or '') or (o.replied_in or '')).strip())[1]
             ]
         qs = pending
         if options.get('api'):

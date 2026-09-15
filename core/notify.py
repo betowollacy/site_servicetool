@@ -57,7 +57,7 @@ def _order_body(order):
 
 
 def _order_result(order):
-    result = ((order.replied_in or '') or (order.service_comments or '')).strip()
+    result = ((order.service_comments or '') or (order.replied_in or '')).strip()
     return re.sub(r'<br\s*/?>', '\n', result, flags=re.IGNORECASE).strip()
 
 
@@ -180,7 +180,7 @@ def completed_order_email(order):
         or (order.service.title if order.service else '')
         or 'Pedido #{}'.format(order.id)
     ).strip()
-    reply = ((order.replied_in or '') or (order.service_comments or '')).strip()
+    reply = ((order.service_comments or '') or (order.replied_in or '')).strip()
     reply_display = re.sub(r'<br\s*/?>', '\n', reply, flags=re.IGNORECASE).strip()
     user, passw = _split_creds(reply)
     submitted = _dt(order.created_at)
