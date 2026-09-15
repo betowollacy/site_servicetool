@@ -411,7 +411,28 @@
                 <h5>Histórico de compras do administrador</h5>
                 <small class="text-muted">Pedidos diretos na API — o que comprou, o que recebeu, hora e valor</small>
             </div>
-            <div class="card-body table-responsive">
+            <div class="card-body">
+                <form method="get" class="row g-2 align-items-end mb-3">
+                    {% if period %}<input type="hidden" name="period" value="{{ period }}">{% endif %}
+                    <div class="col-sm-5 col-md-4">
+                        <label class="form-label small text-muted mb-1">Filtrar por serviço / ferramenta comprada</label>
+                        <select name="svc" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">Todos os serviços</option>
+                            {% for s in admin_services %}
+                            <option value="{{ s.id }}" {% if admin_svc_filter|stringformat:'s' == s.id|stringformat:'s' %}selected{% endif %}>{{ s.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% if admin_svc_filter %}
+                    <div class="col-auto">
+                        <a href="{% url 'admin_dashboard' %}{% if period %}?period={{ period }}{% endif %}" class="btn btn-sm btn-light-secondary">Limpar filtro</a>
+                    </div>
+                    {% endif %}
+                    <div class="col text-end">
+                        <span class="text-muted small">{{ admin_count_filtered }} compra{{ admin_count_filtered|pluralize:'s' }} filtrada{{ admin_count_filtered|pluralize:'s' }} · total <strong>R$ {{ admin_spent_filtered|floatformat:2 }}</strong></span>
+                    </div>
+                </form>
+                <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
                         <tr>
@@ -440,10 +461,11 @@
                             </td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="6" class="text-center">Nenhuma compra do administrador no período.</td></tr>
+                        <tr><td colspan="6" class="text-center">Nenhuma compra do administrador{% if admin_svc_filter %} para este serviço{% endif %} no período.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     </div>

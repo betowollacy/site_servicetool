@@ -138,6 +138,13 @@ def _is_charged(order):
     return bool(order.trx_id) or order.service_status in ('Success', 'In Process')
 
 
+def _parse_int(value):
+    try:
+        return int(str(value or '').strip())
+    except (TypeError, ValueError):
+        return None
+
+
 def _asaas_decimal(value):
     if value in (None, ''):
         return Decimal('0.00')
@@ -323,16 +330,28 @@ def admin_dashboard(request):
 
     admin_flow = []
     admin_spent = Decimal('0.00')
+    admin_services = {}
     for order in orders:
         if not _is_admin_direct(order):
             continue
         spent = order.service_price or Decimal('0.00')
         admin_spent += spent
+        admin_services.setdefault(order.service_id, {
+            'id': order.service_id,
+            'title': order.service_title or 'Serviço removido',
+        })
         admin_flow.append({
             'order': order,
             'spent': spent,
             'result': order.replied_in or order.service_comments or '-',
         })
+    admin_services = sorted(admin_services.values(), key=lambda s: s['title'].lower())
+    admin_svc_filter = _parse_int(request.GET.get('svc'))
+    admin_flow_all = admin_flow
+    if admin_svc_filter:
+        admin_flow = [a for a in admin_flow if a['order'].service_id == admin_svc_filter]
+    admin_spent_filtered = sum((a['spent'] for a in admin_flow), Decimal('0.00'))
+    admin_count_filtered = len(admin_flow)
 
     flow = []
     for order in orders[:15]:
@@ -374,6 +393,11 @@ def admin_dashboard(request):
         'direct_count': direct_count,
         'admin_flow': admin_flow,
         'admin_spent': admin_spent.quantize(Decimal('0.00')),
+        'admin_services': admin_services,
+        'admin_svc_filter': admin_svc_filter or '',
+        'admin_spent_filtered': admin_spent_filtered.quantize(Decimal('0.00')),
+        'admin_count_filtered': admin_count_filtered,
+        'admin_count_total': len(admin_flow_all),
         'api_summary': [api_summary[a] for a in api_summary],
         'api_balances': api_balances,
         'top_tools': top_tools,
