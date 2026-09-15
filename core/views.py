@@ -699,7 +699,7 @@ def _debit_and_forward_order(order, customer):
         # (com pequenas tentativas) para o cliente nao esperar o cron.
         for _ in range(3):
             provider_api.sync_local_order(order, notify_complete=False)
-            if order.service_status != 'In Process':
+            if order.service_status in ('Success', 'Rejected'):
                 break
             time.sleep(4)
     notify.send_telegram(notify.new_order_message(order, paid=True))

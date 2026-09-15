@@ -672,6 +672,15 @@ def submit_local_order(order):
         return False, 'Provedor nao retornou numero do pedido.'
     code = (row.get('CODE', '') or row.get('code', '') or '').strip()
     status = row.get('STATUS') or row.get('status') or ''
+    status_int = None
+    try:
+        status_int = int(float(status))
+    except (TypeError, ValueError):
+        status_int = None
+    if status_int == 3 or str(status).strip().lower() in ('rejected', 'reject'):
+        reason = code or 'Pedido rejeitado pelo provedor.'
+        _log(api, 'place rejected order #{}: {}'.format(order.id, reason))
+        return False, reason
     order.trx_id = str(ref)
     order.process_type = 'Auto'
     updates = ['trx_id', 'process_type']
@@ -689,6 +698,11 @@ def submit_local_order(order):
 
 
 def refund_order(order, message):
+    """Estorna o valor do pedido e marca como Rejected.
+
+    Idempotente: se o pedido ja esta Rejected, nao credita de novo."""
+    if order.service_status == 'Rejected':
+        return False
     customer = order.customer
     amount = order.service_price
     customer.balance = customer.balance + amount
@@ -701,6 +715,7 @@ def refund_order(order, message):
     order.service_status = 'Rejected'
     order.service_comments = message
     order.save(update_fields=['service_status', 'service_comments'])
+    return True
 
 
 def sync_local_order(order, notify_complete=True):

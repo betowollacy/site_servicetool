@@ -27,7 +27,8 @@ class Command(BaseCommand):
                 'Conectado. Conta: {} | Saldo: {}'.format(info['mail'], info['credit'])))
             return
 
-        qs = CustomerOrder.objects.filter(service_status='In Process').select_related('service__inventory')
+        qs = CustomerOrder.objects.filter(
+            service_status__in=['In Process', 'Waiting Action']).select_related('service__inventory')
         if options.get('api'):
             qs = qs.filter(service__api_id=options['api'])
 
@@ -38,7 +39,7 @@ class Command(BaseCommand):
                 if (order.trx_id or '').strip():
                     if provider_api.sync_local_order(order):
                         ok += 1
-                else:
+                elif order.service_status == 'In Process':
                     delivered, _ = provider_api.deliver_from_inventory(order)
                     if delivered:
                         ok += 1

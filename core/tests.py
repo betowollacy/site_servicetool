@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -414,6 +415,57 @@ class ProviderApiTests(TestCase):
         self.assertEqual(order.service_status, 'Rejected')
         self.assertEqual(self.customer.balance, Decimal('100.00'))
         self.assertIn('Insufficient balance', order.service_comments)
+
+    @patch('core.provider_api._request')
+    def test_submit_rejects_at_placement_and_refunds(self, req):
+        req.side_effect = lambda api, action, parameters='': {
+            'SUCCESS': [{'REFERENCEID': 'X1', 'STATUS': 3, 'CODE': 'SN errado'}], 'apiversion': '1.0',
+        }
+        order = self._order()
+        ok, reason = provider_api.submit_local_order(order)
+        self.assertFalse(ok)
+        self.assertIn('SN errado', reason)
+        order.refresh_from_db()
+        self.assertIsNone(order.trx_id)
+
+    def test_refund_order_is_idempotent(self):
+        order = self._order()
+        provider_api.refund_order(order, 'primeira rejeicao')
+        provider_api.refund_order(order, 'segunda chamada')
+        order.refresh_from_db()
+        self.customer.refresh_from_db()
+        self.assertEqual(order.service_status, 'Rejected')
+        self.assertEqual(self.customer.balance, Decimal('120.00'))
+        self.assertEqual(
+            Statement.objects.filter(customer=self.customer, type='Credit', order=order).count(),
+            1,
+        )
+
+    @patch('core.provider_api._request')
+    def test_cron_syncs_waiting_action_orders_with_trx(self, req):
+        req.side_effect = lambda api, action, parameters='': {
+            'SUCCESS': [{'STATUS': 3, 'CODE': 'Rejeitado pelo provedor'}], 'apiversion': '1.0',
+        }
+        order = self._order()
+        order.service_status = 'Waiting Action'
+        order.trx_id = '5550001'
+        order.save(update_fields=['service_status', 'trx_id'])
+        call_command('check_provider_orders')
+        order.refresh_from_db()
+        self.customer.refresh_from_db()
+        self.assertEqual(order.service_status, 'Rejected')
+        self.assertEqual(self.customer.balance, Decimal('120.00'))
+
+    @patch('core.provider_api._request')
+    def test_cron_skips_waiting_action_without_trx(self, req):
+        req.side_effect = AssertionError('sync_local_order nao deve ser chamado sem trx')
+        order = self._order()
+        order.service_status = 'Waiting Action'
+        order.trx_id = ''
+        order.save(update_fields=['service_status', 'trx_id'])
+        call_command('check_provider_orders')
+        order.refresh_from_db()
+        self.assertEqual(order.service_status, 'Waiting Action')
 
     @patch('core.provider_api._request')
     def test_unlinked_service_does_not_call_provider(self, req):
