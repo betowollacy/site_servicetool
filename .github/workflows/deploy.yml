@@ -1,4 +1,4 @@
-name: Deploy para VPS
+name: Deploy
 
 on:
   push:
@@ -6,23 +6,19 @@ on:
 
 jobs:
   deploy:
-    name: Deploy
     runs-on: ubuntu-latest
     steps:
-      - name: Conectar e atualizar na VPS
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.2
         with:
-          host: 178.253.250.178
-          username: root
-          key: ${{ secrets.VPS_SSH_KEY }}
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             set -e
             cd /opt/site_servicetool
             git pull origin main
-            venv/bin/python manage.py migrate --noinput
-            venv/bin/python manage.py collectstatic --noinput
-            systemctl restart servicetool
-            systemctl restart nginx
-            ( crontab -l 2>/dev/null | sed '/check_provider_orders/d' ; echo "*/2 * * * * cd /opt/site_servicetool && venv/bin/python manage.py check_provider_orders >> /opt/site_servicetool/cron_provider.log 2>&1" ) | crontab -
-            echo "=== DEPLOY OK ==="
-            git log --oneline -1
+            source venv/bin/activate
+            python manage.py migrate --noinput
+            systemctl restart site
+            echo "Deploy concluído"
