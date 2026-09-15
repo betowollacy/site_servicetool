@@ -745,7 +745,6 @@ def sync_local_order(order, notify_complete=True):
         target = order.service_status
     if target == 'In Process' and order.service_status == 'Success':
         target = 'Success'
-    changed = False
 
     if target == 'Rejected' and order.service_status != 'Rejected':
         refund_order(order, code or 'Pedido rejeitado pelo provedor.')
@@ -754,15 +753,32 @@ def sync_local_order(order, notify_complete=True):
             notify.send_telegram(notify.rejected_order_message(order, order.service_comments))
         return True
 
+    from .notify import _split_creds
+    old_reply = ((order.replied_in or '') or (order.service_comments or '')).strip()
+    _, had_password = _split_creds(old_reply)
+    was_success = order.service_status == 'Success'
+    changed = False
     if target != order.service_status:
         order.service_status = target
         changed = True
-    if code and code != (order.service_comments or ''):
-        order.service_comments = code
-        changed = True
+    if code:
+        _, new_pass = _split_creds(code)
+        downgrades = bool(had_password and not new_pass)
+        if not downgrades:
+            if code != (order.service_comments or ''):
+                order.service_comments = code
+                changed = True
+            if code[:500] != (order.replied_in or ''):
+                order.replied_in = code[:500]
+                changed = True
     if changed:
-        order.save(update_fields=['service_status', 'service_comments'])
-        if target == 'Success' and notify_complete:
+        order.save(update_fields=['service_status', 'service_comments', 'replied_in'])
+        # Notifica na conclusao e tambem quando a senha chega depois (provider
+        # lento): pedido ja Success que so agora recebeu a senha.
+        _, now_password = _split_creds(
+            ((order.replied_in or '') or (order.service_comments or '')).strip())
+        gained_password = was_success and target == 'Success' and not had_password and now_password
+        if target == 'Success' and notify_complete and ((not was_success) or gained_password):
             from . import notify
             notify.send_telegram(notify.completed_order_message(order))
             notify.send_order_email(order)

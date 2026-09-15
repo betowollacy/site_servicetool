@@ -5,3 +5,4 @@ env/
 *.log
 db.sqlite3
 *.sqlite3
+media/

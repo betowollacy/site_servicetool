@@ -2366,6 +2366,8 @@ class OrderEmailTests(TestCase):
         self.assertEqual(notify._split_creds('apenas resposta sem senha'), (None, None))
         self.assertEqual(notify._split_creds(''), (None, None))
         self.assertEqual(notify._split_creds(None), (None, None))
+        self.assertEqual(notify._split_creds('Username: 8@ppkkk1.com<br>'), (None, None))
+        self.assertEqual(notify._split_creds('Username: user1<br>Password: pass1'), ('user1', 'pass1'))
 
     def test_brl_and_dt_helpers(self):
         from core import notify
@@ -2400,6 +2402,16 @@ class OrderEmailTests(TestCase):
         mail = notify.completed_order_email(self.order)
         self.assertIn('Resposta: TrackID-ABC-123 apenas', mail['text'])
         self.assertNotIn('Usuário:', mail['text'])
+
+    def test_completed_email_renders_br_and_no_fake_creds(self):
+        from core import notify
+        self.order.replied_in = 'Username: 8@ppkkk1.com<br>'
+        self.order.save(update_fields=['replied_in'])
+        mail = notify.completed_order_email(self.order)
+        self.assertIn('Resposta: Username: 8@ppkkk1.com', mail['text'])
+        self.assertNotIn('Usuário: Username', mail['text'])
+        self.assertNotIn('<br>', mail['text'])
+        self.assertIn('Username: 8@ppkkk1.com', mail['html'])
 
     def test_send_order_email_no_config_returns_false(self):
         from core import notify
@@ -2482,6 +2494,66 @@ class OrderEmailTests(TestCase):
         with patch('core.notify.send_telegram'), patch('core.notify.send_order_email') as mail:
             provider_api.sync_local_order(self.order)
             provider_api.sync_local_order(self.order)
+        mail.assert_called_once()
+
+    @patch('core.provider_api._request')
+    def test_sync_success_updates_replied_in(self, req):
+        api = Api.objects.create(
+            api_name='Provider', api_type='gsm',
+            api_url='https://x.com.br/public', api_username='u', api_key='k', status='Active',
+        )
+        self.service.api = api
+        self.service.referenceid = '9001'
+        self.service.save(update_fields=['api', 'referenceid'])
+        req.return_value = {'SUCCESS': [{'STATUS': 4, 'CODE': 'Username: user1<br>Password: pass99'}], 'apiversion': '1.0'}
+        with patch('core.notify.send_telegram'), patch('core.notify.send_order_email'):
+            provider_api.sync_local_order(self.order)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.service_status, 'Success')
+        self.assertIn('Password: pass99', self.order.service_comments)
+        self.assertIn('Password: pass99', self.order.replied_in)
+
+    @patch('core.provider_api._request')
+    def test_sync_does_not_downgrade_reply_with_password(self, req):
+        api = Api.objects.create(
+            api_name='Provider', api_type='gsm',
+            api_url='https://x.com.br/public', api_username='u', api_key='k', status='Active',
+        )
+        self.service.api = api
+        self.service.referenceid = '9001'
+        self.service.save(update_fields=['api', 'referenceid'])
+        self.order.service_status = 'Success'
+        self.order.replied_in = 'Username: userX<br>Password: segredo1'
+        self.order.service_comments = 'Username: userX<br>Password: segredo1'
+        self.order.save(update_fields=['replied_in', 'service_comments', 'service_status'])
+        req.return_value = {'SUCCESS': [{'STATUS': 4, 'CODE': 'Username: userX<br>'}], 'apiversion': '1.0'}
+        with patch('core.notify.send_telegram'), patch('core.notify.send_order_email') as mail:
+            provider_api.sync_local_order(self.order)
+        self.order.refresh_from_db()
+        self.assertIn('Password: segredo1', self.order.replied_in)
+        self.assertIn('Password: segredo1', self.order.service_comments)
+        mail.assert_not_called()
+
+    @patch('core.provider_api._request')
+    def test_sync_late_password_on_success_sends_email_once(self, req):
+        from core import notify
+        api = Api.objects.create(
+            api_name='Provider', api_type='gsm',
+            api_url='https://x.com.br/public', api_username='u', api_key='k', status='Active',
+        )
+        self.service.api = api
+        self.service.referenceid = '9001'
+        self.service.save(update_fields=['api', 'referenceid'])
+        self.order.service_status = 'Success'
+        self.order.replied_in = 'Username: userX<br>'
+        self.order.service_comments = 'Username: userX<br>'
+        self.order.save(update_fields=['replied_in', 'service_comments', 'service_status'])
+        req.return_value = {'SUCCESS': [{'STATUS': 4, 'CODE': 'Username: userX<br>Password: chegaDepois'}], 'apiversion': '1.0'}
+        with patch('core.notify.send_telegram'), patch('core.notify.send_order_email') as mail:
+            provider_api.sync_local_order(self.order)
+            provider_api.sync_local_order(self.order)
+        self.order.refresh_from_db()
+        self.assertIn('chegaDepois', self.order.replied_in)
         mail.assert_called_once()
 
     def test_deliver_from_inventory_sends_email(self):

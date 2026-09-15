@@ -57,7 +57,8 @@ def _order_body(order):
 
 
 def _order_result(order):
-    return ((order.replied_in or '') or (order.service_comments or '')).strip()
+    result = ((order.replied_in or '') or (order.service_comments or '')).strip()
+    return re.sub(r'<br\s*/?>', '\n', result, flags=re.IGNORECASE).strip()
 
 
 def new_order_message(order, paid):
@@ -150,6 +151,10 @@ def _split_creds(text):
                 passw = m.group(1).strip()
     if user and passw:
         return user, passw
+    # Usuario rotulado sem senha encontrada: nao tentar a regex generica
+    # 'Username: X' (senão 'Username' vira usuario e 'X' vira senha).
+    if user:
+        return None, None
     for sep in ('||', '|', ';'):
         parts = [p.strip() for p in text.split(sep) if p.strip()]
         if len(parts) >= 2:
@@ -176,6 +181,7 @@ def completed_order_email(order):
         or 'Pedido #{}'.format(order.id)
     ).strip()
     reply = ((order.replied_in or '') or (order.service_comments or '')).strip()
+    reply_display = re.sub(r'<br\s*/?>', '\n', reply, flags=re.IGNORECASE).strip()
     user, passw = _split_creds(reply)
     submitted = _dt(order.created_at)
     replied = _dt(order.updated_at)
@@ -197,8 +203,8 @@ def completed_order_email(order):
     cred_rows = []
     if user:
         cred_rows = [('Usuário', user), ('Senha', passw or '')]
-    elif reply:
-        cred_rows = [('Resposta', reply)]
+    elif reply_display:
+        cred_rows = [('Resposta', reply_display)]
 
     text_lines = [
         'Olá, {},'.format(name),

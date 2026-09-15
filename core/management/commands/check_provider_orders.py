@@ -1,7 +1,13 @@
 from django.core.management.base import BaseCommand
+from django.utils import timezone
+from datetime import timedelta
 
 from core import notify, provider_api
 from core.models import Api, CustomerOrder
+
+# Janela em que um pedido Success ainda e reconsultado caso a resposta
+# ainda nao contenha senha (provedores demoram a devolver a senha completa).
+SUCCESS_CRED_GRACE = timedelta(hours=2)
 
 
 class Command(BaseCommand):
@@ -27,10 +33,24 @@ class Command(BaseCommand):
                 'Conectado. Conta: {} | Saldo: {}'.format(info['mail'], info['credit'])))
             return
 
-        qs = CustomerOrder.objects.filter(
-            service_status__in=['In Process', 'Waiting Action']).select_related('service__inventory')
+        from core.notify import _split_creds
+        pending = list(CustomerOrder.objects.filter(
+            service_status__in=['In Process', 'Waiting Action']).select_related('service__inventory'))
+        # Success recentes cuja resposta ainda nao tem senha: a senha do
+        # provedor pode chegar minutos depois da conclusao.
+        if not options.get('api'):
+            recent_success = list(CustomerOrder.objects.filter(
+                service_status='Success',
+                updated_at__gte=timezone.now() - SUCCESS_CRED_GRACE,
+            ).select_related('service__inventory'))
+            pending += [
+                o for o in recent_success
+                if (o.trx_id or '').strip()
+                and not _split_creds(((o.replied_in or '') or (o.service_comments or '')).strip())[1]
+            ]
+        qs = pending
         if options.get('api'):
-            qs = qs.filter(service__api_id=options['api'])
+            qs = [o for o in qs if o.service and o.service.api_id == options['api']]
 
         total = ok = 0
         for order in qs:
