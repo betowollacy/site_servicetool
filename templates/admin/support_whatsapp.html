@@ -12,22 +12,47 @@
     <div class="col-lg-6">
         <div class="card">
             <div class="card-body">
-                <h6 class="fw-bold mb-3"><i class="ti ti-brand-whatsapp me-1" style="color:#25d366"></i> Número de suporte</h6>
+                <h6 class="fw-bold mb-3"><i class="ti ti-brand-whatsapp me-1" style="color:#25d366"></i> Contatos de suporte</h6>
                 <form method="post" class="row g-3">
                     {% csrf_token %}
-                    <div class="col-12">
-                        <label class="form-label">Número do WhatsApp (com DDI/DDD)</label>
-                        <input type="text" class="form-control" name="number" value="{% if wa_number %}{{ wa_number }}{% endif %}" placeholder="5511999999999">
+                    <div class="col-12 border rounded p-3 mb-1">
+                        <span class="badge bg-success mb-2">Contato 1</span>
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <label class="form-label">Nome do atendente</label>
+                                <input type="text" class="form-control" name="name" value="{% if wa_contacts.0 %}{{ wa_contacts.0.name }}{% endif %}" placeholder="Ex.: Maria">
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label">Número do WhatsApp (com DDI/DDD)</label>
+                                <input type="text" class="form-control" name="number" value="{% if wa_contacts.0 %}{{ wa_contacts.0.number }}{% endif %}" placeholder="5511999999999">
+                            </div>
+                        </div>
                         <small class="text-muted">Código do país + DDD + número, somente dígitos. Ex.: Brasil = 55 + 11 + 999999999.</small>
                     </div>
+                    <div class="col-12 border rounded p-3 mb-1">
+                        <span class="badge bg-secondary mb-2">Contato 2 (opcional)</span>
+                        <div class="row g-2">
+                            <div class="col-md-5">
+                                <label class="form-label">Nome do atendente</label>
+                                <input type="text" class="form-control" name="name2" value="{% if wa_contacts.1 %}{{ wa_contacts.1.name }}{% endif %}" placeholder="Ex.: João">
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label">Número do WhatsApp (com DDI/DDD)</label>
+                                <input type="text" class="form-control" name="number2" value="{% if wa_contacts.1 %}{{ wa_contacts.1.number }}{% endif %}" placeholder="5521999999998">
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-12">
-                        <button type="submit" class="btn btn-success w-100"><i class="ti ti-brand-whatsapp me-2"></i> Salvar número</button>
+                        <button type="submit" class="btn btn-success w-100"><i class="ti ti-brand-whatsapp me-2"></i> Salvar contatos</button>
                     </div>
                 </form>
-                {% if wa_link %}
-                <div class="alert alert-info py-2 mt-3 mb-0">Link ativo: <a href="{{ wa_link }}" target="_blank" rel="noopener">{{ wa_link }}</a></div>
+                {% if wa_links %}
+                <div class="alert alert-info py-2 mt-3 mb-0">
+                    Link(s) ativo(s):
+                    {% for link in wa_links %}<br><a href="{{ link }}" target="_blank" rel="noopener">{{ link }}</a>{% endfor %}
+                </div>
                 {% else %}
-                <div class="alert alert-warning py-2 mt-3 mb-0">Nenhum número configurado — o botão de WhatsApp fica oculto no site do cliente.</div>
+                <div class="alert alert-warning py-2 mt-3 mb-0">Nenhum contato configurado — o botão de WhatsApp fica oculto no site do cliente.</div>
                 {% endif %}
             </div>
         </div>
@@ -38,10 +63,11 @@
                 <h6 class="fw-bold mb-3"><i class="ti ti-info-circle me-1"></i> Como aparece</h6>
                 <ul class="mb-0" style="line-height: 1.9">
                     <li>Botão flutuante de WhatsApp no canto inferior direito da <b>área do cliente</b>, discreto e com ícone.</li>
+                    <li>Com <b>1 contato</b>: o botão abre o WhatsApp direto com o nome do atendente no balão.</li>
+                    <li>Com <b>2 contatos</b>: o botão abre uma lista com os dois nomes para o cliente escolher.</li>
+                    <li>O nome e o número aparecem no cadastro acima — edite quando quiser.</li>
                     <li>O cliente pode <b>fechar</b> o botão (a escolha fica salva no navegador dele).</li>
-                    <li>O botão abre o WhatsApp direto com o número configurado (<code>wa.me/número</code>).</li>
-                    <li>Só exibe se houver número salvo. Deixe vazio para ocultar.</li>
-                    <li>Para deixar vazio, salve com o campo limpo.</li>
+                    <li>Só exibe se houver número salvo. Deixe os dois vazios para ocultar.</li>
                 </ul>
             </div>
         </div>

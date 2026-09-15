@@ -14,6 +14,23 @@ def _bool(value, default=False):
     return str(value).strip().lower() in ('1', 'true', 'yes', 'on')
 
 
+def _parse_wa_contacts(raw):
+    """Formato via SystemSetting: 'Nome|5511999999999,Nome2|5521999999998'."""
+    contacts = []
+    for part in str(raw or '').split(','):
+        part = part.strip()
+        if not part:
+            continue
+        if '|' in part:
+            name, _, number = part.rpartition('|')
+        else:
+            name, number = '', part
+        digits = ''.join(ch for ch in number if ch.isdigit())
+        if digits and digits not in [c['number'] for c in contacts]:
+            contacts.append({'name': name.strip(), 'number': digits})
+    return contacts
+
+
 def site_context(request):
     site_title = SystemSetting.get('siteTitle', 'SERVICETOOL')
     currencies = list(Currency.objects.filter(status='Active').values('id', 'code', 'icon', 'name', 'rate', 'created_at'))
@@ -40,6 +57,7 @@ def site_context(request):
         'siteFav': SystemSetting.get('siteFav', '/static/resource/fav.png'),
         'siteWaUrl': SystemSetting.get('siteWhatsappUrl', ''),
         'siteWaNumber': SystemSetting.get('siteWhatsappNumber', ''),
+        'siteWaContacts': _parse_wa_contacts(SystemSetting.get('siteWhatsappNumber', '')),
         'siteTeleUrl': SystemSetting.get('siteTelegramUrl', ''),
         'siteFbUrl': SystemSetting.get('siteFacebookUrl', ''),
         'siteXUrl': SystemSetting.get('siteTwitterUrl', ''),

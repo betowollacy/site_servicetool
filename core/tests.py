@@ -2785,14 +2785,42 @@ class AdminWhatsAppSupportTests(TestCase):
     def setUp(self):
         self.staff = User.objects.create_user(username='adminwa', password='senha123', is_staff=True)
 
-    def test_save_normalizes_number(self):
+    def test_save_normalizes_number_and_name(self):
         self.client.force_login(self.staff)
-        resp = self.client.post(reverse('admin_support_whatsapp'), {'number': '55 (11) 99999-9999'})
+        resp = self.client.post(reverse('admin_support_whatsapp'), {
+            'name': 'Maria', 'number': '55 (11) 99999-9999',
+        })
         self.assertEqual(resp.status_code, 302)
-        self.assertEqual(SystemSetting.get('siteWhatsappNumber'), '5511999999999')
+        self.assertEqual(SystemSetting.get('siteWhatsappNumber'), 'Maria|5511999999999')
+
+    def test_save_two_contacts(self):
+        self.client.force_login(self.staff)
+        resp = self.client.post(reverse('admin_support_whatsapp'), {
+            'name': 'Maria', 'number': '5511999999999',
+            'name2': 'João', 'number2': '5521999999998',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(
+            SystemSetting.get('siteWhatsappNumber'),
+            'Maria|5511999999999,João|5521999999998',
+        )
+
+    def test_save_dedupes_numbers(self):
+        self.client.force_login(self.staff)
+        self.client.post(reverse('admin_support_whatsapp'), {
+            'name': 'A', 'number': '5511999999999',
+            'name2': 'B', 'number2': '5511999999999',
+        })
+        self.assertEqual(SystemSetting.get('siteWhatsappNumber'), 'A|5511999999999')
+
+    def test_legacy_plain_number_still_works(self):
+        SystemSetting.objects.create(key='siteWhatsappNumber', value='5511999999999')
+        resp = self.client.get(reverse('homepage'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'https://wa.me/5511999999999')
 
     def test_empty_clears(self):
-        SystemSetting.objects.create(key='siteWhatsappNumber', value='5511999999999')
+        SystemSetting.objects.create(key='siteWhatsappNumber', value='Maria|5511999999999')
         self.client.force_login(self.staff)
         resp = self.client.post(reverse('admin_support_whatsapp'), {'number': '   '})
         self.assertEqual(resp.status_code, 302)
@@ -2804,11 +2832,24 @@ class AdminWhatsAppSupportTests(TestCase):
         self.assertIn('django-admin/login', resp.url)
 
     def test_widget_shown_on_frontend_when_number_set(self):
-        SystemSetting.objects.create(key='siteWhatsappNumber', value='5511999999999')
+        SystemSetting.objects.create(key='siteWhatsappNumber', value='Maria|5511999999999')
         resp = self.client.get(reverse('homepage'))
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'https://wa.me/5511999999999')
         self.assertContains(resp, 'wa-support-widget')
+
+    def test_widget_two_contacts_lists_names(self):
+        SystemSetting.objects.create(
+            key='siteWhatsappNumber',
+            value='Maria|5511999999999,João|5521999999998',
+        )
+        resp = self.client.get(reverse('homepage'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'https://wa.me/5511999999999')
+        self.assertContains(resp, 'https://wa.me/5521999999998')
+        self.assertContains(resp, 'Maria')
+        self.assertContains(resp, 'João')
+        self.assertContains(resp, 'waFab')
 
     def test_widget_hidden_when_no_number(self):
         resp = self.client.get(reverse('homepage'))

@@ -1028,26 +1028,58 @@ def admin_maintenance(request):
     })
 
 
+def _parse_wa_contacts(raw):
+    """Formato via SystemSetting: 'Nome|5511999999999,Nome2|5521999999998'."""
+    contacts = []
+    for part in str(raw or '').split(','):
+        part = part.strip()
+        if not part:
+            continue
+        if '|' in part:
+            name, _, number = part.rpartition('|')
+        else:
+            name, number = '', part
+        digits = ''.join(ch for ch in number if ch.isdigit())
+        if digits and digits not in [c['number'] for c in contacts]:
+            contacts.append({'name': name.strip(), 'number': digits})
+    return contacts
+
+
+def _wa_contacts_to_raw(contacts):
+    return ','.join('{}|{}'.format(c['name'], c['number']) for c in contacts)
+
+
 @_staff
 def admin_support_whatsapp(request):
-    """Numero de suporte exibido como botao flutuante de WhatsApp na area do cliente."""
+    """Numeros e nomes de atendentes exibidos como botao flutuante de WhatsApp na area do cliente."""
     if request.method == 'POST':
-        number = (request.POST.get('number') or '').strip()
-        digits = ''.join(ch for ch in number if ch.isdigit())
+        def _digits(value):
+            return ''.join(ch for ch in (value or '') if ch.isdigit())
+
+        contacts = []
+        for key in ('number', 'number2'):
+            digits = _digits(request.POST.get(key))
+            if not digits or digits in [c['number'] for c in contacts]:
+                continue
+            name = (request.POST.get(key.replace('number', 'name')) or '').strip()
+            contacts.append({'name': name, 'number': digits})
         setting, _ = SystemSetting.objects.get_or_create(key='siteWhatsappNumber', defaults={'value': ''})
-        if digits:
-            setting.value = digits
+        if contacts:
+            setting.value = _wa_contacts_to_raw(contacts)
             setting.save(update_fields=['value'])
-            messages.success(request, 'Número salvo. Link: https://wa.me/{}'.format(digits))
+            links = ' | '.join('{} <https://wa.me/{}>'.format(c['name'] or c['number'], c['number']) for c in contacts)
+            messages.success(request, 'Contato(s) salvo(s). {}'.format(links))
         else:
             setting.value = ''
             setting.save(update_fields=['value'])
-            messages.warning(request, 'Número vazio — botão de WhatsApp ocultado do site.')
+            messages.warning(request, 'Números vazios — botão de WhatsApp ocultado do site.')
         return redirect('admin_support_whatsapp')
     current = SystemSetting.get('siteWhatsappNumber', '')
+    contacts = _parse_wa_contacts(current)
     return render(request, 'admin/support_whatsapp.html', {
         'wa_number': current,
-        'wa_link': 'https://wa.me/{}'.format(current) if current else '',
+        'wa_contacts': contacts,
+        'wa_links': ['https://wa.me/{}'.format(c['number']) for c in contacts],
     })
 
 
