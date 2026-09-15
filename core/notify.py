@@ -393,13 +393,23 @@ def send_new_order_email(order, paid):
 
 
 def send_order_email(order):
-    """Envia o e-mail de conclusão ao cliente do pedido via SMTP."""
+    """Envia o e-mail de conclusão ao cliente do pedido via SMTP.
+
+    Também envia uma cópia para a caixa de entrada da loja (SystemSetting
+    orderReplyCopyTo), para arquivo/auditoria da resposta do provedor."""
     customer = getattr(order, 'customer', None)
     to = (customer.email if customer else '').strip()
     if not to:
         return False
     mail = completed_order_email(order)
-    return _smtp_send(to, mail['subject'], mail['text'], mail['html'])
+    sent = _smtp_send(to, mail['subject'], mail['text'], mail['html'])
+    copy_to = SystemSetting.get('orderReplyCopyTo', '').strip()
+    if copy_to and copy_to.lower() != to.lower() and sent:
+        try:
+            _smtp_send(copy_to, mail['subject'], mail['text'], mail['html'])
+        except Exception as exc:
+            logger.warning('Falha ao enviar copia de e-mail para %s: %s', copy_to, exc)
+    return sent
 
 
 def send_code_email(to, code, purpose):
