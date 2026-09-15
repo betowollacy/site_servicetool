@@ -640,6 +640,10 @@ class PaymentDeposit(models.Model):
     cancel_url = models.CharField(max_length=1000, blank=True, null=True)
     checkout_url = models.CharField(max_length=255, blank=True, null=True)
     status = models.CharField(max_length=20, default='Pending')
+    net_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,
+                                     help_text='Valor líquido recebido após as taxas do gateway (ex.: netValue do Asaas).')
+    gateway_fee = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'),
+                                      help_text='Taxa cobrada pelo gateway sobre o depósito.')
     order = models.ForeignKey(CustomerOrder, on_delete=models.SET_NULL, null=True, blank=True)
     invoice = models.ForeignKey(Invoice, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

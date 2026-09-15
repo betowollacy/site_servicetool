@@ -25,11 +25,11 @@ from .models import (
     Api, ACTIVATION_SERVICE_EXTRA_FIELDS, CREDIT_SERVICE_EXTRA_FIELDS,
     METHOD_SERVICE_EXTRA_FIELDS, SERVICE_COLLECT_DATA_CHOICES,
     Currency, Customer, CustomerOrder, Inventory,
-    InventoryData, Invoice, OrderInput, Page, PaymentGateway, RemoteServiceInput, RemoteServiceList,
+    InventoryData, Invoice, OrderInput, Page, PaymentDeposit, PaymentGateway, RemoteServiceInput, RemoteServiceList,
     ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting, User,
     collect_data_codes,
 )
-from . import provider_api, public_api
+from . import asaas, provider_api, public_api
 
 STATUS_MAP = {
     'waiting': ('Waiting Action', 'Aguardando Ação'),
@@ -138,6 +138,17 @@ def _is_charged(order):
     return bool(order.trx_id) or order.service_status in ('Success', 'In Process')
 
 
+def _asaas_decimal(value):
+    if value in (None, ''):
+        return Decimal('0.00')
+    normalized = str(value).replace(',', '.')
+    digits = ''.join(ch for ch in normalized if ch.isdigit() or ch == '.')
+    try:
+        return Decimal(digits).quantize(Decimal('0.01'))
+    except (TypeError, ValueError, InvalidOperation):
+        return Decimal('0.00')
+
+
 @_staff
 def admin_dashboard(request):
     period, since = _dashboard_period(request)
@@ -203,6 +214,52 @@ def admin_dashboard(request):
     if since is not None:
         invoices_qs = invoices_qs.filter(created_at__gte=since)
     deposits = invoices_qs.aggregate(total=Sum('invoice_amount'))['total'] or Decimal('0.00')
+
+    dep_qs = (PaymentDeposit.objects
+              .filter(status='Paid')
+              .select_related('invoice', 'invoice__customer'))
+    if since is not None:
+        dep_qs = dep_qs.filter(created_at__gte=since)
+    deposit_flow = []
+    deposit_credited = Decimal('0.00')   # valor creditado ao saldo do cliente
+    deposit_net = Decimal('0.00')        # valor líquido que consta na conta do gateway
+    deposit_fee = Decimal('0.00')        # taxa cobrada pelo gateway
+    for dep in dep_qs.order_by('-id'):
+        credited = (dep.invoice.invoice_amount if dep.invoice else dep.gateway_amount) or Decimal('0.00')
+        if dep.net_amount is not None:
+            net = dep.net_amount
+            fee = dep.gateway_fee or Decimal('0.00')
+        else:
+            # Depósitos antigos sem registro de taxa: considera recebido = creditado.
+            net = dep.gateway_amount or credited
+            fee = Decimal('0.00')
+        deposit_credited += credited
+        deposit_net += net
+        deposit_fee += fee
+        deposit_flow.append({
+            'deposit': dep,
+            'customer': (dep.invoice.customer if dep.invoice else (dep.order.customer if dep.order else None)),
+            'credited': credited,
+            'net': net,
+            'fee': fee,
+            'profit': (net - credited).quantize(Decimal('0.00')),
+        })
+    deposit_profit = (deposit_net - deposit_credited).quantize(Decimal('0.00'))
+
+    asaas_balance = None
+    asaas_balance_error = None
+    asaas_gw = PaymentGateway.objects.filter(name__iexact='Asaas', status='Active').first()
+    if asaas_gw and (asaas_gw.asaas_api_key or '').strip():
+        try:
+            raw = asaas.get_balance(asaas_gw)
+            if isinstance(raw, dict):
+                fallback = raw.get('balance')
+                asaas_balance = {
+                    'total': _asaas_decimal(raw.get('balance')),
+                    'available': _asaas_decimal(raw.get('availableBalance', fallback)),
+                }
+        except Exception as exc:  # noqa: BLE001 - saldo é opcional no painel
+            asaas_balance_error = str(exc)
 
     profit = revenue - api_cost - refunded
 
@@ -275,6 +332,13 @@ def admin_dashboard(request):
         'credits_spent': credits_spent,
         'refunded': refunded,
         'deposits': deposits,
+        'deposit_credited': deposit_credited.quantize(Decimal('0.00')),
+        'deposit_net': deposit_net.quantize(Decimal('0.00')),
+        'deposit_fee': deposit_fee.quantize(Decimal('0.00')),
+        'deposit_profit': deposit_profit,
+        'deposit_flow': deposit_flow[:15],
+        'asaas_balance': asaas_balance,
+        'asaas_balance_error': asaas_balance_error,
         'profit': profit,
         'direct_count': direct_count,
         'api_summary': [api_summary[a] for a in api_summary],

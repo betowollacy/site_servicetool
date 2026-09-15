@@ -2726,6 +2726,16 @@ class AdminDashboardTests(TestCase):
             customer_currency='BRL', payment_gateway='Asaas',
             invoice_title='Adicionar Saldo', invoice_status='Paid',
         )
+        deposit_inv = Invoice.objects.create(
+            customer=self.customer, customer_name=self.customer.name,
+            invoice_for='Deposit', invoice_amount=Decimal('20.00'),
+            customer_currency='BRL', payment_gateway='Asaas',
+            invoice_title='Adicionar Saldo', invoice_status='Paid',
+        )
+        PaymentDeposit.objects.create(
+            name='Asaas - PIX', gateway_amount=Decimal('20.50'), status='Paid',
+            invoice=deposit_inv, net_amount=Decimal('19.70'), gateway_fee=Decimal('0.80'),
+        )
 
         self.client.force_login(self.staff)
         resp = self.client.get(reverse('admin_dashboard'))
@@ -2735,7 +2745,6 @@ class AdminDashboardTests(TestCase):
         self.assertEqual(ctx['refunded'], Decimal('14.00'))
         self.assertEqual(ctx['api_cost'], Decimal('11.00'))   # 1 credit x 5.5 (venda) + direto 5.5
         self.assertEqual(ctx['credits_spent'], Decimal('2.00'))
-        self.assertEqual(ctx['deposits'], Decimal('50.00'))
         self.assertEqual(ctx['profit'], Decimal('-11.00'))
         self.assertEqual(ctx['direct_count'], 1)
         self.assertEqual(ctx['count_success'], 2)
@@ -2746,6 +2755,11 @@ class AdminDashboardTests(TestCase):
         self.assertEqual(api_row['cost'], Decimal('11.00'))
         self.assertEqual(api_row['revenue'], Decimal('14.00'))
         self.assertEqual(api_row['profit'], Decimal('3.00'))
+        self.assertEqual(ctx['deposits'], Decimal('70.00'))
+        self.assertEqual(ctx['deposit_credited'], Decimal('20.00'))
+        self.assertEqual(ctx['deposit_net'], Decimal('19.70'))
+        self.assertEqual(ctx['deposit_fee'], Decimal('0.80'))
+        self.assertEqual(ctx['deposit_profit'], Decimal('-0.30'))
         self.assertContains(resp, 'Faturamento')
         self.assertContains(resp, '33.00')   # saldo ao vivo da API
 
@@ -2761,3 +2775,17 @@ class AdminDashboardTests(TestCase):
         self.assertEqual(ctx['revenue'], Decimal('0.00'))
         self.assertEqual(ctx['api_cost'], Decimal('0.00'))
         self.assertEqual(ctx['profit'], Decimal('0.00'))
+
+    @patch('core.views_admin.provider_api.account_info',
+           return_value={'credit': '5', 'creditraw': 5.0, 'mail': 'conta@api.com', 'currency': 'USD'})
+    @patch('core.views_admin.asaas.get_balance', return_value={'balance': '500.00', 'availableBalance': '480.00'})
+    def test_dashboard_asaas_balance(self, _mock_bal, _mock_acc):
+        PaymentGateway.objects.create(
+            name='Asaas', status='Active', asaas_api_key='test-key', asaas_sandbox=True,
+        )
+        self.client.force_login(self.staff)
+        resp = self.client.get(reverse('admin_dashboard'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context['asaas_balance']['total'], Decimal('500.00'))
+        self.assertEqual(resp.context['asaas_balance']['available'], Decimal('480.00'))
+        self.assertIsNone(resp.context['asaas_balance_error'])

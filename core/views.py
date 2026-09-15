@@ -5,7 +5,7 @@ import string
 import time
 import uuid
 from datetime import timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -926,9 +926,30 @@ def _pay_with_binance(request, customer, invoice):
     return redirect('payment_page', invoice_id=invoice.id)
 
 
+def _payload_decimal(payload, key, default=None):
+    value = payload.get(key)
+    if value is None or value == '':
+        return default
+    try:
+        return Decimal(str(value).replace(',', '.'))
+    except (TypeError, ValueError, InvalidOperation):
+        return default
+
+
 def _mark_paid(deposit, payload=None):
     if deposit.status == 'Paid':
         return
+    pay = payload if isinstance(payload, dict) else {}
+    if isinstance(pay.get('payment'), dict):
+        pay = pay['payment']
+    net = _payload_decimal(pay, 'netValue')
+    value = _payload_decimal(pay, 'value')
+    if net is not None:
+        net = net.quantize(Decimal('0.01'))
+        deposit.net_amount = net
+        if value is not None and value >= net:
+            deposit.gateway_fee = (value - net).quantize(Decimal('0.01'))
+        deposit.save(update_fields=['net_amount', 'gateway_fee'])
     invoice = deposit.invoice
     if not invoice:
         deposit.status = 'Paid'

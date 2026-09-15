@@ -90,3 +90,7 @@ def get_pix_qr_code(gateway, payment_id):
 
 def get_payment(gateway, payment_id):
     return call(gateway, 'GET', f'/payments/{payment_id}')
+
+
+def get_balance(gateway):
+    return call(gateway, 'GET', '/balance')

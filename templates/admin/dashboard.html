@@ -140,6 +140,114 @@
     </div>
 </div>
 
+<div class="row mb-3">
+    <div class="col-xl-7">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Depósitos — entradas, taxa e lucro</h5>
+                <small class="text-muted">Referente ao período selecionado</small>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-4">
+                        <div class="border rounded p-2 text-center">
+                            <div class="text-muted small">Entrada (creditada ao cliente)</div>
+                            <div class="fw-semibold">R$ {{ deposit_credited|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="border rounded p-2 text-center">
+                            <div class="text-muted small">Recebido líquido (gateway)</div>
+                            <div class="fw-semibold">R$ {{ deposit_net|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="border rounded p-2 text-center">
+                            <div class="text-muted small">Taxa do gateway</div>
+                            <div class="fw-semibold text-danger">R$ {{ deposit_fee|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="border rounded p-2 text-center">
+                            <div class="text-muted small">Lucro dos depósitos</div>
+                            <div class="fw-semibold {% if deposit_profit < 0 %}text-danger{% else %}text-success{% endif %}">R$ {{ deposit_profit|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="border rounded p-2 text-center">
+                            <div class="text-muted small">Lucro = líquido recebido − crédito dado ao cliente</div>
+                            <div class="small text-muted">Taxa cobrada do cliente − taxa do gateway</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive mt-3">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th class="text-end">Creditado</th>
+                                <th class="text-end">Líquido</th>
+                                <th class="text-end">Taxa</th>
+                                <th class="text-end">Lucro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in deposit_flow %}
+                            <tr>
+                                <td>{{ d.customer.name|default:'-' }}</td>
+                                <td class="text-end">R$ {{ d.credited|floatformat:2 }}</td>
+                                <td class="text-end">R$ {{ d.net|floatformat:2 }}</td>
+                                <td class="text-end">R$ {{ d.fee|floatformat:2 }}</td>
+                                <td class="text-end {% if d.profit < 0 %}text-danger{% else %}text-success{% endif %}">R$ {{ d.profit|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-center">Nenhum depósito pago no período.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-5">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Caixa Asaas</h5>
+                <a href="{% url 'admin_gateway_list' %}" class="btn btn-sm btn-light-primary">Gateways</a>
+            </div>
+            <div class="card-body">
+                {% if asaas_balance_error %}
+                <div class="alert alert-danger mb-0">{{ asaas_balance_error }}</div>
+                {% elif asaas_balance %}
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="border rounded p-2 text-center">
+                            <div class="text-muted small">Saldo total na Asaas</div>
+                            <div class="fw-semibold text-primary">R$ {{ asaas_balance.total|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="border rounded p-2 text-center">
+                            <div class="text-muted small">Saldo disponível</div>
+                            <div class="fw-semibold">R$ {{ asaas_balance.available|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">Gateway Asaas não configurado ou inativo.<br>Configure a chave de API para consultar o saldo.</div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12 mb-3 text-end">
+                <small class="text-muted">Depósitos antigos, sem registro de taxa Asaas, mostram valor líquido = valor creditado.</small>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-xl-6">
         <div class="card">
