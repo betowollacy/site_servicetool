@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -2569,3 +2569,47 @@ class ForgotPasswordFlowTests(TestCase):
         with self._smtp_fake([]):
             resp = self.client.post(reverse('forgot_password'), {'action': 'request', 'email': 'cliente@teste.com'})
         self.assertContains(resp, 'Já enviamos um código recentemente.')
+
+
+class SingleSessionTests(TestCase):
+
+    def setUp(self):
+        self.customer = Customer.objects.create(
+            name='Cliente Teste', email='cliente@teste.com',
+            password=Customer.make_password('Senha123@'), currency='BRL', status='Active',
+        )
+
+    def _login(self, client):
+        return client.post(reverse('login'), {'email': 'cliente@teste.com', 'password': 'Senha123@'})
+
+    def test_new_login_logs_out_previous_session(self):
+        a, b = Client(), Client()
+        self._login(a)
+        self.assertEqual(a.get(reverse('customer_dashboard')).status_code, 200)
+        self._login(b)
+        self.assertEqual(b.get(reverse('customer_dashboard')).status_code, 200)
+        resp = a.get(reverse('customer_dashboard'))
+        self.assertIn(reverse('homepage'), resp['Location'])
+        self.assertIsNone(a.session.get('customer_id'))
+
+    def test_login_after_verify_keeps_session(self):
+        with patch('core.notify._smtp_send', return_value=True):
+            self.client.post(reverse('register'), {
+                'name': 'Novo', 'email': 'novo@teste.com', 'password': 'Senha123@',
+            })
+        temp = TempRegister.objects.get(email='novo@teste.com')
+        self.client.post(reverse('verify_email'), {'action': 'verify', 'code': temp.token}, follow=True)
+        novo = Customer.objects.get(email='novo@teste.com')
+        self.assertEqual(self.client.session.get('customer_id'), novo.id)
+        self.assertTrue(novo.session_token)
+
+    def test_stale_token_is_rejected(self):
+        self.customer.session_token = 'token-atual'
+        self.customer.save(update_fields=['session_token'])
+        a = Client()
+        sess = a.session
+        sess['customer_id'] = self.customer.id
+        sess['customer_session_token'] = 'token-antigo'
+        sess.save()
+        resp = a.get(reverse('customer_dashboard'))
+        self.assertIn(reverse('homepage'), resp['Location'])

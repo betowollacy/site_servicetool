@@ -22,6 +22,12 @@ def site_context(request):
     customer_id = request.session.get('customer_id')
     if customer_id:
         customer = Customer.objects.filter(id=customer_id).first()
+        if customer:
+            token = request.session.get('customer_session_token', '')
+            if customer.session_token and token != customer.session_token:
+                customer = None
+                request.session.pop('customer_id', None)
+                request.session.pop('customer_session_token', None)
 
     them_mode = SystemSetting.get('themeMode', 'dark')
     theme_color = SystemSetting.get('themeColor', 'preset-1')

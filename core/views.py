@@ -76,7 +76,23 @@ def _get_customer(request):
     customer_id = request.session.get('customer_id')
     if not customer_id:
         return None
-    return Customer.objects.filter(id=customer_id).first()
+    customer = Customer.objects.filter(id=customer_id).first()
+    if not customer:
+        return None
+    token = request.session.get(CUSTOMER_SESSION_TOKEN, '')
+    if customer.session_token and token != customer.session_token:
+        request.session.pop('customer_id', None)
+        request.session.pop(CUSTOMER_SESSION_TOKEN, None)
+        return None
+    return customer
+
+
+CUSTOMER_SESSION_TOKEN = 'customer_session_token'
+
+
+def _issue_session_token(customer):
+    customer.session_token = uuid.uuid4().hex
+    customer.save(update_fields=['session_token'])
 
 
 def _service_dict(service):
@@ -266,7 +282,9 @@ def login_view(request):
         password = request.POST.get('password', '')
         customer = Customer.objects.filter(email__iexact=email).first()
         if customer and customer.check_password(password) and customer.status == 'Active':
+            _issue_session_token(customer)
             request.session['customer_id'] = customer.id
+            request.session[CUSTOMER_SESSION_TOKEN] = customer.session_token
             if request.POST.get('remember_login') == 'on':
                 request.session.set_expiry(60 * 60 * 24 * 30)
             else:
@@ -354,9 +372,11 @@ def verify_email(request):
             name=temp.name, email=temp.email, password=temp.password,
             currency=temp.currency, status='Active',
         )
+        _issue_session_token(customer)
         temp.delete()
         request.session.pop(VERIFY_SESSION_KEY + '_email', None)
         request.session['customer_id'] = customer.id
+        request.session[CUSTOMER_SESSION_TOKEN] = customer.session_token
         request.session.set_expiry(0)
         messages.success(request, 'E-mail confirmado! Cadastro realizado com sucesso.')
         return redirect('homepage')
@@ -367,6 +387,7 @@ def verify_email(request):
 
 def logout_view(request):
     request.session.pop('customer_id', None)
+    request.session.pop(CUSTOMER_SESSION_TOKEN, None)
     return redirect('homepage')
 
 
