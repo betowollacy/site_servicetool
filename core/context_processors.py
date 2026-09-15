@@ -39,6 +39,7 @@ def site_context(request):
         'siteLogo': SystemSetting.get('siteLogo', '/static/resource/logo.png'),
         'siteFav': SystemSetting.get('siteFav', '/static/resource/fav.png'),
         'siteWaUrl': SystemSetting.get('siteWhatsappUrl', ''),
+        'siteWaNumber': SystemSetting.get('siteWhatsappNumber', ''),
         'siteTeleUrl': SystemSetting.get('siteTelegramUrl', ''),
         'siteFbUrl': SystemSetting.get('siteFacebookUrl', ''),
         'siteXUrl': SystemSetting.get('siteTwitterUrl', ''),

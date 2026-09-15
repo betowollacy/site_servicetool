@@ -219,6 +219,30 @@
         </div>
     </div>
 
+    {% if siteWaNumber %}
+    <div id="waSupportWidget" class="wa-support-widget">
+        <a href="https://wa.me/{{ siteWaNumber }}" target="_blank" rel="noopener" aria-label="Suporte via WhatsApp">
+            <i class="bi bi-whatsapp"></i>
+        </a>
+        <button type="button" class="wa-support-close" id="waSupportClose" aria-label="Fechar suporte via WhatsApp">&times;</button>
+    </div>
+    <style>
+        .wa-support-widget{position:fixed;right:20px;bottom:24px;z-index:1050}
+        .wa-support-widget a{display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:#25d366;color:#fff;font-size:28px;text-decoration:none;box-shadow:0 4px 14px rgba(37,211,102,.45);transition:transform .15s ease}
+        .wa-support-widget a:hover{transform:scale(1.06)}
+        .wa-support-close{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border:0;border-radius:50%;background:#e11d48;color:#fff;font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+    </style>
+    <script>
+        (function(){
+            try { if (localStorage.getItem('waSupportHidden') === '1') { document.getElementById('waSupportWidget').style.display = 'none'; } } catch(e) {}
+            document.getElementById('waSupportClose').addEventListener('click', function(){
+                document.getElementById('waSupportWidget').style.display = 'none';
+                try { localStorage.setItem('waSupportHidden', '1'); } catch(e) {}
+            });
+        })();
+    </script>
+    {% endif %}
+
     {% include 'frontend/include/login.html' %}
 
     <script src="{% static 'frontend/js/jquery.min.js' %}"></script>

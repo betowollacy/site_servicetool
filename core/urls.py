@@ -61,6 +61,7 @@ path('admin-panel/apis/<int:api_id>/import/', views_admin.admin_api_import,
     path('admin-panel/pedido-direto/', views_admin.admin_direct_order, name='admin_direct_order'),
     path('admin-panel/setting/', views_admin.admin_setting, name='admin_setting'),
     path('admin-panel/maintenance/', views_admin.admin_maintenance, name='admin_maintenance'),
+    path('admin-panel/suporte-whatsapp/', views_admin.admin_support_whatsapp, name='admin_support_whatsapp'),
     path('admin-panel/settings/upload/<str:kind>/', views_admin.admin_setting_upload_image, name='admin_setting_upload_image'),
     path('admin-panel/logout/', views_admin.admin_logout, name='admin_logout'),
 

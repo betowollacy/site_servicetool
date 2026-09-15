@@ -1028,6 +1028,29 @@ def admin_maintenance(request):
     })
 
 
+@_staff
+def admin_support_whatsapp(request):
+    """Numero de suporte exibido como botao flutuante de WhatsApp na area do cliente."""
+    if request.method == 'POST':
+        number = (request.POST.get('number') or '').strip()
+        digits = ''.join(ch for ch in number if ch.isdigit())
+        setting, _ = SystemSetting.objects.get_or_create(key='siteWhatsappNumber', defaults={'value': ''})
+        if digits:
+            setting.value = digits
+            setting.save(update_fields=['value'])
+            messages.success(request, 'Número salvo. Link: https://wa.me/{}'.format(digits))
+        else:
+            setting.value = ''
+            setting.save(update_fields=['value'])
+            messages.warning(request, 'Número vazio — botão de WhatsApp ocultado do site.')
+        return redirect('admin_support_whatsapp')
+    current = SystemSetting.get('siteWhatsappNumber', '')
+    return render(request, 'admin/support_whatsapp.html', {
+        'wa_number': current,
+        'wa_link': 'https://wa.me/{}'.format(current) if current else '',
+    })
+
+
 def _service_type_from(svtype):
     return TYPE_MAP.get(svtype, ('Server Service', 'Server'))
 

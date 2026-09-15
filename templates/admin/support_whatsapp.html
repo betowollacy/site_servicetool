@@ -1,0 +1,50 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12"><h4 class="mb-0">Suporte WhatsApp</h4></div>
+</div>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3"><i class="ti ti-brand-whatsapp me-1" style="color:#25d366"></i> Número de suporte</h6>
+                <form method="post" class="row g-3">
+                    {% csrf_token %}
+                    <div class="col-12">
+                        <label class="form-label">Número do WhatsApp (com DDI/DDD)</label>
+                        <input type="text" class="form-control" name="number" value="{% if wa_number %}{{ wa_number }}{% endif %}" placeholder="5511999999999">
+                        <small class="text-muted">Código do país + DDD + número, somente dígitos. Ex.: Brasil = 55 + 11 + 999999999.</small>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success w-100"><i class="ti ti-brand-whatsapp me-2"></i> Salvar número</button>
+                    </div>
+                </form>
+                {% if wa_link %}
+                <div class="alert alert-info py-2 mt-3 mb-0">Link ativo: <a href="{{ wa_link }}" target="_blank" rel="noopener">{{ wa_link }}</a></div>
+                {% else %}
+                <div class="alert alert-warning py-2 mt-3 mb-0">Nenhum número configurado — o botão de WhatsApp fica oculto no site do cliente.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3"><i class="ti ti-info-circle me-1"></i> Como aparece</h6>
+                <ul class="mb-0" style="line-height: 1.9">
+                    <li>Botão flutuante de WhatsApp no canto inferior direito da <b>área do cliente</b>, discreto e com ícone.</li>
+                    <li>O cliente pode <b>fechar</b> o botão (a escolha fica salva no navegador dele).</li>
+                    <li>O botão abre o WhatsApp direto com o número configurado (<code>wa.me/número</code>).</li>
+                    <li>Só exibe se houver número salvo. Deixe vazio para ocultar.</li>
+                    <li>Para deixar vazio, salve com o campo limpo.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

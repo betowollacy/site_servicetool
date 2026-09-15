@@ -2781,6 +2781,41 @@ class AdminApiIpHintTests(TestCase):
         self.assertNotContains(resp, 'Connection refused')
 
 
+class AdminWhatsAppSupportTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='adminwa', password='senha123', is_staff=True)
+
+    def test_save_normalizes_number(self):
+        self.client.force_login(self.staff)
+        resp = self.client.post(reverse('admin_support_whatsapp'), {'number': '55 (11) 99999-9999'})
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(SystemSetting.get('siteWhatsappNumber'), '5511999999999')
+
+    def test_empty_clears(self):
+        SystemSetting.objects.create(key='siteWhatsappNumber', value='5511999999999')
+        self.client.force_login(self.staff)
+        resp = self.client.post(reverse('admin_support_whatsapp'), {'number': '   '})
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(SystemSetting.get('siteWhatsappNumber'), '')
+
+    def test_page_requires_staff(self):
+        resp = self.client.get(reverse('admin_support_whatsapp'))
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('django-admin/login', resp.url)
+
+    def test_widget_shown_on_frontend_when_number_set(self):
+        SystemSetting.objects.create(key='siteWhatsappNumber', value='5511999999999')
+        resp = self.client.get(reverse('homepage'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'https://wa.me/5511999999999')
+        self.assertContains(resp, 'wa-support-widget')
+
+    def test_widget_hidden_when_no_number(self):
+        resp = self.client.get(reverse('homepage'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotContains(resp, 'wa-support-widget')
+
+
 class AdminDashboardTests(TestCase):
     def setUp(self):
         self.staff = User.objects.create_user(username='admindash', password='senha123', is_staff=True)
