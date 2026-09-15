@@ -2665,3 +2665,99 @@ class SingleSessionTests(TestCase):
         sess.save()
         resp = a.get(reverse('customer_dashboard'))
         self.assertIn(reverse('homepage'), resp['Location'])
+
+
+class AdminDashboardTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='admindash', password='senha123', is_staff=True)
+        self.customer = Customer.objects.create(
+            name='Cliente Dash', email='clidash@teste.com',
+            password=Customer.make_password('senha'), currency='BRL',
+            balance=Decimal('100.00'), api_allow='on',
+        )
+        self.api = Api.objects.create(
+            api_name='API Teste', status='Active',
+            price_rate=Decimal('5.5000'), reseller_price=Decimal('1.00'),
+        )
+        RemoteServiceList.objects.create(
+            api=self.api, referenceid='R-TEST', SERVICETYPE='server_service',
+            SERVICENAME='Aluguel 1 Dia', CREDIT=Decimal('1.00'),
+        )
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group,
+            title='Aluguel 1 Dia', slug='aluguel-1-dia', status='Active',
+            original_price=Decimal('10.00'), api=self.api, api_enabled=True,
+            referenceid='R-TEST', process_type='Auto',
+        )
+
+    def _customer_order(self, status='Success', trx='', price=None):
+        order = CustomerOrder.objects.create(
+            customer=self.customer, service=self.service,
+            service_status=status, service_type='server_service',
+            service_qnt='1', service_price=price or Decimal('14.00'),
+            service_title=self.service.title, trx_id=trx,
+        )
+        self.customer.balance = self.customer.balance - order.service_price
+        self.customer.save(update_fields=['balance'])
+        Statement.objects.create(
+            customer=self.customer, description='Order #{} - {}'.format(order.id, order.service_title),
+            type='Debit', amount=order.service_price, balance=self.customer.balance, order=order,
+        )
+        return order
+
+    @patch('core.views_admin.provider_api.account_info',
+           return_value={'credit': '33.00', 'creditraw': 33.0, 'mail': 'conta@api.com', 'currency': 'USD'})
+    def test_dashboard_totals(self, _mock_account):
+        # venda paga por cliente -> fatura e gera custo na API
+        self._customer_order('Success', trx='TRX1')
+        # venda rejeitada -> vira reembolso, nao fatura
+        self._customer_order('Rejected')
+        # Pedido Direto na API (admin): sem statement, valor registrado = custo
+        CustomerOrder.objects.create(
+            customer=self.customer, service=self.service,
+            service_status='Success', service_type='server_service',
+            service_qnt='1', service_price=Decimal('5.50'),
+            service_title=self.service.title, trx_id='TRX2',
+        )
+        Invoice.objects.create(
+            customer=self.customer, customer_name=self.customer.name,
+            invoice_for='Deposit', invoice_amount=Decimal('50.00'),
+            customer_currency='BRL', payment_gateway='Asaas',
+            invoice_title='Adicionar Saldo', invoice_status='Paid',
+        )
+
+        self.client.force_login(self.staff)
+        resp = self.client.get(reverse('admin_dashboard'))
+        self.assertEqual(resp.status_code, 200)
+        ctx = resp.context
+        self.assertEqual(ctx['revenue'], Decimal('14.00'))
+        self.assertEqual(ctx['refunded'], Decimal('14.00'))
+        self.assertEqual(ctx['api_cost'], Decimal('11.00'))   # 1 credit x 5.5 (venda) + direto 5.5
+        self.assertEqual(ctx['credits_spent'], Decimal('2.00'))
+        self.assertEqual(ctx['deposits'], Decimal('50.00'))
+        self.assertEqual(ctx['profit'], Decimal('-11.00'))
+        self.assertEqual(ctx['direct_count'], 1)
+        self.assertEqual(ctx['count_success'], 2)
+        self.assertEqual(len(ctx['top_tools']), 1)
+        self.assertEqual(ctx['top_tools'][0]['qty'], 2)
+        api_row = next(r for r in ctx['api_summary'] if r['api'].id == self.api.id)
+        self.assertEqual(api_row['orders'], 2)
+        self.assertEqual(api_row['cost'], Decimal('11.00'))
+        self.assertEqual(api_row['revenue'], Decimal('14.00'))
+        self.assertEqual(api_row['profit'], Decimal('3.00'))
+        self.assertContains(resp, 'Faturamento')
+        self.assertContains(resp, '33.00')   # saldo ao vivo da API
+
+    @patch('core.views_admin.provider_api.account_info',
+           return_value={'credit': '0', 'creditraw': 0, 'mail': 'conta@api.com', 'currency': 'USD'})
+    def test_dashboard_open_without_data(self, _mock_account):
+        CustomerOrder.objects.all().delete()
+        Invoice.objects.all().delete()
+        self.client.force_login(self.staff)
+        resp = self.client.get(reverse('admin_dashboard') + '?period=30')
+        self.assertEqual(resp.status_code, 200)
+        ctx = resp.context
+        self.assertEqual(ctx['revenue'], Decimal('0.00'))
+        self.assertEqual(ctx['api_cost'], Decimal('0.00'))
+        self.assertEqual(ctx['profit'], Decimal('0.00'))

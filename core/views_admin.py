@@ -14,10 +14,11 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import logout
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.text import slugify
 
 from .models import (
@@ -51,14 +52,235 @@ def _staff(fn):
     return staff_member_required(fn, login_url='/django-admin/login/')
 
 
+AVAILABLE_PERIODS = {
+    'all': 'Tudo',
+    '30': 'Últimos 30 dias',
+    '7': 'Últimos 7 dias',
+    'today': 'Hoje',
+}
+
+
+def _dashboard_period(request):
+    period = request.GET.get('period', '').strip().lower()
+    if period not in AVAILABLE_PERIODS:
+        period = 'all'
+    since = None
+    if period == 'today':
+        since = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period in ('7', '30'):
+        since = timezone.now() - timezone.timedelta(days=int(period))
+    return period, since
+
+
+def _order_qty(order):
+    try:
+        q = str(order.service_qnt or '').strip()
+        return int(q or '1')
+    except (TypeError, ValueError):
+        return 1
+
+
+def _order_credits(order):
+    """Custo do pedido em créditos do provedor (CREDIT do catálogo x quantidade).
+
+    Pedidos entregues do estoque local custam zero na API."""
+    service = order.service
+    if not service or not service.api_id or not (service.referenceid or '').strip():
+        return Decimal('0.00')
+    if service.inventory_id:
+        return Decimal('0.00')
+    qty = _order_qty(order)
+    remote = (RemoteServiceList.objects
+              .filter(api_id=service.api_id, referenceid=(service.referenceid or '').strip())
+              .first())
+    credit = Decimal('0.00')
+    if remote and remote.CREDIT:
+        credit = remote.CREDIT
+    elif service.api and service.api.reseller_price:
+        credit = service.api.reseller_price
+    return (credit * qty).quantize(Decimal('0.00'))
+
+
+def _order_cost(order, is_direct):
+    """Custo estimado em BRL que o site paga à API pelo pedido (CREDIT x rate)."""
+    credits = _order_credits(order)
+    if credits and order.service and order.service.api and order.service.api.price_rate:
+        return (credits * order.service.api.price_rate).quantize(Decimal('0.00'))
+    if is_direct:
+        # Pedido direto do admin registra o custo do provedor no próprio valor.
+        return (order.service_price or Decimal('0.00')).quantize(Decimal('0.00'))
+    return Decimal('0.00')
+
+
+def _is_admin_direct(order):
+    """Pedidos diretos (Pedido Direto na API) não movimentam saldo/statement."""
+    return not order.statements.all()
+
+
+def _api_credit_decimal(info):
+    if not info:
+        return Decimal('0.00')
+    try:
+        return Decimal(str(info.get('creditraw') or 0)).quantize(Decimal('0.00'))
+    except (TypeError, ValueError, InvalidOperation):
+        pass
+    digits = ''.join(ch for ch in str(info.get('credit') or '') if ch.isdigit() or ch in '.,-')
+    if not digits:
+        return Decimal('0.00')
+    try:
+        return Decimal(digits.replace(',', '.')).quantize(Decimal('0.00'))
+    except (TypeError, ValueError, InvalidOperation):
+        return Decimal('0.00')
+
+
+def _is_charged(order):
+    """Pedido efetivamente cobrado pelo provedor (foi enviado / está em andamento)."""
+    return bool(order.trx_id) or order.service_status in ('Success', 'In Process')
+
+
 @_staff
 def admin_dashboard(request):
+    period, since = _dashboard_period(request)
+    orders_qs = (CustomerOrder.objects
+                 .select_related('customer', 'service', 'service__api')
+                 .prefetch_related('statements'))
+    if since is not None:
+        orders_qs = orders_qs.filter(created_at__gte=since)
+    orders = list(orders_qs)
+
+    revenue = Decimal('0.00')      # vendas pagas pelos clientes (não-estornadas)
+    api_cost = Decimal('0.00')     # gasto com as APIs (crédito x câmbio)
+    credits_spent = Decimal('0.00')  # créditos consumidos nas APIs
+    refunded = Decimal('0.00')     # reembolsos/estornos devolvidos a clientes
+    direct_count = 0
+    status_counts = dict.fromkeys(SERVICE_STATUS_CHOICES, 0)
+    api_rows = {}
+    tools = {}
+
+    for order in orders:
+        status_counts[order.service_status] = status_counts.get(order.service_status, 0) + 1
+        is_direct = _is_admin_direct(order)
+        if is_direct:
+            direct_count += 1
+        if _is_charged(order):
+            cost = _order_cost(order, is_direct)
+            api_cost += cost
+            credits_spent += _order_credits(order)
+            service = order.service
+            if service and service.api_id and (service.referenceid or '').strip():
+                row = api_rows.setdefault(service.api_id, {
+                    'api': service.api, 'orders': 0, 'cost': Decimal('0.00'),
+                    'credits': Decimal('0.00'), 'revenue': Decimal('0.00'),
+                })
+                row['orders'] += 1
+                row['cost'] += cost
+                row['credits'] += _order_credits(order)
+                if not is_direct and order.service_status != 'Rejected':
+                    row['revenue'] += order.service_price or Decimal('0.00')
+        if not is_direct:
+            if order.service_status != 'Rejected':
+                revenue += order.service_price or Decimal('0.00')
+            else:
+                refunded += order.service_price or Decimal('0.00')
+        if order.service_status == 'Success' and order.service_id:
+            tool = tools.setdefault(order.service_id, {
+                'service': order.service,
+                'title': order.service_title or (order.service.title if order.service else ''),
+                'qty': 0, 'revenue': Decimal('0.00'), 'cost': Decimal('0.00'),
+            })
+            tool['qty'] += 1
+            tool['revenue'] += order.service_price or Decimal('0.00')
+            if _is_charged(order):
+                tool['cost'] += _order_cost(order, is_direct)
+
+    top_tools = sorted(tools.values(), key=lambda t: t['qty'], reverse=True)[:8]
+    max_tool_qty = max((t['qty'] for t in top_tools), default=0) or 1
+    for t in top_tools:
+        t['profit'] = t['revenue'] - t['cost']
+        t['width'] = round((t['qty'] / max_tool_qty) * 100)
+
+    invoices_qs = Invoice.objects.filter(invoice_for='Deposit', invoice_status='Paid')
+    if since is not None:
+        invoices_qs = invoices_qs.filter(created_at__gte=since)
+    deposits = invoices_qs.aggregate(total=Sum('invoice_amount'))['total'] or Decimal('0.00')
+
+    profit = revenue - api_cost - refunded
+
+    api_balances = []
+    for api in Api.objects.filter(status='Active').order_by('api_name'):
+        info = None
+        error = None
+        try:
+            info = provider_api.account_info(api)
+        except provider_api.ProviderError as exc:
+            error = str(exc)
+        except Exception as exc:  # noqa: BLE001 - saldo é opcional no painel
+            error = str(exc)
+        api_balances.append({
+            'api': api,
+            'info': info,
+            'balance': _api_credit_decimal(info),
+            'error': error,
+        })
+
+    api_summary = {}
+    for live in api_balances:
+        entry = {
+            'api': live['api'],
+            'orders': 0, 'cost': Decimal('0.00'), 'credits': Decimal('0.00'),
+            'revenue': Decimal('0.00'), 'profit': Decimal('0.00'),
+            'balance': live['balance'], 'currency': (live['info'] or {}).get('currency', ''),
+            'mail': (live['info'] or {}).get('mail', ''),
+            'balance_error': live['error'],
+        }
+        api_summary[live['api'].id] = entry
+    for aid, row in api_rows.items():
+        entry = api_summary.setdefault(aid, {
+            'api': row['api'], 'orders': 0, 'cost': Decimal('0.00'), 'credits': Decimal('0.00'),
+            'revenue': Decimal('0.00'), 'profit': Decimal('0.00'),
+            'balance': Decimal('0.00'), 'currency': '', 'mail': '', 'balance_error': 'API inativa',
+        })
+        entry['orders'] = row['orders']
+        entry['cost'] = row['cost']
+        entry['credits'] = row['credits']
+        entry['revenue'] = row['revenue']
+        entry['profit'] = row['revenue'] - row['cost']
+
+    flow = []
+    for order in orders[:15]:
+        is_direct = _is_admin_direct(order)
+        cost = _order_cost(order, is_direct) if _is_charged(order) else Decimal('0.00')
+        sale = order.service_price if (order.service_status != 'Rejected' and not is_direct) else Decimal('0.00')
+        flow.append({
+            'order': order,
+            'direct': is_direct,
+            'cost': cost,
+            'sale': sale,
+            'profit': sale - cost,
+        })
+
     ctx = {
+        'period': period,
+        'periods': AVAILABLE_PERIODS,
         'total_customers': Customer.objects.count(),
         'total_services': ServiceList.objects.count(),
-        'waiting_orders': CustomerOrder.objects.filter(service_status='Waiting Action').count(),
         'total_invoices': Invoice.objects.count(),
-        'recent_orders': CustomerOrder.objects.all()[:8],
+        'status_counts': status_counts,
+        'count_waiting': status_counts['Waiting Action'],
+        'count_in_process': status_counts['In Process'],
+        'count_success': status_counts['Success'],
+        'count_rejected': status_counts['Rejected'],
+        'revenue': revenue,
+        'api_cost': api_cost,
+        'credits_spent': credits_spent,
+        'refunded': refunded,
+        'deposits': deposits,
+        'profit': profit,
+        'direct_count': direct_count,
+        'api_summary': [api_summary[a] for a in api_summary],
+        'api_balances': api_balances,
+        'top_tools': top_tools,
+        'flow': flow,
     }
     return render(request, 'admin/dashboard.html', ctx)
 
