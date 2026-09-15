@@ -149,6 +149,24 @@ def _asaas_decimal(value):
         return Decimal('0.00')
 
 
+def _ip_auth_hint(exc):
+    """Quando o provedor rejeita pelo IP do servidor, devolve uma orientação clara.
+
+    Provedores Dhr (gmsreseller etc.) bloqueiam chamadas fora do IP registrado
+    no campo 'API IP' da conta — que captura o primeiro IP válido automaticamente.
+    """
+    text = str(exc or '')
+    lowered = text.lower()
+    if any(k in lowered for k in ('not authorized', 'is not authorized',
+                                  'server\'s ip', 'server ip', 'ip address',
+                                  'add or reset your server')):
+        return ('IP do servidor não autorizado no provedor. Entre na aba "API Access" '
+                'da sua conta no site do provedor e deixe o campo "API IP" capturar o IP '
+                'do servidor (ou adicione/resete o IP para o IP da VPS); salve e clique '
+                'em "Testar conexão" novamente.')
+    return None
+
+
 @_staff
 def admin_dashboard(request):
     period, since = _dashboard_period(request)
@@ -1845,7 +1863,11 @@ def admin_api_test(request, api_id):
             info = provider_api.account_info(api)
             messages.success(request, 'Conexão OK. Conta: {} | Saldo: {}'.format(info['mail'], info['credit']))
         except provider_api.ProviderError as exc:
-            messages.error(request, 'Falha na conexão: {}'.format(exc))
+            hint = _ip_auth_hint(exc)
+            if hint:
+                messages.error(request, hint)
+            else:
+                messages.error(request, 'Falha na conexão: {}'.format(exc))
     return redirect('admin_api_list')
 
 
@@ -1856,7 +1878,11 @@ def admin_api_import(request, api_id):
         try:
             catalog, created, updated = _upsert_remote_catalog(api)
         except provider_api.ProviderError as exc:
-            messages.error(request, 'Falha ao importar: {}'.format(exc))
+            hint = _ip_auth_hint(exc)
+            if hint:
+                messages.error(request, hint)
+            else:
+                messages.error(request, 'Falha ao importar: {}'.format(exc))
             return redirect('admin_api_list')
         messages.success(request, 'Importados {} serviços do provedor ({} novos, {} atualizados).'.format(
             len(catalog), created, updated))
@@ -1874,7 +1900,11 @@ def admin_api_sync(request, api_id):
     try:
         catalog, remote_created, remote_updated = _upsert_remote_catalog(api)
     except provider_api.ProviderError as exc:
-        messages.error(request, 'Falha ao importar: {}'.format(exc))
+        hint = _ip_auth_hint(exc)
+        if hint:
+            messages.error(request, hint)
+        else:
+            messages.error(request, 'Falha ao importar: {}'.format(exc))
         return redirect('admin_api_list')
     keywords = _auto_keywords_for(api)
     remotes = {r.referenceid: r for r in RemoteServiceList.objects.filter(api=api)}

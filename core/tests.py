@@ -2751,6 +2751,36 @@ class AdminDirectOrderTests(TestCase):
         self.assertIn('django-admin/login', resp.url)
 
 
+class AdminApiIpHintTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username='adminiphint', password='senha123', is_staff=True)
+
+    def test_ip_hint_detects_dhr_ip_error(self):
+        from core.views_admin import _ip_auth_hint
+        hint = _ip_auth_hint(
+            "Your server's IP [170.80.51.229] address is not authorized. "
+            "You can add or reset your server's IP by logging into our website "
+            "and navigating to Profile > API Access."
+        )
+        self.assertIsNotNone(hint)
+        self.assertIn('API Access', hint)
+        self.assertIsNone(_ip_auth_hint('Falha ao conectar no provedor: timeout'))
+        self.assertIsNone(_ip_auth_hint('Authentication Failed'))
+
+    def test_api_test_shows_ip_hint_on_ip_error(self):
+        api = Api.objects.create(
+            api_name='API Bloq', status='Active',
+            api_url='https://api.teste.com', api_key='k', api_username='u',
+        )
+        self.client.force_login(self.staff)
+        with patch('core.views_admin.provider_api.account_info',
+                   side_effect=provider_api.ProviderError(
+                       "Your server's IP [1.2.3.4] address is not authorized.")):
+            resp = self.client.post(reverse('admin_api_test', args=[api.id]), follow=True)
+        self.assertContains(resp, 'IP do servidor não autorizado')
+        self.assertNotContains(resp, 'Connection refused')
+
+
 class AdminDashboardTests(TestCase):
     def setUp(self):
         self.staff = User.objects.create_user(username='admindash', password='senha123', is_staff=True)
