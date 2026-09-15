@@ -2932,6 +2932,27 @@ class AdminWhatsAppSupportTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertNotContains(resp, 'wa-support-widget')
 
+    def test_contacts_shown_in_customer_menu(self):
+        SystemSetting.objects.create(
+            key='siteWhatsappNumber',
+            value='Maria|5511999999999,João|5521999999998',
+        )
+        customer = Customer.objects.create(
+            name='Cliente Menu', email='menu@teste.com', mobile='11999999999',
+            password=Customer.make_password('senha123'), currency='BRL',
+            status='Active',
+        )
+        session = self.client.session
+        session['customer_id'] = customer.id
+        session.save()
+        resp = self.client.get(reverse('homepage'))
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertIn('href="https://wa.me/5511999999999"', html)
+        self.assertIn('href="https://wa.me/5521999999998"', html)
+        self.assertIn('WhatsApp: Maria', html)
+        self.assertIn('WhatsApp: João', html)
+
 
 class AdminDashboardTests(TestCase):
     def setUp(self):
