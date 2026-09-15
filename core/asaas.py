@@ -93,4 +93,4 @@ def get_payment(gateway, payment_id):
 
 
 def get_balance(gateway):
-    return call(gateway, 'GET', '/balance')
+    return call(gateway, 'GET', '/finance/balance')
