@@ -20,5 +20,6 @@ jobs:
             git pull origin main
             source venv/bin/activate
             python manage.py migrate --noinput
+            python manage.py collectstatic --noinput
             systemctl restart site
             echo "Deploy concluído"
