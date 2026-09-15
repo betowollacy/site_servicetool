@@ -22,5 +22,5 @@ jobs:
             pip install -r requirements.txt --quiet
             python manage.py migrate --noinput
             python manage.py collectstatic --noinput
-            systemctl restart site
+            systemctl restart servicetool.service
             echo "Deploy concluído"
