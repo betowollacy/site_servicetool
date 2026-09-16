@@ -3062,6 +3062,18 @@ class AdminDirectOrderTests(TestCase):
         self.assertContains(resp, 'API Teste')
 
     @patch('core.views_admin.provider_api.account_info',
+           return_value={'credit': '33.00', 'creditraw': 33.0, 'mail': 'conta@api.com', 'currency': 'USD'})
+    def test_balance_is_cached_between_page_loads(self, acc):
+        self.client.force_login(self.staff)
+        r1 = self.client.get(reverse('admin_direct_order'))
+        n1 = acc.call_count
+        self.assertEqual(r1.status_code, 200)
+        self.assertGreater(n1, 0)
+        r2 = self.client.get(reverse('admin_direct_order'))
+        self.assertEqual(r2.status_code, 200)
+        self.assertEqual(acc.call_count, n1)
+
+    @patch('core.views_admin.provider_api.account_info',
            return_value={'credit': '10', 'creditraw': 10.0, 'mail': 'conta@api.com', 'currency': 'USD'})
     @patch('core.views_admin.provider_api.submit_local_order', return_value=(True, 'REF-DIRETO'))
     @patch('core.views_admin.provider_api.sync_local_order', return_value=True)

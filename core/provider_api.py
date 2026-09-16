@@ -3,6 +3,7 @@ import json
 import logging
 import re
 import socket
+import time
 import unicodedata
 import urllib.error
 import urllib.parse
@@ -13,7 +14,10 @@ from xml.sax.saxutils import escape
 
 from django.utils import timezone
 
-from .models import Api, ApiLog, CustomerOrder, InventoryData, RemoteServiceList, ServiceInput, Statement
+from .models import (
+    Api, ApiLog, CustomerOrder, InventoryData, RemoteServiceList, ServiceInput,
+    Statement, SystemSetting,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -464,6 +468,49 @@ def account_info(api):
         'mail': info.get('mail', ''),
         'currency': info.get('currency', ''),
     }
+
+
+def cached_api_balance(api, ttl=300):
+    """Saldo da API consultado com cache de curta duracao.
+
+    Provedores lentos travam o painel quando cada pagina consulta o saldo em
+    tempo real (timeout de 30s por API). Guarda o resultado — ou o erro — em
+    SystemSetting por TTL segundos, compartilhado entre workers e reutilizado
+    no proximo carregamento de pagina."""
+    key = 'apiBalanceCache_{}'.format(api.id)
+    now = time.time()
+    raw = ''
+    try:
+        raw = SystemSetting.get(key, '')
+    except Exception:
+        raw = ''
+    if raw:
+        try:
+            entry = json.loads(raw)
+            if now - float(entry.get('ts') or 0) < ttl:
+                if entry.get('ok'):
+                    return entry['info']
+                raise ProviderError(entry.get('error') or 'Erro do provedor')
+        except ProviderError:
+            raise
+        except (TypeError, ValueError, KeyError):
+            pass
+    try:
+        info = account_info(api)
+        payload = {'ts': now, 'ok': True, 'info': info}
+    except ProviderError as exc:
+        payload = {'ts': now, 'ok': False, 'error': str(exc)}
+    except Exception as exc:  # noqa: BLE001 - saldo é opcional no painel
+        payload = {'ts': now, 'ok': False, 'error': str(exc)}
+    try:
+        obj, _ = SystemSetting.objects.get_or_create(key=key, defaults={'value': json.dumps(payload)})
+        obj.value = json.dumps(payload)
+        obj.save()
+    except Exception:
+        pass
+    if payload['ok']:
+        return payload['info']
+    raise ProviderError(payload['error'])
 
 
 def _parse_listing(row):

@@ -339,7 +339,7 @@ def admin_dashboard(request):
         info = None
         error = None
         try:
-            info = provider_api.account_info(api)
+            info = provider_api.cached_api_balance(api)
         except provider_api.ProviderError as exc:
             error = str(exc)
         except Exception as exc:  # noqa: BLE001 - saldo é opcional no painel
@@ -762,7 +762,7 @@ def admin_administrator(request):
         ).first()
         api_price = remote.CREDIT if remote and remote.CREDIT else api.reseller_price
         try:
-            info = provider_api.account_info(api)
+            info = provider_api.cached_api_balance(api)
             digits = ''.join(ch for ch in str(info.get('credit') or '') if ch.isdigit() or ch in '.,-')
             api_balance = None
             if digits:
@@ -935,7 +935,7 @@ def admin_direct_order(request):
         info = None
         error = None
         try:
-            info = provider_api.account_info(api)
+            info = provider_api.cached_api_balance(api)
         except Exception as exc:  # noqa: BLE001 - saldo é opcional no painel
             error = str(exc)
         api_balances.append({
