@@ -906,6 +906,49 @@ class ProviderApiAdminTests(TestCase):
         self.assertEqual(self.api.price_rate, Decimal('5.3500'))
         self.assertEqual(self.api.price_markup, Decimal('30.00'))
 
+    def test_service_form_changes_api_directly(self):
+        self._login()
+        other = Api.objects.create(
+            api_name='RIT', api_url='https://ritunlocker.net/public',
+            api_username='enterserver@hotmail.com', api_key='RKEY', status='Active',
+        )
+        resp = self.client.post(reverse('admin_service_edit', args=['imei', self.service.id]), {
+            'title': self.service.title,
+            'status': 'Active',
+            'api': str(other.id),
+            'referenceid': '1287',
+            'api_enabled': '1',
+            'fields': 'IMEI',
+            'collect_data': ['user'],
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.service.refresh_from_db()
+        self.assertEqual(self.service.api_id, other.id)
+        self.assertEqual(self.service.referenceid, '1287')
+        self.assertTrue(self.service.api_enabled)
+
+    def test_service_form_clears_api_when_none(self):
+        self._login()
+        RemoteServiceList.objects.create(
+            api=self.api, referenceid='7', SERVICETYPE='IMEI', SERVICENAME='Unlock 1')
+        self.service.api = self.api
+        self.service.referenceid = '7'
+        self.service.api_enabled = True
+        self.service.save(update_fields=['api', 'referenceid', 'api_enabled'])
+        resp = self.client.post(reverse('admin_service_edit', args=['imei', self.service.id]), {
+            'title': self.service.title,
+            'status': 'Active',
+            'api': '0',
+            'api_enabled': '1',
+            'fields': 'IMEI',
+            'collect_data': ['user'],
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.service.refresh_from_db()
+        self.assertIsNone(self.service.api_id)
+        self.assertEqual(self.service.referenceid, '')
+        self.assertFalse(self.service.api_enabled)
+
     def test_admin_link_sets_auto_price(self):
         remote = RemoteServiceList.objects.create(
             api=self.api, referenceid='7', SERVICETYPE='IMEI', SERVICENAME='Unlock 1',

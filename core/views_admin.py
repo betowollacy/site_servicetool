@@ -1202,6 +1202,16 @@ def _group_for(svtype, label):
         return ServiceGroup.objects.create(name=label, slug=svtype)
 
 
+def _remote_ref_options():
+    """Opções (referência, nome do produto no provedor, API) para o autocomplete
+    do campo 'ID do Produto' no cadastro do serviço."""
+    return [
+        (r.referenceid, r.SERVICENAME or '', r.api.api_name)
+        for r in RemoteServiceList.objects.select_related('api')
+        .filter(api__status='Active').order_by('api_id', 'SERVICENAME')
+    ]
+
+
 def _apply_service_post(service, post):
     service.title = post.get('title', service.title) or service.title
     service.slug = slugify(post.get('slug') or service.title)
@@ -1214,7 +1224,18 @@ def _apply_service_post(service, post):
             setattr(service, f, val)
     if post.get('status'):
         service.status = post['status']
-    service.api_enabled = bool(post.get('api_enabled'))
+    api_value = post.get('api')
+    if api_value is not None:
+        if api_value in ('', '0'):
+            service.api = None
+            service.referenceid = ''
+            service.api_enabled = False
+        else:
+            service.api = Api.objects.filter(id=api_value).first()
+            service.referenceid = (post.get('referenceid') or '').strip()
+            service.api_enabled = bool(post.get('api_enabled'))
+    else:
+        service.api_enabled = bool(post.get('api_enabled'))
     service.collect_data = ','.join(
         c for c in post.getlist('collect_data') if c in dict(SERVICE_COLLECT_DATA_CHOICES)
     )
@@ -1352,6 +1373,8 @@ def admin_service_new(request, svtype):
         'type_label': label,
         'service_fields': [],
         'inventories': Inventory.objects.all().order_by('name'),
+        'apis': Api.objects.filter(status='Active').order_by('api_name'),
+        'api_ref_options': _remote_ref_options(),
     })
 
 
@@ -1380,6 +1403,8 @@ def admin_service_edit(request, svtype, service_id):
         'type_label': label,
         'service_fields': service.service_fields.all(),
         'inventories': Inventory.objects.all().order_by('name'),
+        'apis': Api.objects.filter(status='Active').order_by('api_name'),
+        'api_ref_options': _remote_ref_options(),
     })
 
 

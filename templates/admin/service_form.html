@@ -68,6 +68,24 @@
                                 <label class="form-check-label" for="apiEnabled">API ativa (entrega automática). Desative para entregar manualmente quando o provedor estiver com problemas.</label>
                             </div>
                         </div>
+                        <div class="col-md-6 mb-3"><label class="form-label">API (provedor)</label>
+                            <select class="form-select" name="api" id="apiSelect">
+                                <option value="0">-- Nenhuma (entrega manual/estoque) --</option>
+                                {% for a in apis %}
+                                <option value="{{ a.id }}" {% if service.api_id == a.id %}selected{% endif %}>{{ a.api_name }} — {{ a.api_url }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Selecione um provedor para enviar pedidos pela API. Mude aqui sem precisar ir à lista de APIs.</small>
+                        </div>
+                        <div class="col-md-6 mb-3"><label class="form-label">ID do Produto no Provedor</label>
+                            <input type="text" class="form-control" name="referenceid" id="referenceidInput" list="apiRefOptions" value="{{ service.referenceid|default:'' }}" placeholder="ex.: 1287 (código do produto na API)">
+                            <datalist id="apiRefOptions">
+                                {% for ref, name, api_name in api_ref_options %}
+                                <option value="{{ ref }}">{{ ref }} — {{ name }} ({{ api_name }})</option>
+                                {% endfor %}
+                            </datalist>
+                            <small class="text-muted">O código que o provedor usa para este produto. Digite para ver sugestões do catálogo.</small>
+                        </div>
                         <div class="col-12 mb-3">
                             <label class="form-label d-block">Quais dados solicitar na compra</label>
                             <div class="row g-2">
