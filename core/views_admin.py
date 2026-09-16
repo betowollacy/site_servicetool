@@ -2438,3 +2438,78 @@ def admin_page_delete(request, page_id):
     Page.objects.filter(id=page_id).delete()
     messages.success(request, 'Página removida.')
     return redirect('admin_page_list')
+
+
+@_staff
+def admin_daily_report(request):
+    """Relatório diário de pedidos.
+
+    Agrupa as compras por dia (data de criação local). O dia de hoje é
+    mostrado isolado (começa do zero a cada dia) e os dias anteriores
+    ficam no histórico agrupados pela data, sem misturar um dia com o outro.
+    """
+    service_q = (request.GET.get('svc') or '').strip()
+    kind = (request.GET.get('kind') or '').strip()
+    only_direct = kind == 'admin'
+    only_customers = kind == 'clients'
+
+    orders = (CustomerOrder.objects
+              .select_related('customer', 'service')
+              .prefetch_related('order_inputs', 'statements'))
+    if service_q:
+        orders = orders.filter(service_id=service_q)
+
+    services = sorted(
+        {o.service_id: (o.service.title if o.service else 'Serviço removido')
+         for o in orders.order_by('service_id')}.items(),
+        key=lambda kv: kv[1].lower(),
+    )
+
+    days = {}
+    for order in orders.order_by('created_at'):
+        is_direct = _is_admin_direct(order)
+        if only_direct and not is_direct:
+            continue
+        if only_customers and is_direct:
+            continue
+        local = timezone.localtime(order.created_at)
+        day_key = local.date().isoformat()
+        day = days.setdefault(day_key, {
+            'date': local.date(),
+            'label': '',
+            'orders': [],
+            'total': Decimal('0.00'),
+            'count': 0,
+        })
+        day['orders'].append({
+            'order': order,
+            'direct': is_direct,
+            'time': local.strftime('%H:%M'),
+        })
+        day['total'] += (order.service_price or Decimal('0.00'))
+        day['count'] += 1
+
+    today = timezone.localdate()
+    yesterday = today - timezone.timedelta(days=1)
+    # Ordena por data descendente (hoje primeiro, depois o histórico).
+    ordered_days = []
+    for key in sorted(days.keys(), reverse=True):
+        day = days[key]
+        if key == today.isoformat():
+            day['label'] = 'Hoje'
+        elif key == yesterday.isoformat():
+            day['label'] = 'Ontem'
+        ordered_days.append(day)
+
+    total_all = sum((d['total'] for d in ordered_days), Decimal('0.00'))
+
+    ctx = {
+        'days': ordered_days,
+        'today': today,
+        'services': services,
+        'svc': service_q,
+        'kind': kind,
+        'total_all': total_all.quantize(Decimal('0.00')),
+        'day_count': len(ordered_days),
+    }
+    return render(request, 'admin/daily_report.html', ctx)

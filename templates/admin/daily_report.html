@@ -1,0 +1,96 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <h4 class="mb-0">Relatório Diário de Pedidos</h4>
+        <span class="text-muted small">Hoje começa do zero — cada dia fica separado no histórico, sem misturar.</span>
+    </div>
+</div>
+
+<form method="get" class="card mb-3">
+    <div class="card-body py-2">
+        <div class="row g-2 align-items-center">
+            <div class="col-sm-4 col-md-3">
+                <select name="kind" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Todos os pedidos</option>
+                    <option value="admin" {% if kind == 'admin' %}selected{% endif %}>Só pedidos do admin (direto)</option>
+                    <option value="clients" {% if kind == 'clients' %}selected{% endif %}>Só pedidos de clientes</option>
+                </select>
+            </div>
+            <div class="col-sm-5 col-md-4">
+                <select name="svc" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Todos os serviços / ferramentas</option>
+                    {% for sid, title in services %}
+                    <option value="{{ sid }}" {% if svc|stringformat:'s' == sid|stringformat:'s' %}selected{% endif %}>{{ title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col text-md-end">
+                <span class="text-muted small">
+                    {{ day_count }} dia{{ day_count|pluralize:'s' }} · total geral <strong>R$ {{ total_all|floatformat:2 }}</strong>
+                </span>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% for day in days %}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="mb-0">
+            {% if day.label %}<span class="badge bg-warning text-dark me-2">{{ day.label }}</span>{% endif %}
+            {{ day.date|date:'l, d/m/Y' }}
+        </h5>
+        <span class="text-muted small">{{ day.count }} compra{{ day.count|pluralize:'s' }} · total <strong>R$ {{ day.total|floatformat:2 }}</strong></span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-v-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Hora</th>
+                        <th>Pedido</th>
+                        <th>Comprou</th>
+                        <th>Cliente</th>
+                        <th class="text-end">Valor</th>
+                        <th>Status</th>
+                        <th>O que recebeu</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in day.orders %}
+                    <tr>
+                        <td class="ps-3 small text-nowrap">{{ item.time }}</td>
+                        <td>
+                            #{{ item.order.id }}
+                            {% if item.direct %}<span class="badge bg-light-primary">Admin</span>{% endif %}
+                        </td>
+                        <td class="small">
+                            <span class="text-truncate d-inline-block" style="max-width:240px">{{ item.order.service_title|default:'-' }}</span>
+                            <div class="text-muted small">{{ item.order.service_qnt|default:'1' }} un · {{ item.order.service_type }}</div>
+                        </td>
+                        <td class="small">{{ item.order.customer.name|default:'-' }}<div class="text-muted small">{{ item.order.customer.email|default:'' }}</div></td>
+                        <td class="text-end fw-semibold">R$ {{ item.order.service_price|floatformat:2 }}</td>
+                        <td><span class="badge bg-light-primary">{{ item.order.service_status }}</span></td>
+                        <td class="small" style="max-width:320px">
+                            {% if item.order.service_comments|default:item.order.replied_in %}
+                            <span class="text-success"><i class="ti ti-circle-check"></i> {{ item.order.service_comments|default:item.order.replied_in }}</span>
+                            {% else %}
+                            <span class="text-muted">{{ item.order.service_input1|default:'(sem resposta)' }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center py-4">Nenhum pedido neste dia.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="card">
+    <div class="card-body text-center text-muted py-5">Nenhum pedido encontrado.</div>
+</div>
+{% endfor %}
+{% endblock %}
