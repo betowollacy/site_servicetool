@@ -117,6 +117,27 @@ def _is_admin_direct(order):
     return not order.statements.all()
 
 
+def _order_creator_display(request, order):
+    """Retorna nome do administrador que fez o pedido.
+
+    Para pedidos antigos sem created_by, infere cruzando o e-mail do
+    customer do pedido com um User is_staff (regra usada pelo
+    get_or_create do admin_customer).
+    """
+    user = getattr(order, 'created_by', None)
+    if user is None:
+        customer = getattr(order, 'customer', None)
+        email = (getattr(customer, 'email', '') or '').strip().lower()
+        if email:
+            user = User.objects.filter(is_staff=True).filter(
+                Q(email__iexact=email) | Q(username__iexact=email),
+            ).first()
+    if user is None:
+        return None
+    name = user.get_full_name() or user.get_short_name() or user.username
+    return name or None
+
+
 def _api_credit_decimal(info):
     if not info:
         return Decimal('0.00')
@@ -342,6 +363,7 @@ def admin_dashboard(request):
         })
         admin_flow.append({
             'order': order,
+            'who': _order_creator_display(request, order),
             'spent': spent,
             'result': order.service_comments or order.replied_in or '-',
         })
@@ -786,6 +808,7 @@ def admin_administrator(request):
         cost = (api_price or service.original_price) * qnt
         order = CustomerOrder.objects.create(
             customer=customer,
+            created_by=request.user if getattr(request.user, 'is_authenticated', False) else None,
             service=service,
             service_status='In Process',
             service_type=_invoice_type_key(service.service_type),
@@ -945,6 +968,7 @@ def admin_direct_order(request):
         cost = (api_price or service.original_price) * qnt
         order = CustomerOrder.objects.create(
             customer=admin_customer,
+            created_by=request.user if getattr(request.user, 'is_authenticated', False) else None,
             service=service,
             service_status='In Process',
             service_type=_invoice_type_key(service.service_type),

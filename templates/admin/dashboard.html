@@ -439,6 +439,7 @@
                             <th>Pedido</th>
                             <th>Comprou (serviço)</th>
                             <th>Hora do pedido</th>
+                            <th>Quem</th>
                             <th class="text-end">Valor gasto</th>
                             <th>Status</th>
                             <th>O que recebeu</th>
@@ -453,6 +454,7 @@
                                 <div class="text-muted small">{{ a.order.service_qnt|default:'1' }} un · {{ a.order.service_type }}</div>
                             </td>
                             <td class="small text-nowrap">{{ a.order.created_at|date:'d/m/Y H:i' }}</td>
+                            <td class="small">{{ a.who|default:'-' }}</td>
                             <td class="text-end fw-semibold">R$ {{ a.spent|floatformat:2 }}</td>
                             <td><span class="badge bg-light-primary">{{ a.order.service_status }}</span></td>
                             <td class="small" style="max-width:340px">
@@ -461,7 +463,7 @@
                             </td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="6" class="text-center">Nenhuma compra do administrador{% if admin_svc_filter %} para este serviço{% endif %} no período.</td></tr>
+                        <tr><td colspan="7" class="text-center">Nenhuma compra do administrador{% if admin_svc_filter %} para este serviço{% endif %} no período.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>

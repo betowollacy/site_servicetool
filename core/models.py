@@ -5,6 +5,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth import hashers
+from django.conf import settings
 
 
 class User(AbstractUser):
@@ -373,6 +374,8 @@ class CustomerOrder(models.Model):
     ]
 
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='orders')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                   null=True, blank=True, related_name='created_orders')
     service = models.ForeignKey(ServiceList, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
     service_status = models.CharField(max_length=30, choices=SERVICE_STATUS, default='Waiting Action')
     service_type = models.CharField(max_length=30, choices=SERVICE_TYPES, default='server_service')
