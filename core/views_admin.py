@@ -663,7 +663,7 @@ def admin_service_list(request, svtype):
         'service_type': db_type,
         'type_label': label,
         'svtype': svtype,
-        'services': ServiceList.objects.filter(service_type=db_type),
+        'services': ServiceList.objects.filter(service_type=db_type).select_related('api'),
         'type_options': [(k, TYPE_MAP[k][1]) for k in TYPE_MAP],
     }
     return render(request, 'admin/service_list.html', ctx)
@@ -1863,17 +1863,8 @@ def _price_field(request, name, default=Decimal('0')):
 @_staff
 def admin_api_list(request):
     apis = Api.objects.all().order_by('-id')
-    local_services = list(ServiceList.objects.filter(status='Active').order_by('service_type', 'title'))
     q = (request.GET.get('q') or '').strip()
-    remote_qs = RemoteServiceList.objects.select_related('api').order_by('api_id', 'SERVICENAME')
-    if q:
-        remote_qs = remote_qs.filter(Q(SERVICENAME__icontains=q) | Q(referenceid__icontains=q))
-    remote_services = list(remote_qs)
-    for remote in remote_services:
-        remote.price_brl = provider_api.suggested_price(remote.api, remote.CREDIT) if remote.api else None
-    linked_by_remote = {}
-    for linked in ServiceList.objects.exclude(api__isnull=True).exclude(referenceid__isnull=True).exclude(referenceid=''):
-        linked_by_remote.setdefault((linked.api_id, linked.referenceid), []).append(linked)
+    show_products = request.GET.get('produtos') == '1' or bool(q)
     raw_map = SystemSetting.get('apiAutoMap', '')
     auto_map_data = {}
     if raw_map:
@@ -1884,18 +1875,38 @@ def admin_api_list(request):
     api_kw_strings = {}
     for api in apis:
         api_kw_strings[api.id] = {k: ', '.join(v) for k, v in _auto_keywords_for(api).items()}
-    return render(request, 'admin/api_list.html', {
+    ctx = {
         'apis': apis,
-        'local_services': local_services,
-        'remote_services': remote_services,
-        'linked_by_remote': linked_by_remote,
-        'remote_type_to_local': REMOTE_TYPE_TO_LOCAL,
+        'show_products': show_products,
         'search_q': q,
         'auto_map_data': auto_map_data,
         'api_kw_strings': api_kw_strings,
         'auto_svtypes': AUTO_KEYWORD_SVTYPES,
         'auto_svtype_labels': AUTO_GROUP_LABELS,
-    })
+    }
+    if show_products:
+        local_services = list(ServiceList.objects.filter(status='Active').order_by('service_type', 'title'))
+        local_by_type = {}
+        for svc in local_services:
+            local_by_type.setdefault(svc.service_type, []).append(svc)
+        remote_qs = RemoteServiceList.objects.select_related('api').order_by('api_id', 'SERVICENAME')
+        if q:
+            remote_qs = remote_qs.filter(Q(SERVICENAME__icontains=q) | Q(referenceid__icontains=q))
+        remote_services = list(remote_qs)
+        for remote in remote_services:
+            remote.price_brl = provider_api.suggested_price(remote.api, remote.CREDIT) if remote.api else None
+            remote.rem_local_type = REMOTE_TYPE_TO_LOCAL.get((remote.SERVICETYPE or '').upper())
+        linked_by_remote = {}
+        for linked in ServiceList.objects.exclude(api__isnull=True).exclude(referenceid__isnull=True).exclude(referenceid=''):
+            linked_by_remote.setdefault((linked.api_id, linked.referenceid), []).append(linked)
+        ctx.update({
+            'local_services': local_services,
+            'local_by_type': local_by_type,
+            'remote_services': remote_services,
+            'linked_by_remote': linked_by_remote,
+            'remote_type_to_local': REMOTE_TYPE_TO_LOCAL,
+        })
+    return render(request, 'admin/api_list.html', ctx)
 
 
 @_staff
@@ -1992,7 +2003,7 @@ def admin_api_import(request, api_id):
             return redirect('admin_api_list')
         messages.success(request, 'Importados {} serviços do provedor ({} novos, {} atualizados).'.format(
             len(catalog), created, updated))
-    return redirect('admin_api_list')
+    return redirect('{}?produtos=1'.format(reverse('admin_api_list')))
 
 
 @_staff
@@ -2091,7 +2102,7 @@ def admin_api_sync(request, api_id):
         'Vinculação automática de "{}" concluída: {} serviços novos criados, {} já vinculados, {} sem lista. '
         'Catálogo remoto: {} novos, {} atualizados.'.format(
             api.api_name, created, already, skipped, remote_created, remote_updated))
-    return redirect('admin_api_list')
+    return redirect('{}?produtos=1'.format(reverse('admin_api_list')))
 
 
 @_staff

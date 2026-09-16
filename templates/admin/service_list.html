@@ -55,14 +55,13 @@
                     <td>{{ s.sells }}</td>
                     <td><span class="badge {% if s.status == 'Active' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ s.status }}</span></td>
                     <td>
-                        <form method="post" action="{% url 'admin_service_toggle_api' svtype s.id %}" onsubmit="return confirm('{% if s.api_enabled %}Desativar a API deste produto? Os pedidos passam a exigir entrega manual.{% else %}Ativar a API deste produto? Os pedidos voltam a ser enviados automaticamente ao provedor.{% endif %}')">
-                            {% csrf_token %}
-                            {% if s.api_enabled %}
-                            <button type="submit" class="btn btn-sm btn-light-success" title="API ativa - clique para desativar"><i class="ti ti-plug-connected"></i></button>
-                            {% else %}
-                            <button type="submit" class="btn btn-sm btn-light-warning" title="API desativada - clique para ativar"><i class="ti ti-plug-off"></i></button>
-                            {% endif %}
-                        </form>
+                        {% if s.api %}
+                        <span class="badge {% if s.api_enabled %}bg-light-primary{% else %}bg-light-warning{% endif %}" title="{% if s.api_enabled %}API ativa (entrega automática){% else %}API desativada (entrega manual){% endif %}: {{ s.api.api_name }}">
+                            <i class="ti ti-plug-connected me-1"></i>{{ s.api.api_name }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted" title="Produto sem API vinculada">—</span>
+                        {% endif %}
                     </td>
                     <td>
                         {% if s.service_type == 'Activation Service' or s.service_type == 'Credit Service' %}

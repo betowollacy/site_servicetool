@@ -14,7 +14,12 @@
 {% endif %}
 
 <div class="row g-3 mb-3">
-    <div class="col-12 d-flex justify-content-end">
+    <div class="col-12 d-flex justify-content-end gap-2">
+        {% if show_products %}
+        <a href="{% url 'admin_api_list' %}" class="btn btn-light-secondary"><i class="ti ti-eye-off me-2"></i> Ocultar catálogo</a>
+        {% else %}
+        <a href="{% url 'admin_api_list' %}?produtos=1" class="btn btn-light-secondary"><i class="ti ti-eye me-2"></i> Ver catálogo do provedor</a>
+        {% endif %}
         <a href="{% url 'admin_api_new' %}" class="btn btn-primary"><i class="ti ti-plus me-2"></i> Nova API</a>
     </div>
 </div>
@@ -106,13 +111,15 @@
 <div class="card"><div class="card-body text-center text-muted py-5">Nenhuma API configurada ainda. Clique em "Nova API".</div></div>
 {% endfor %}
 
+{% if show_products %}
 <div class="card">
     <div class="card-header d-flex flex-wrap align-items-center gap-2">
         <h6 class="mb-0"><i class="ti ti-link me-2"></i> Serviços do provedor (vincular ao catálogo)</h6>
         <form method="get" class="ms-auto d-flex gap-2" data-loading>
+            <input type="hidden" name="produtos" value="1">
             <input type="text" name="q" value="{{ search_q|default:'' }}" class="form-control form-control-sm font-monospace" style="min-width:240px" placeholder="Buscar por nome ou ID...">
             <button class="btn btn-sm btn-primary" type="submit"><i class="ti ti-search me-1"></i> Buscar</button>
-            {% if search_q %}<a href="{% url 'admin_api_list' %}" class="btn btn-sm btn-light-secondary">Limpar</a>{% endif %}
+            {% if search_q %}<a href="{% url 'admin_api_list' %}?produtos=1" class="btn btn-sm btn-light-secondary">Limpar</a>{% endif %}
         </form>
     </div>
     <div class="card-body">
@@ -154,9 +161,11 @@
                                 <input type="hidden" name="remote_id" value="{{ remote.id }}">
                                 <select name="service_id" class="form-select form-select-sm" style="max-width:240px">
                                     <option value="">-- Desvincular --</option>
-                                    {% for svc in local_services %}
+                                    {% with opts=local_by_type|get_item:remote.rem_local_type|default:local_services %}
+                                    {% for svc in opts %}
                                     <option value="{{ svc.id }}" data-type="{{ svc.service_type }}">{{ svc.id }} - {{ svc.service_type }} - {{ svc.title }}</option>
                                     {% endfor %}
+                                    {% endwith %}
                                 </select>
                                 <div class="form-check form-check-inline mt-2">
                                     <input class="form-check-input" type="checkbox" name="auto_price" value="1" id="ap-{{ remote.id }}" checked>
@@ -174,6 +183,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 {% block footer_script %}
 <script>
