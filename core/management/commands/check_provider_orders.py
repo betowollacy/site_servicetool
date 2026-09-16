@@ -17,6 +17,10 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--test', type=int, help='Testa a conexao desta API (id).')
         parser.add_argument('--api', type=int, help='Sincroniza apenas pedidos desta API.')
+        parser.add_argument(
+            '--all', action='store_true',
+            help='Inclui todos os pedidos Success sem senha, ignorando a janela do SUCCESS_CRED_GRACE '
+                 '(para resgatar pedidos antigos cuja senha chegou depois).')
 
     def handle(self, *args, **options):
         test_id = options.get('test')
@@ -38,14 +42,15 @@ class Command(BaseCommand):
         pending = list(CustomerOrder.objects.filter(
             service_status__in=['In Process', 'Waiting Action']).select_related('service__inventory'))
         # Success recentes cuja resposta ainda nao tem senha: a senha do
-        # provedor pode chegar minutos depois da conclusao.
-        if not options.get('api'):
-            recent_success = list(CustomerOrder.objects.filter(
-                service_status='Success',
-                updated_at__gte=timezone.now() - SUCCESS_CRED_GRACE,
-            ).select_related('service__inventory'))
+        # provedor pode chegar minutos depois da conclusao. Com --all,
+        # inclui todos os Success sem senha, ignorando a janela (para
+        # resgatar pedidos antigos cuja senha chegou bem depois).
+        if not options.get('api') or options.get('all'):
+            success_qs = CustomerOrder.objects.filter(service_status='Success').select_related('service__inventory')
+            if not options.get('all'):
+                success_qs = success_qs.filter(updated_at__gte=timezone.now() - SUCCESS_CRED_GRACE)
             pending += [
-                o for o in recent_success
+                o for o in success_qs
                 if (o.trx_id or '').strip()
                 and not _split_creds(((o.service_comments or '') or (o.replied_in or '')).strip())[1]
             ]

@@ -507,6 +507,25 @@ class ProviderApiTests(TestCase):
         self.assertEqual(order.service_status, 'Waiting Action')
 
     @patch('core.provider_api._request')
+    def test_cron_all_rescues_old_success_without_password(self, req):
+        req.side_effect = lambda api, action, parameters='': {
+            'SUCCESS': [{'STATUS': 4,
+                         'CODE': 'Username: velho@x.com<br>Password: grade-senha'}],
+            'apiversion': '1.0',
+        }
+        order = self._order()
+        order.service_status = 'Success'
+        order.service_comments = 'Username: velho@x.com'
+        order.replied_in = order.service_comments
+        order.trx_id = '5550999'
+        order.save(update_fields=['service_status', 'service_comments', 'replied_in', 'trx_id'])
+        CustomerOrder.objects.filter(pk=order.pk).update(
+            updated_at=timezone.now() - timedelta(days=10))
+        call_command('check_provider_orders', all=True)
+        order.refresh_from_db()
+        self.assertIn('grade-senha', order.replied_in)
+
+    @patch('core.provider_api._request')
     def test_unlinked_service_does_not_call_provider(self, req):
         other = ServiceList.objects.create(
             service_type='IMEI Service', service_group=self.group, title='Outro',
