@@ -68,6 +68,12 @@
                         <div class="pd-article text-body" style="white-space: pre-line;">
                             {{ serviceData.article|richtext }}
                         </div>
+                        {% if serviceData.screenshot %}
+                        <div class="mt-4">
+                            <img src="{{ serviceData.screenshot }}" alt="Screenshot de {{ serviceData.title }}"
+                                 class="img-fluid rounded border w-100" style="max-height:460px; object-fit:contain; background:#14171d;">
+                        </div>
+                        {% endif %}
                     </div>
                     {% endif %}
 
