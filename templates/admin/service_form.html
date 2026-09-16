@@ -175,7 +175,13 @@
                             <input type="file" class="form-control" name="thumbnail_image" accept=".jpg,.jpeg,.png,.webp,.gif">
                             <small class="text-muted">Se enviar um arquivo, ele substitui a URL acima automaticamente.</small>
                         </div>
-                        <div class="col-md-6 mb-3"><label class="form-label">URL do Screenshot</label><input type="text" class="form-control" name="screenshot" value="{{ service.screenshot|default:'' }}"></div>
+                        <div class="col-md-6 mb-3"><label class="form-label">URL do Screenshot</label>
+                            <input type="text" class="form-control" name="screenshot" value="{{ service.screenshot|default:'' }}">
+                            {% if service.screenshot %}<img src="{{ service.screenshot }}" alt="screenshot atual" width="120" class="mt-2 rounded border">{% endif %}
+                            <label class="form-label mt-3">Ou envie um arquivo de imagem</label>
+                            <input type="file" class="form-control" name="screenshot_image" accept=".jpg,.jpeg,.png,.webp,.gif">
+                            <small class="text-muted">Se enviar um arquivo, ele substitui a URL acima automaticamente.</small>
+                        </div>
                         <div class="col-12 mb-3"><label class="form-label">Tags do Serviço (separadas por vírgula)</label><input type="text" class="form-control" name="service_tags" value="{{ service.service_tags|default:'' }}"></div>
                     </div>
                 </div>

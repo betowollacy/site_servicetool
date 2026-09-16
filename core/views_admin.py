@@ -1279,6 +1279,26 @@ def _save_uploaded_thumbnail(service, files, request=None):
     service.save(update_fields=['thumbnail'])
 
 
+def _save_uploaded_screenshot(service, files, request=None):
+    """Salva a imagem enviada em MEDIA_ROOT/screenshots e atualiza o campo screenshot."""
+    img = files.get('screenshot_image')
+    if not img:
+        return
+    ext = os.path.splitext(img.name)[1].lower() or '.jpg'
+    if ext not in ('.jpg', '.jpeg', '.png', '.webp', '.gif'):
+        if request:
+            messages.warning(request, 'Formato de imagem não suportado (use JPG, PNG, WEBP ou GIF).')
+        return
+    folder = Path(settings.MEDIA_ROOT) / 'screenshots'
+    folder.mkdir(parents=True, exist_ok=True)
+    name = f"{service.slug or 'service'}-{uuid.uuid4().hex[:8]}{ext}"
+    with open(folder / name, 'wb+') as dest:
+        for chunk in img.chunks():
+            dest.write(chunk)
+    service.screenshot = f"{settings.MEDIA_URL}screenshots/{name}"
+    service.save(update_fields=['screenshot'])
+
+
 def admin_service_new(request, svtype):
     db_type, label = _service_type_from(svtype)
     if request.method == 'POST':
@@ -1297,6 +1317,7 @@ def admin_service_new(request, svtype):
         _apply_service_post(service, request.POST)
         _save_fields(service, request.POST.get('fields', ''))
         _save_uploaded_thumbnail(service, request.FILES, request)
+        _save_uploaded_screenshot(service, request.FILES, request)
         auto_remote, auto_score = provider_api.auto_link_service(service)
         if auto_remote:
             messages.success(request, 'Serviço criado e integrado automaticamente ao provedor: "{}" (referência {}).'.format(
@@ -1324,6 +1345,7 @@ def admin_service_edit(request, svtype, service_id):
         _apply_service_post(service, request.POST)
         _save_fields(service, request.POST.get('fields', ''))
         _save_uploaded_thumbnail(service, request.FILES, request)
+        _save_uploaded_screenshot(service, request.FILES, request)
         auto_remote, auto_score = provider_api.auto_link_service(service)
         if auto_remote:
             messages.success(request, 'Serviço atualizado e integrado automaticamente ao provedor: "{}" (referência {}).'.format(
