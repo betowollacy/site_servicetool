@@ -6,8 +6,9 @@ from core import notify, provider_api
 from core.models import Api, CustomerOrder
 
 # Janela em que um pedido Success ainda e reconsultado caso a resposta
-# ainda nao contenha senha (provedores demoram a devolver a senha completa).
-SUCCESS_CRED_GRACE = timedelta(hours=2)
+# ainda nao contenha senha (provedores demoram a devolver a senha completa:
+# na fonte direta a senha pode chegar muito depois da conclusao).
+SUCCESS_CRED_GRACE = timedelta(hours=72)
 
 
 class Command(BaseCommand):

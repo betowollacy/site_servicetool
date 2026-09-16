@@ -805,6 +805,12 @@ def sync_local_order(order, notify_complete=True):
     if target == 'In Process' and order.service_status == 'Success':
         target = 'Success'
 
+    try:
+        _log(api, 'sync order #{} status={} target={}: {}'.format(
+            order.id, status, target, json.dumps(row, ensure_ascii=False)[:1800]))
+    except Exception:
+        pass
+
     if target == 'Rejected' and order.service_status != 'Rejected':
         refund_order(order, code or 'Pedido rejeitado pelo provedor.')
         if notify_complete:
