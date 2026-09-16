@@ -29,7 +29,7 @@ from .models import (
     ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting, User,
     collect_data_codes, collect_field_code_by_name,
 )
-from . import asaas, notify, provider_api, public_api
+from . import asaas, catalog_images, notify, provider_api, public_api
 
 STATUS_MAP = {
     'waiting': ('Waiting Action', 'Aguardando Ação'),
@@ -2102,6 +2102,30 @@ def admin_api_sync(request, api_id):
         'Vinculação automática de "{}" concluída: {} serviços novos criados, {} já vinculados, {} sem lista. '
         'Catálogo remoto: {} novos, {} atualizados.'.format(
             api.api_name, created, already, skipped, remote_created, remote_updated))
+    return redirect('{}?produtos=1'.format(reverse('admin_api_list')))
+
+
+@_staff
+def admin_fetch_missing_thumbnails(request):
+    """Varre sites GSM Theme, casa pelo nome e preenche a imagem dos serviços
+    locais que estão sem thumbnail (mesma lógica de correspondência da vinculação)."""
+    if request.method != 'POST':
+        return redirect('admin_api_list')
+    stats = catalog_images.scan_and_fill()
+    if stats['downloaded']:
+        messages.success(request,
+            'Imagens do catálogo GSM Theme: {} produto(s) preenchido(s) com imagem '
+            '({} correspondidos, {} falhas ao baixar). Sites lidos: {}.'.format(
+                stats['downloaded'], stats['matched'], stats['failed'],
+                ', '.join(stats['sites_ok']) or 'nenhum'))
+    else:
+        messages.info(request,
+            'Nenhum produto sem imagem foi preenchido ({0} itens no catálogo dos sites, '
+            '{1} correspondidos, {2} sem correspondência).{3}'.format(
+                stats['catalog_items'], stats['matched'],
+                stats['total'] - stats['matched'],
+                ' Sites inacessíveis: {}.'.format(', '.join(stats['sites_fail']))
+                if stats['sites_fail'] else ''))
     return redirect('{}?produtos=1'.format(reverse('admin_api_list')))
 
 

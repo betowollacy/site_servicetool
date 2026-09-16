@@ -2110,6 +2110,103 @@ class AdminApiAutoSyncTests(TestCase):
         self.assertEqual(by_ref['10'].service_group.slug, 'server')
 
 
+class CatalogImagesTests(TestCase):
+    def setUp(self):
+        from core import catalog_images
+        self.catalog_images = catalog_images
+        self.group = ServiceGroup.objects.create(name='Ativação', slug='activation', status='Active')
+
+    def test_extract_services_parses_embedded_array(self):
+        html = ('<script>'
+                'var services   = [{"id":951,"title":"Alien Tool (Motorola FRP/Infinix PJ) '
+                'Aluguel 6H (Login e Senha)  Fonte Direta","thumbnail":"\\/media\\/alien-tool-fd.png",'
+                '"slug":"alien-tool","url":"https:\\/\\/site.com\\/service\\/alien-tool"},'
+                '{"id":615,"title":"AMT [Teste] - Android Multi Tool - Aluguel 2H",'
+                '"thumbnail":"\\/media\\/amt2hfd.png","slug":"amt"}] '
+                'var outro = 1;'
+                '</script>')
+        items = self.catalog_images.extract_services(html)
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0]['title'], 'Alien Tool (Motorola FRP/Infinix PJ) Aluguel 6H (Login e Senha) Fonte Direta')
+        self.assertEqual(items[0]['thumbnail'], '/media/alien-tool-fd.png')
+        self.assertEqual(items[1]['title'], 'AMT [Teste] - Android Multi Tool - Aluguel 2H')
+        self.assertEqual(items[1]['slug'], 'amt')
+
+    def test_extract_services_ignores_broken_array(self):
+        html = '<script>// var services = [...] comentário\nvar services = [{"title":"A","thumbnail":"/m/a.png"}]</script>'
+        self.assertEqual(len(self.catalog_images.extract_services(html)), 1)
+
+    def test_find_image_match_prefers_same_duration_and_kind(self):
+        catalog = {
+            'Alien Tool (Motorola FRP/Infinix PJ) Aluguel 6H Fonte Direta': 'https://x.com/media/6h.png',
+            'Alien Tool Moto Infinix Tecno - Ativação 1 Ano': 'https://x.com/media/1ano.png',
+        }
+        url, score = self.catalog_images.find_image_match(
+            'Alien Tool Moto Infinix Tecno - Ativação 1 Ano', catalog)
+        self.assertEqual(url, 'https://x.com/media/1ano.png')
+        self.assertGreater(score, 0)
+
+    def test_find_image_match_rejects_unrelated(self):
+        catalog = {'Check IMEI Report': 'https://x.com/media/imei.png'}
+        url, score = self.catalog_images.find_image_match(
+            'Alien Tool Moto Infinix Tecno - Ativação 1 Ano', catalog)
+        self.assertIsNone(url)
+        self.assertEqual(score, 0.0)
+
+    @patch('core.catalog_images.fetch_site_catalog')
+    def test_scan_fills_only_products_without_image(self, fetch):
+        fetch.return_value = {
+            'Alien Tool Moto Infinix Tecno - Ativação 1 Ano': 'https://x.com/media/1ano.png',
+            'AMT Android Multi Tool - Aluguel 2H Fonte Direta': 'https://x.com/media/amt.png',
+        }
+        sem_imagem = ServiceList.objects.create(
+            service_type='Activation Service', service_group=self.group, status='Active',
+            title='Alien Tool Moto Infinix Tecno - Ativação 1 Ano', slug='alien-tool-1-ano',
+        )
+        com_imagem = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, status='Active',
+            title='AMT Android Multi Tool - Aluguel 2H Fonte Direta', slug='amt-2h',
+            thumbnail='/media/ja-existente.png',
+        )
+        with patch.object(self.catalog_images, 'download_thumbnail', autospec=True) as dl:
+            def fake_download(service, url):
+                service.thumbnail = 'thumbnails/baixado.png'
+                service.save(update_fields=['thumbnail'])
+                return True
+            dl.side_effect = fake_download
+            stats = self.catalog_images.scan_and_fill()
+        self.assertEqual(stats['downloaded'], 1)
+        self.assertEqual(stats['total'], 1)
+        self.assertEqual(stats['matched'], 1)
+        sem_imagem.refresh_from_db()
+        self.assertEqual(sem_imagem.thumbnail, 'thumbnails/baixado.png')
+        com_imagem.refresh_from_db()
+        self.assertEqual(com_imagem.thumbnail, '/media/ja-existente.png')
+
+    @patch('core.catalog_images.fetch_site_catalog')
+    def test_view_posts_and_requires_staff(self, fetch):
+        fetch.return_value = {
+            'Alien Tool Moto Infinix Tecno - Ativação 1 Ano': 'https://x.com/media/1ano.png',
+        }
+        service = ServiceList.objects.create(
+            service_type='Activation Service', service_group=self.group, status='Active',
+            title='Alien Tool Moto Infinix Tecno - Ativação 1 Ano', slug='alien-tool-view',
+        )
+        anonymous = self.client.post(reverse('admin_fetch_missing_thumbnails'))
+        self.assertNotEqual(anonymous.status_code, 200)
+        staff = User.objects.create_user(username='imgstaff', password='senha123', is_staff=True)
+        self.client.force_login(staff)
+        with patch.object(self.catalog_images, 'download_thumbnail', autospec=True) as dl:
+            def fake_download(svc, url):
+                svc.thumbnail = 'thumbnails/baixado.png'
+                svc.save(update_fields=['thumbnail'])
+                return True
+            dl.side_effect = fake_download
+            self.client.post(reverse('admin_fetch_missing_thumbnails'))
+        service.refresh_from_db()
+        self.assertEqual(service.thumbnail, 'thumbnails/baixado.png')
+
+
 class AdminDbBackupTests(TestCase):
     def setUp(self):
         self.staff = User.objects.create_user(username='admindb', password='senha123', is_staff=True)
