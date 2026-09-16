@@ -330,6 +330,45 @@ class ProviderApiTests(TestCase):
         self.assertEqual(order.process_type, 'Auto')
 
     @patch('core.provider_api._request')
+    def test_submit_saves_password_from_separate_fields(self, req):
+        def fake(api, action, parameters=''):
+            return {'SUCCESS': [{'MESSAGE': 'Order received', 'REFERENCEID': '5550100',
+                                 'CODE': 'Email: u@x.com', 'PASSWORD': 'segredo123'}],
+                    'apiversion': '1.0'}
+        req.side_effect = fake
+        order = self._order()
+        OrderInput.objects.create(order=order, field_name='IMEI', field_value='351234567890123')
+        ok, ref = provider_api.submit_local_order(order)
+        self.assertTrue(ok)
+        order.refresh_from_db()
+        self.assertIn('u@x.com', order.replied_in)
+        self.assertIn('segredo123', order.replied_in)
+
+    @patch('core.provider_api._request')
+    def test_sync_saves_password_from_separate_fields(self, req):
+        def fake(api, action, parameters=''):
+            return {'SUCCESS': [{'STATUS': 4, 'CODE': 'Email: u@x.com',
+                                 'PASSWORD': 'segredo-sync'}], 'apiversion': '1.0'}
+        req.side_effect = fake
+        order = self._order()
+        order.trx_id = '5550002'
+        order.save(update_fields=['trx_id'])
+        provider_api.sync_local_order(order)
+        order.refresh_from_db()
+        self.assertEqual(order.service_status, 'Success')
+        self.assertIn('u@x.com', order.replied_in)
+        self.assertIn('segredo-sync', order.replied_in)
+
+    def test_reply_from_row_merges_separate_credentials(self):
+        reply = provider_api._reply_from_row({
+            'REFERENCEID': '7788', 'CODE': '6000-100',
+            'EMAIL': 'loja@x.com', 'PASSWORD': 'senha-x',
+        })
+        self.assertIn('loja@x.com', reply)
+        self.assertIn('senha-x', reply)
+        self.assertNotIn('7788', reply)
+
+    @patch('core.provider_api._request')
     def test_submit_blocks_recent_duplicate(self, req):
         def fake(api, action, parameters=''):
             return {'SUCCESS': [{'MESSAGE': 'Order received', 'REFERENCEID': '100001'}], 'apiversion': '1.0'}
@@ -2471,6 +2510,8 @@ class OrderEmailTests(TestCase):
         self.assertEqual(notify._split_creds(None), (None, None))
         self.assertEqual(notify._split_creds('Username: 8@ppkkk1.com<br>'), (None, None))
         self.assertEqual(notify._split_creds('Username: user1<br>Password: pass1'), ('user1', 'pass1'))
+        self.assertEqual(notify._split_creds('Email: 8@ppkkk1.com | Senha: pass9'), ('8@ppkkk1.com', 'pass9'))
+        self.assertEqual(notify._split_creds('Email: 8@ppkkk1.com\nPassword: pass10'), ('8@ppkkk1.com', 'pass10'))
 
     def test_brl_and_dt_helpers(self):
         from core import notify

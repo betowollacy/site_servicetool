@@ -592,6 +592,31 @@ def _extract_credentials(row):
     return ' | '.join(result)
 
 
+def _reply_from_row(row):
+    """Monta a resposta do provedor a salvar no pedido.
+
+    Alguns provedores devolvem o login e a senha em campos SEPARADOS da
+    resposta (EMAIL/USERNAME + PASSWORD/SENHA), alem do CODE — que pode conter
+    so o e-mail. Junta tudo para o cliente receber email e senha completos
+    no e-mail, no Telegram e no painel."""
+    code = ((row or {}).get('CODE', '') or (row or {}).get('code', '') or '').strip()
+    extras = _extract_credentials(row or {})
+    if not extras:
+        return code
+    extra_parts = [p.strip() for p in extras.split('|') if p.strip()]
+    missing = [p for p in extra_parts if p.lower() not in code.lower()]
+    if not missing:
+        return code or extras
+    has_creds_in_code = bool(re.search(
+        r'(?:senha|password|pass\b|user|login|email|mail)\s*[:\-=]', code, re.I))
+    if has_creds_in_code:
+        # CODE ja trouxe a credencial (ex.: so o e-mail) e a senha veio em
+        # campo separado — junta tudo para o cliente receber os dois.
+        return '{} | {}'.format(code, ' | '.join(missing))
+    # CODE e so o numero do pedido: devolve as credenciais dos campos separados.
+    return ' | '.join(extra_parts)
+
+
 def provider_for_order(order):
     """Retorna a Api vinculada ao servico do pedido, ou None se nao for automático."""
     service = order.service
@@ -704,7 +729,7 @@ def submit_local_order(order):
     if not str(ref or '').strip():
         _log(api, 'place empty ref order #{}: {}'.format(order.id, row))
         return False, 'Provedor nao retornou numero do pedido.'
-    code = (row.get('CODE', '') or row.get('code', '') or '').strip()
+    code = _reply_from_row(row)
     status = row.get('STATUS') or row.get('status') or ''
     status_int = None
     try:
@@ -768,7 +793,7 @@ def sync_local_order(order, notify_complete=True):
         data = _request(api, get_action, params)
         row = _success_rows(data)[0]
         status = int(float(row.get('STATUS', 0) or 0))
-        code = row.get('CODE', '') or ''
+        code = _reply_from_row(row)
     except ProviderError as exc:
         _log(api, 'sync fail order #{}: {}'.format(order.id, exc))
         return False

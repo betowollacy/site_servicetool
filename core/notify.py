@@ -117,9 +117,9 @@ def _history_url():
 
 
 _PAIR_RE = re.compile(
-    r'^\s*(?:usuario|username|user)\s*[:\-=]\s*(.+?)\s*[|]\s*'
+    r'^\s*(?:usuario|username|user|login|email|mail)\s*[:\-=]\s*(.+?)\s*[|]\s*'
     r'(?:senha|password|pass|passwd|pwd)\s*[:\-=]\s*(.+?)\s*$', re.I)
-_LABEL_USER_RE = re.compile(r'^\s*(?:usuario|username|user|login)\s*[:\-=]\s*(.+?)\s*$', re.I)
+_LABEL_USER_RE = re.compile(r'^\s*(?:usuario|username|user|login|email|mail)\s*[:\-=]\s*(.+?)\s*$', re.I)
 _LABEL_PASS_RE = re.compile(r'^\s*(?:senha|password|pass|passwd|pwd)\s*[:\-=]\s*(.+?)\s*$', re.I)
 
 
