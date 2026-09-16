@@ -3095,8 +3095,13 @@ class AdminServiceScreenshotUploadTests(TestCase):
         )
 
     def test_edit_upload_screenshot_image_overwrites_url(self):
+        import io
+        from PIL import Image as PILImage
+        buf = io.BytesIO()
+        PILImage.new('RGB', (2000, 800), (30, 40, 50)).save(buf, format='PNG')
+        buf.seek(0)
+        img = SimpleUploadedFile('shot.png', buf.read(), content_type='image/png')
         self.client.force_login(self.staff)
-        img = SimpleUploadedFile('shot.png', b'\x89PNG\r\n\x1a\n' + b'0' * 64, content_type='image/png')
         with patch('core.views_admin.provider_api.auto_link_service', return_value=(None, None)):
             resp = self.client.post(reverse('admin_service_edit', args=['server', self.service.id]), {
                 'title': 'Aluguel 1 Dia',
@@ -3109,6 +3114,11 @@ class AdminServiceScreenshotUploadTests(TestCase):
         self.assertTrue(self.service.screenshot)
         self.assertIn('/media/screenshots/', self.service.screenshot)
         self.assertNotIn('velho.jpg', self.service.screenshot)
+        path = self.service.screenshot.replace('/media/', str(settings.MEDIA_ROOT) + os.sep).replace('/', os.sep)
+        self.assertTrue(os.path.exists(path), path)
+        with PILImage.open(path) as saved:
+            self.assertLessEqual(saved.height, 460)
+            self.assertLessEqual(saved.width, 1024)
 
 
 class AdminApiIpHintTests(TestCase):

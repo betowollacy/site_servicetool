@@ -1280,7 +1280,8 @@ def _save_uploaded_thumbnail(service, files, request=None):
 
 
 def _save_uploaded_screenshot(service, files, request=None):
-    """Salva a imagem enviada em MEDIA_ROOT/screenshots e atualiza o campo screenshot."""
+    """Salva a imagem enviada em MEDIA_ROOT/screenshots, ajustada ao tamanho de
+    exibição (máx. 460px de altura preservando a proporção), e atualiza o campo."""
     img = files.get('screenshot_image')
     if not img:
         return
@@ -1292,9 +1293,29 @@ def _save_uploaded_screenshot(service, files, request=None):
     folder = Path(settings.MEDIA_ROOT) / 'screenshots'
     folder.mkdir(parents=True, exist_ok=True)
     name = f"{service.slug or 'service'}-{uuid.uuid4().hex[:8]}{ext}"
-    with open(folder / name, 'wb+') as dest:
-        for chunk in img.chunks():
-            dest.write(chunk)
+    dest = folder / name
+    try:
+        from PIL import Image
+        probe = Image.open(img)
+        probe.verify()
+        img.seek(0)
+    except Exception:
+        if request:
+            messages.warning(request, 'Arquivo não é uma imagem válida.')
+        return
+    if ext != '.gif':
+        try:
+            image = Image.open(img)
+            image.thumbnail((1024, 460), Image.Resampling.LANCZOS)
+            image.save(dest, optimize=True)
+        except Exception:
+            with open(dest, 'wb+') as raw:
+                for chunk in img.chunks():
+                    raw.write(chunk)
+    else:
+        with open(dest, 'wb+') as raw:
+            for chunk in img.chunks():
+                raw.write(chunk)
     service.screenshot = f"{settings.MEDIA_URL}screenshots/{name}"
     service.save(update_fields=['screenshot'])
 
