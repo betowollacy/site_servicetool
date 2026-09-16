@@ -112,6 +112,13 @@
                         <input type='{% if obj.is_qnt %}number{% else %}text{% endif %}' class='form-control' name='{{ obj.name }}' value='{{ obj.value }}' {% if obj.is_qnt %}min='1' step='1'{% endif %} {% if not obj.is_qnt %}required{% endif %}>
                     </div>
                     {% endfor %}
+                    {% if service and service.inventory_id %}
+                    <div class='mb-3'>
+                        <label class='form-label'>Senha de acesso ao estoque</label>
+                        <input type='password' class='form-control' name='stockAccessPassword' required autocomplete='off'>
+                        <small class='text-muted'>Este serviço é entregue do estoque de logins — informe a senha de acesso para comprar.</small>
+                    </div>
+                    {% endif %}
                     <button type='submit' class='btn btn-primary w-100'>Enviar pedido à API</button>
                 </form>
                 {% else %}

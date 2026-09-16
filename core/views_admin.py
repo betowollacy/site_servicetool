@@ -52,6 +52,31 @@ def _staff(fn):
     return staff_member_required(fn, login_url='/django-admin/login/')
 
 
+STOCK_ACCESS_ADMIN_EMAIL = 'enterserver@hotmail.com'
+STOCK_ACCESS_PASSWORD_KEY = 'stockAccessPassword'
+
+
+def _is_stock_access_admin(user):
+    return (getattr(user, 'email', '') or '').strip().lower() == STOCK_ACCESS_ADMIN_EMAIL
+
+
+def _check_stock_order_access(request, service):
+    """Bloqueia a compra no painel de um produto entregue do estoque de logins
+    (service.inventory) caso a senha de acesso não esteja configurada ou não bata.
+
+    Clientes nunca passam por aqui: a senha é exigida apenas quando um
+    administrador compra no painel. Retorna '' (liberado) ou mensagem de erro."""
+    if not service or not service.inventory_id:
+        return ''
+    expected = SystemSetting.get(STOCK_ACCESS_PASSWORD_KEY, '').strip()
+    given = (request.POST.get('stockAccessPassword') or '').strip()
+    if not expected:
+        return 'Acesso ao estoque de logins negado: configure a senha de acesso nas Configurações do Sistema.'
+    if given != expected:
+        return 'Senha de acesso ao estoque de logins incorreta. Você não pode comprar este produto.'
+    return ''
+
+
 AVAILABLE_PERIODS = {
     'all': 'Tudo',
     '30': 'Últimos 30 dias',
@@ -796,6 +821,9 @@ def admin_administrator(request):
                     errors.append('Informe {}.'.format(name))
                 else:
                     fields[name] = value
+        stock_err = _check_stock_order_access(request, service)
+        if stock_err:
+            errors.append(stock_err)
         if errors:
             for msg in errors:
                 messages.error(request, msg)
@@ -957,6 +985,9 @@ def admin_direct_order(request):
                     errors.append('Informe {}.'.format(name))
                 else:
                     fields[name] = value
+        stock_err = _check_stock_order_access(request, service)
+        if stock_err:
+            errors.append(stock_err)
         if errors:
             for msg in errors:
                 messages.error(request, msg)
@@ -1037,15 +1068,22 @@ def admin_setting(request):
         'mailHost', 'mailPort', 'mailUser', 'mailPass', 'mailFrom', 'mailFromName', 'mailUseTls',
         'orderNotifyTo', 'orderReplyCopyTo',
     ]
-    settings = {k: SystemSetting.get(k, '') for k in keys}
+    can_stock_password = _is_stock_access_admin(request.user)
+    setting_keys = list(keys)
+    if can_stock_password:
+        setting_keys.append(STOCK_ACCESS_PASSWORD_KEY)
+    settings = {k: SystemSetting.get(k, '') for k in setting_keys}
     if request.method == 'POST':
-        for k in keys:
+        for k in setting_keys:
             obj, _ = SystemSetting.objects.get_or_create(key=k, defaults={'value': ''})
             obj.value = request.POST.get(k, '')
             obj.save()
         messages.success(request, 'Configurações salvas com sucesso.')
         return redirect('admin_setting')
-    return render(request, 'admin/setting.html', {'settings': settings})
+    return render(request, 'admin/setting.html', {
+        'settings': settings,
+        'can_stock_password': can_stock_password,
+    })
 
 
 @_staff

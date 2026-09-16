@@ -3002,6 +3002,88 @@ class AdminDirectOrderTests(TestCase):
         self.assertIn('django-admin/login', resp.url)
 
 
+class AdminStockAccessPasswordTests(TestCase):
+    OWNER_EMAIL = 'enterserver@hotmail.com'
+
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username='dono', password='senha123', is_staff=True, email=self.OWNER_EMAIL,
+        )
+        self.other = User.objects.create_user(
+            username='outro', password='senha123', is_staff=True, email='outro@painel.com',
+        )
+        self.api = Api.objects.create(
+            api_name='API Estoque', status='Active',
+            price_rate=Decimal('5.5000'), reseller_price=Decimal('1.00'),
+            api_url='https://api.teste.com', api_key='api-key-estoque',
+            api_username='usuario-estoque',
+        )
+        RemoteServiceList.objects.create(
+            api=self.api, referenceid='R-STOCK', SERVICETYPE='server_service',
+            SERVICENAME='Aluguel 6h', CREDIT=Decimal('1.00'),
+        )
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
+        self.stock = Inventory.objects.create(name='AMT 6h')
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group,
+            title='AMT Aluguel 6h', slug='amt-6h', status='Active',
+            original_price=Decimal('20.00'), api=self.api, api_enabled=True,
+            referenceid='R-STOCK', process_type='Auto', inventory=self.stock,
+        )
+
+    def test_only_owner_sees_and_saves_stock_password(self):
+        self.client.force_login(self.owner)
+        resp = self.client.get(reverse('admin_setting'))
+        self.assertContains(resp, 'name="stockAccessPassword"')
+        self.client.post(reverse('admin_setting'), {'stockAccessPassword': 'senha-secreta'})
+        self.assertEqual(SystemSetting.get('stockAccessPassword', ''), 'senha-secreta')
+
+    def test_other_admin_cannot_see_nor_change_stock_password(self):
+        SystemSetting.objects.create(key='stockAccessPassword', value='senha-owner')
+        self.client.force_login(self.other)
+        resp = self.client.get(reverse('admin_setting'))
+        self.assertNotContains(resp, 'name="stockAccessPassword"')
+        self.client.post(reverse('admin_setting'), {'stockAccessPassword': 'senha-invasor'})
+        self.assertEqual(SystemSetting.get('stockAccessPassword', ''), 'senha-owner')
+
+    @patch('core.views_admin.provider_api.account_info',
+           return_value={'credit': '10', 'creditraw': 10.0, 'mail': 'conta@api.com', 'currency': 'USD'})
+    def test_stock_service_requires_password_to_place_admin_order(self, _acc):
+        SystemSetting.objects.create(key='stockAccessPassword', value='abc123')
+        self.client.force_login(self.owner)
+        resp = self.client.post(reverse('admin_direct_order'), {'serviceID': self.service.id})
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('service={}'.format(self.service.id), resp.url)
+        self.assertEqual(CustomerOrder.objects.count(), 0)
+
+        resp2 = self.client.post(reverse('admin_direct_order'), {
+            'serviceID': self.service.id,
+            'stockAccessPassword': 'errada',
+        })
+        self.assertEqual(resp2.status_code, 302)
+        self.assertEqual(CustomerOrder.objects.count(), 0)
+
+    def test_stock_service_blocked_when_password_not_configured(self):
+        self.client.force_login(self.owner)
+        resp = self.client.post(reverse('admin_direct_order'), {'serviceID': self.service.id})
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(CustomerOrder.objects.count(), 0)
+
+    @patch('core.views_admin.provider_api.account_info',
+           return_value={'credit': '10', 'creditraw': 10.0, 'mail': 'conta@api.com', 'currency': 'USD'})
+    @patch('core.views_admin.provider_api.submit_local_order', return_value=(True, 'REF-ESTOQUE'))
+    @patch('core.views_admin.provider_api.sync_local_order', return_value=True)
+    def test_stock_service_accepted_with_correct_password(self, _sync, _submit, _acc):
+        SystemSetting.objects.create(key='stockAccessPassword', value='abc123')
+        self.client.force_login(self.owner)
+        resp = self.client.post(reverse('admin_direct_order'), {
+            'serviceID': self.service.id,
+            'stockAccessPassword': 'abc123',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(CustomerOrder.objects.count(), 1)
+
+
 class AdminApiIpHintTests(TestCase):
     def setUp(self):
         self.staff = User.objects.create_user(username='adminiphint', password='senha123', is_staff=True)
