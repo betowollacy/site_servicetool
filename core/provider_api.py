@@ -2,7 +2,9 @@ import base64
 import json
 import logging
 import re
+import socket
 import unicodedata
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import timedelta
@@ -381,6 +383,31 @@ def _parse_parameters(parameters=''):
     return {k: v for k, v in parsed.items() if v is not None}
 
 
+_HTTP_HEADERS = {
+    # User-Agent de navegador: varios paineis (LiteSpeed/WAF) derrubam o
+    # Python-urllib/3.x padrao ou seguram a conexao (causa o 'timed out').
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/plain, */*',
+}
+
+
+class _SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Nao segue redirect 301/302/303 de um POST: o urllib converteria o
+    POST em GET e perderia o corpo da API (causa do 'timed out'). Painéis
+    GSM Theme respondem 302 quando a URL esta errada (sem o '/public').
+    307/308 (que refazem o POST) continuam sendo seguidos normalmente."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if code in (301, 302, 303) and req.has_header('Content-Length'):
+            raise ProviderError(
+                'Falha na conexão: o provedor respondeu um redirecionamento '
+                '(código {}) em vez da API. Provavelmente a URL informada está '
+                'errada — revise e digite a URL do painel terminando em '
+                '"/public" (ex.: https://provedor.com.br/public).'.format(code))
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def _request(api, action, parameters=''):
     url = endpoint_for(api, action)
     if not url:
@@ -396,12 +423,19 @@ def _request(api, action, parameters=''):
             'action': action,
             'parameters': parameters or '',
         }).encode('utf-8')
-    req = urllib.request.Request(url, data=payload, method='POST')
+    req = urllib.request.Request(url, data=payload, method='POST', headers=_HTTP_HEADERS)
+    opener = urllib.request.build_opener(_SafeRedirectHandler())
     try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+        with opener.open(req, timeout=TIMEOUT) as resp:
             body = resp.read().decode('utf-8')
+    except socket.timeout:
+        hint = ('. Confira se a URL da API termina em "/public" '
+                'e se o seu IP está autorizado no painel.' if _protocol(api) == _PROTOCOL_DHRU else '')
+        raise ProviderError(
+            'Falha na conexão: o provedor demorou mais de {}s para responder '
+            '(timeout).{}'.format(TIMEOUT, hint))
     except Exception as exc:
-        raise ProviderError('Falha ao conectar no provedor: {}'.format(exc))
+        raise ProviderError('Falha na conexão: {}'.format(exc))
     try:
         data = json.loads(body)
     except ValueError:

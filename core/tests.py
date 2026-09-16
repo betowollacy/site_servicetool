@@ -504,8 +504,8 @@ class ProviderApiTests(TestCase):
         self.assertEqual(provider_api.endpoint_for(api, 'accountinfo'),
                          'https://ritunlocker.com/api/accountinfo')
 
-    @patch('core.provider_api.urllib.request.urlopen')
-    def test_ritunlocker_request_uses_key(self, urlopen):
+    @patch('core.provider_api.urllib.request.build_opener')
+    def test_ritunlocker_request_uses_key(self, build_opener):
         class _Resp:
             def __enter__(self):
                 return self
@@ -515,10 +515,16 @@ class ProviderApiTests(TestCase):
 
             def read(self):
                 return b'{"SUCCESS": [{"AccountInfo": {"credit": "100.00", "currency": "USD"}}]}'
-        urlopen.return_value = _Resp()
+        captured = {}
+
+        class _Opener:
+            def open(self, req, timeout=None):
+                captured['req'] = req
+                return _Resp()
+        build_opener.return_value = _Opener()
 
         info = provider_api.account_info(self._rit_api())
-        req = urlopen.call_args[0][0]
+        req = captured['req']
         self.assertEqual(req.full_url, 'https://ritunlocker.com/api/accountinfo')
         self.assertIn(b'key=CHAVE-RIT-123', req.data)
         self.assertNotIn(b'apiaccesskey', req.data)
