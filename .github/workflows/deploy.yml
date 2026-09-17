@@ -26,3 +26,11 @@ jobs:
             python manage.py collectstatic --noinput
             systemctl restart servicetool.service
             echo "Deploy concluído"
+      - name: Notificar falha no Telegram
+        if: failure()
+        run: |
+          curl -s -o /dev/null -w '%{http_code}' \
+            "https://api.telegram.org/bot${{ secrets.DEPLOY_TG_BOT_TOKEN }}/sendMessage" \
+            --data-urlencode "chat_id=${{ secrets.DEPLOY_TG_CHAT_ID }}" \
+            --data-urlencode "text=FALHA no deploy de site_servicetool (@${{ github.ref_name }}, commit ${{ github.sha }})"
+        continue-on-error: true
