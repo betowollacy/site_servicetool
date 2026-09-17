@@ -876,6 +876,20 @@ def sync_local_order(order, notify_complete=True):
         return True
 
     from .notify import _split_creds
+    # Algumas APIs devolvem so o login no status, sem a senha: ela aparece no
+    # painel web do provedor. Quando a resposta vier sem senha e a API tiver o
+    # painel configurado, tenta capturar o texto completo (usuario + senha).
+    if target == 'Success' and not _split_creds(code)[1]:
+        try:
+            from . import provider_panel
+            panel_reply = provider_panel.order_reply(api, order)
+            if panel_reply and _split_creds(panel_reply)[1]:
+                code = panel_reply
+                _log(api, 'sync panel reply order #{}: {}'.format(
+                    order.id, panel_reply[:1800]))
+        except Exception as exc:  # noqa: BLE001 - painel e complementar
+            _log(api, 'sync panel fail order #{}: {}'.format(order.id, exc))
+
     old_reply = ((order.service_comments or '') or (order.replied_in or '')).strip()
     _, had_password = _split_creds(old_reply)
     was_success = order.service_status == 'Success'

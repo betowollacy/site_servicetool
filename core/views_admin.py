@@ -2063,6 +2063,9 @@ def admin_api_new(request):
             api_username=(request.POST.get('api_username') or '').strip(),
             api_key=(request.POST.get('api_key') or '').strip(),
             api_pin=(request.POST.get('api_pin') or '').strip(),
+            panel_url=(request.POST.get('panel_url') or '').strip(),
+            panel_user=(request.POST.get('panel_user') or '').strip(),
+            panel_pass=(request.POST.get('panel_pass') or '').strip(),
             status=request.POST.get('status', 'Active'),
             price_rate=_price_field(request, 'price_rate'),
             price_markup=_price_field(request, 'price_markup'),
@@ -2084,6 +2087,12 @@ def admin_api_update(request, api_id):
             api.api_key = request.POST['api_key'].strip()
         if request.POST.get('api_pin') is not None:
             api.api_pin = request.POST['api_pin'].strip()
+        if request.POST.get('panel_url') is not None:
+            api.panel_url = request.POST['panel_url'].strip()
+        if request.POST.get('panel_user') is not None:
+            api.panel_user = request.POST['panel_user'].strip()
+        if request.POST.get('panel_pass') is not None:
+            api.panel_pass = request.POST['panel_pass'].strip()
         if request.POST.get('status') in ('Active', 'Inactive'):
             api.status = request.POST['status']
         if request.POST.get('price_rate') is not None:

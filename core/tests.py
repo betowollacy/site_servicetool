@@ -707,6 +707,112 @@ class ProviderApiTests(TestCase):
         self.assertEqual(catalog[0]['name'], 'iPhone X Unlock')
         self.assertEqual(catalog[0]['fields'], ['IMEI'])
 
+    def test_provider_panel_extract_reply_from_order_reply(self):
+        from core import provider_panel
+        page = (
+            '<html><body>'
+            '<div id="orderReplyContent" style="display: none;">'
+            'Code: Username: 155@tool430.com<br>\nPassword: 17og28zy</div>'
+            '<div class="order-reply-text formatted-note-content" id="adminNoteText">'
+            'Code: Username: 155@tool430.com<br />\nPassword: 17og28zy</div>'
+            '</body></html>'
+        )
+        self.assertEqual(provider_panel._extract_reply(page),
+                         'Username: 155@tool430.com<br>Password: 17og28zy')
+
+    def test_provider_panel_extract_reply_without_reply_is_empty(self):
+        from core import provider_panel
+        self.assertEqual(provider_panel._extract_reply('<html><body>nada</body></html>'), '')
+
+    def test_provider_panel_extract_reply_generic_page_layout(self):
+        from core import provider_panel
+        page = '<html><body><p>Login: 55@x.com<br>Senha: abc123</p></body></html>'
+        self.assertEqual(provider_panel._extract_reply(page),
+                         'Username: 55@x.com<br>Password: abc123')
+
+    def test_provider_panel_url_building(self):
+        from core import provider_panel
+        self.assertEqual(provider_panel._login_url('https://ritunlocker.com'),
+                         'https://ritunlocker.com/login')
+        self.assertEqual(provider_panel._order_url('https://ritunlocker.com', '1304'),
+                         'https://ritunlocker.com/account/orders/1304')
+        self.assertEqual(provider_panel._login_url('https://painel.com/orders/{trx}'),
+                         'https://painel.com/login')
+        self.assertEqual(provider_panel._order_url('https://painel.com/orders/{trx}', '99'),
+                         'https://painel.com/orders/99')
+
+    def test_provider_panel_order_reply_requires_config(self):
+        from core import provider_panel
+        order = self._order()
+        order.trx_id = '1304'
+        order.save(update_fields=['trx_id'])
+        self.assertEqual(provider_panel.order_reply(self.api, order, force=True), '')
+
+    @patch('core.provider_panel._fetch_page')
+    @patch('core.provider_panel._login')
+    def test_provider_panel_order_reply_logs_in_and_extracts(self, login, fetch):
+        from core import provider_panel
+        self.api.panel_url = 'https://ritunlocker.com'
+        self.api.panel_user = 'dono@site.com'
+        self.api.panel_pass = 'senha'
+        self.api.save(update_fields=['panel_url', 'panel_user', 'panel_pass'])
+        login.return_value = [{'name': 'session', 'value': 'abc', 'domain': 'ritunlocker.com',
+                               'path': '/', 'secure': True, 'expires': None}]
+        fetch.return_value = ('<div id="adminNoteText">Code: Username: 155@tool430.com'
+                              '<br>\nPassword: 17og28zy</div>')
+        order = self._order()
+        order.trx_id = '1304'
+        order.save(update_fields=['trx_id'])
+        reply = provider_panel.order_reply(self.api, order, force=True)
+        self.assertEqual(reply, 'Username: 155@tool430.com<br>Password: 17og28zy')
+        login.assert_called_once()
+
+    def test_provider_panel_order_reply_throttles_repeated_fetches(self):
+        from core import provider_panel
+        self.api.panel_url = 'https://ritunlocker.com'
+        self.api.panel_user = 'dono@site.com'
+        self.api.panel_pass = 'senha'
+        self.api.save(update_fields=['panel_url', 'panel_user', 'panel_pass'])
+        order = self._order()
+        order.trx_id = '1304'
+        order.save(update_fields=['trx_id'])
+        with patch('core.provider_panel._fetch_page', return_value='') as fetch, \
+                patch('core.provider_panel._login') as login:
+            login.return_value = [{'name': 'session', 'value': 'abc',
+                                   'domain': 'ritunlocker.com', 'path': '/',
+                                   'secure': True, 'expires': None}]
+            provider_panel.order_reply(self.api, order)
+            provider_panel.order_reply(self.api, order)
+        self.assertEqual(fetch.call_count, 1)
+
+    @patch('core.provider_panel.order_reply')
+    @patch('core.provider_api._request')
+    def test_sync_uses_panel_reply_for_any_api_when_no_password(self, req, panel):
+        api = self.api
+        api.panel_url = 'https://ritunlocker.com'
+        api.panel_user = 'dono@site.com'
+        api.panel_pass = 'senha'
+        api.save(update_fields=['panel_url', 'panel_user', 'panel_pass'])
+        service = ServiceList.objects.get(id=self.service.id)
+        service.api = api
+        service.referenceid = '8810'
+        service.save(update_fields=['api', 'referenceid'])
+        self.service = service
+        order = self._order()
+        order.service_status = 'Success'
+        order.trx_id = '1304'
+        order.replied_in = 'Username: 155@tool430.com<br>'
+        order.service_comments = 'Username: 155@tool430.com<br>'
+        order.save(update_fields=['service_status', 'trx_id', 'replied_in', 'service_comments'])
+        req.return_value = {'SUCCESS': [{'STATUS': 4, 'CODE': 'Username: 155@tool430.com<br>'}]}
+        panel.return_value = 'Username: 155@tool430.com<br>Password: 17og28zy'
+        with patch('core.notify.send_telegram') as tg, patch('core.notify.send_order_email') as mail:
+            provider_api.sync_local_order(order)
+        order.refresh_from_db()
+        self.assertIn('Password: 17og28zy', order.replied_in)
+        mail.assert_called_once()
+        tg.assert_called_once()
+
     def test_detect_duration_reconhece_6_hurs(self):
         self.assertEqual(provider_api._detect_duration('UNLOCK TOOL RENT (6-Hurs)-API -india'), '6h')
         self.assertEqual(provider_api._detect_duration('ALUGUEL FERRAMENTA 6 HORAS'), '6h')

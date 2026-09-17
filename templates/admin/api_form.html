@@ -28,6 +28,16 @@
                 <div class="col-md-6 mb-3"><label class="form-label">Câmbio USD→BRL</label><input type="text" name="price_rate" class="form-control font-monospace" placeholder="ex.: 5.35 (0 = sem conversão)"></div>
                 <div class="col-md-6 mb-3"><label class="form-label">Margem (%)</label><input type="text" name="price_markup" class="form-control font-monospace" placeholder="ex.: 30"></div>
             </div>
+            <hr>
+            <div class="row">
+                <div class="col-12">
+                    <label class="form-label mb-1">Painel web do provedor (captura de senha)</label>
+                    <div class="form-text mb-2">Quando a API conclui o pedido devolvendo só o login (sem senha), o sistema entra no painel do provedor, lê a resposta completa do pedido e envia usuário + senha ao cliente (e-mail, Telegram e site). Preencha apenas se o provedor tiver painel.</div>
+                </div>
+                <div class="col-md-6 mb-3"><label class="form-label">URL do painel</label><input type="text" name="panel_url" class="form-control font-monospace" placeholder="https://ritunlocker.com (ou .../orders/{trx})"></div>
+                <div class="col-md-3 mb-3"><label class="form-label">Login do painel</label><input type="text" name="panel_user" class="form-control font-monospace" placeholder="email@provedor.com"></div>
+                <div class="col-md-3 mb-3"><label class="form-label">Senha do painel</label><input type="password" name="panel_pass" class="form-control font-monospace" placeholder="não vai pro cliente"></div>
+            </div>
             <div class="alert alert-light border mb-0"><i class="ti ti-info-circle me-1"></i> Após criar, clique em "Importar serviços" na lista para baixar o catálogo do provedor.</div>
         </div>
         <div class="card-footer">
