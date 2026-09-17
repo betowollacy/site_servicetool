@@ -859,7 +859,7 @@ def admin_administrator(request):
             order.save(update_fields=['service_status', 'service_comments'])
             messages.error(request, 'Falha no pedido #{}: {}'.format(order.id, order.service_comments))
         elif forwarded is True:
-            provider_api.sync_local_order(order, notify_complete=False)
+            provider_api.sync_local_order(order, notify_complete=True)
             order.refresh_from_db()
             result = order.replied_in or order.service_comments or '-'
             messages.success(request, 'Pedido #{} enviado a API (ref: {}). Status: {}. Resultado: {}'.format(
@@ -1022,7 +1022,7 @@ def admin_direct_order(request):
             order.save(update_fields=['service_status', 'service_comments'])
             messages.error(request, 'Falha no pedido #{}: {}'.format(order.id, order.service_comments))
         elif forwarded is True:
-            provider_api.sync_local_order(order, notify_complete=False)
+            provider_api.sync_local_order(order, notify_complete=True)
             order.refresh_from_db()
             result = order.replied_in or order.service_comments or '-'
             messages.success(request, 'Pedido #{} enviado a API (ref: {}). Status: {}. Resultado: {}'.format(

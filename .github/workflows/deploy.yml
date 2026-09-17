@@ -16,6 +16,7 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
             set -e
+            git config --global --add safe.directory /opt/site_servicetool
             cd /opt/site_servicetool
             git pull origin main
             source venv/bin/activate
