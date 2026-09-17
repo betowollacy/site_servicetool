@@ -25,7 +25,7 @@ jobs:
             pip install -r requirements.txt --quiet
             python manage.py migrate --noinput
             python manage.py collectstatic --noinput
-            systemctl restart servicetool.service
+            systemctl reload servicetool.service || systemctl restart servicetool.service
             echo "Deploy concluído"
       - name: Notificar falha no Telegram
         if: failure()
