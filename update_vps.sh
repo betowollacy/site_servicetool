@@ -101,10 +101,10 @@ create_backup() {
 
 update_system() {
     log_info "Atualizando pacotes do sistema..."
-    apt-get update
-    apt-get upgrade -y
-    apt-get autoremove -y
-    apt-get autoclean
+    DEBIAN_FRONTEND=noninteractive apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::="--force-confold"
+    DEBIAN_FRONTEND=noninteractive apt-get autoremove -y
+    DEBIAN_FRONTEND=noninteractive apt-get autoclean
     log_success "Sistema atualizado"
 }
 
