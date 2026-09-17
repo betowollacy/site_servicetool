@@ -225,10 +225,13 @@ def find_remote_match(title, api=None):
     brand = _brand_tokens(title)
     dur = _detect_duration(title)
     kind = _detect_kind(title)
+    target_norm = _norm_title(title)
     if not brand:
         return None, 0.0, 0.0
     best, best_score, best_overlap = None, 0.0, 0.0
     for r in qs:
+        if target_norm and _norm_title(r.SERVICENAME) == target_norm:
+            return r, 5.0, 1.0
         rbrand = _brand_tokens(r.SERVICENAME)
         overlap = _brand_overlap(brand, rbrand)
         if overlap < 0.34:
@@ -270,12 +273,19 @@ def _match_acceptable(score, overlap, dur, rdur, kind, rkind, title='', remote_n
     return overlap >= 0.75
 
 
-def auto_link_service(service, min_score=2.2):
-    """Tenta vincular o servico ao provedor por palavra-chave.
-    Nao sobrescreve vinculos existentes. Retorna (remote|None, score)."""
+def auto_link_service(service, min_score=2.2, allow_assign=True):
+    """Tenta vincular o servico ao provedor por nome igual (do titulo para o
+    catalogo) ou palavra-chave. Nao sobrescreve vinculos existentes.
+    Se o servico ja tem API escolhida (service.api), busca so no catalogo dela
+    (nome igual vincula direto). allow_assign=False impede qualquer vinculo
+    (usado quando o admin escolheu explicitamente 'Nenhuma'/manual).
+    Retorna (remote|None, score)."""
+    if not allow_assign:
+        return None, 0.0
     if service.api_id and str(service.referenceid or '').strip():
         return None, 0.0
-    remote, score, overlap = find_remote_match(service.title)
+    remote, score, overlap = find_remote_match(
+        service.title, api=service.api if service.api_id else None)
     if remote is None:
         return None, score
     dur = _detect_duration(service.title)

@@ -20,9 +20,6 @@
         {% else %}
         <a href="{% url 'admin_api_list' %}?produtos=1" class="btn btn-light-secondary"><i class="ti ti-eye me-2"></i> Ver catálogo do provedor</a>
         {% endif %}
-        <form method="post" action="{% url 'admin_fetch_missing_thumbnails' %}" data-loading onsubmit="return confirm('Buscar imagens no catálogo GSM Theme e preencher os produtos sem imagem? Pode demorar alguns minutos.')">{% csrf_token %}
-            <button class="btn btn-info"><i class="ti ti-photo me-2"></i> Buscar imagens do catálogo</button>
-        </form>
         <a href="{% url 'admin_api_new' %}" class="btn btn-primary"><i class="ti ti-plus me-2"></i> Nova API</a>
     </div>
 </div>

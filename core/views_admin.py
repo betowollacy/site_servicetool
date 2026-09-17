@@ -1360,7 +1360,8 @@ def admin_service_new(request, svtype):
         _save_fields(service, request.POST.get('fields', ''))
         _save_uploaded_thumbnail(service, request.FILES, request)
         _save_uploaded_screenshot(service, request.FILES, request)
-        auto_remote, auto_score = provider_api.auto_link_service(service)
+        auto_remote, auto_score = provider_api.auto_link_service(
+            service, allow_assign=str(request.POST.get('api') or '') not in ('', '0'))
         if auto_remote:
             messages.success(request, 'Serviço criado e integrado automaticamente ao provedor: "{}" (referência {}).'.format(
                 auto_remote.SERVICENAME, auto_remote.referenceid))
@@ -1390,7 +1391,8 @@ def admin_service_edit(request, svtype, service_id):
         _save_fields(service, request.POST.get('fields', ''))
         _save_uploaded_thumbnail(service, request.FILES, request)
         _save_uploaded_screenshot(service, request.FILES, request)
-        auto_remote, auto_score = provider_api.auto_link_service(service)
+        auto_remote, auto_score = provider_api.auto_link_service(
+            service, allow_assign=str(request.POST.get('api') or '') not in ('', '0'))
         if auto_remote:
             messages.success(request, 'Serviço atualizado e integrado automaticamente ao provedor: "{}" (referência {}).'.format(
                 auto_remote.SERVICENAME, auto_remote.referenceid))

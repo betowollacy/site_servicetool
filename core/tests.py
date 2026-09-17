@@ -734,6 +734,86 @@ class ProviderApiTests(TestCase):
         remote, score = provider_api.auto_link_service(local)
         self.assertIsNone(remote)
 
+    def test_auto_link_nome_igual_casa_direto_mesmo_com_palavra_chave_(self):
+        """Se o nome do servico local for igual (normalizado) ao do catalogo da
+        API escolhida, o vinculo acontece direto, mesmo se outra API ativa tiver
+        um nome parecido mas diferente (a busca fica escopada na API escolhida)."""
+        outra = Api.objects.create(
+            api_name='Outra Provider', api_type='gsm',
+            api_url='https://outra.com/public', api_username='', api_key='CHAVE-OUTRA',
+            status='Active', api_pin='', price_rate=Decimal('0'), price_markup=Decimal('0'),
+        )
+        RemoteServiceList.objects.create(
+            api=outra, referenceid='7777', SERVICETYPE='SERVER',
+            SERVICENAME='UNLOCK TOOL RENT (6-Hurs)-API -india', CREDIT=Decimal('0.90'),
+        )
+        RemoteServiceList.objects.create(
+            api=self.api, referenceid='9002', SERVICETYPE='SERVER',
+            SERVICENAME='ALUGUEL FERRAMENTA 6 HORAS - TOOL', CREDIT=Decimal('0.90'),
+        )
+        local = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group,
+            title='ALUGUEL FERRAMENTA 6 HORAS',
+            original_price=Decimal('5.00'), status='Active', slug='aluguel-tool-6h',
+            api=self.api, referenceid='',
+        )
+        remote, score = provider_api.auto_link_service(local)
+        local.refresh_from_db()
+        self.assertIsNotNone(remote)
+        self.assertEqual(local.api_id, self.api.id)
+        self.assertEqual(local.referenceid, '9002')
+        self.assertTrue(local.api_enabled)
+
+    def test_auto_link_escopa_na_api_escolhida_nao_cassa_em_outra(self):
+        """Com API escolhida no cadastro (sem referenceid), nao procura fora: so
+        o catalogo da propria API e considerado."""
+        matching = Api.objects.create(
+            api_name='Matching Provider', api_type='gsm',
+            api_url='https://matching.com/public', api_username='', api_key='CHAVE-MATCH',
+            status='Active', api_pin='', price_rate=Decimal('0'), price_markup=Decimal('0'),
+        )
+        RemoteServiceList.objects.create(
+            api=matching, referenceid='8888', SERVICETYPE='SERVER',
+            SERVICENAME='CHIMERA TOOL RENT 6 HOURS', CREDIT=Decimal('0.90'),
+        )
+        RemoteServiceList.objects.create(
+            api=self.api, referenceid='9002', SERVICETYPE='SERVER',
+            SERVICENAME='UNLOCK TOOL RENT 12 HOURS', CREDIT=Decimal('0.90'),
+        )
+        local = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group,
+            title='CHIMERA TOOL RENT 6 HOURS',
+            original_price=Decimal('5.00'), status='Active', slug='chimera-6h',
+            api=self.api, referenceid='',
+        )
+        remote, score = provider_api.auto_link_service(local)
+        local.refresh_from_db()
+        self.assertIsNone(remote)
+        # A API escolhida no cadastro e mantida, mas o nome do catalogo da
+        # propria API nao bate -> sem referencia e sem sobreescrita.
+        self.assertEqual(local.api_id, self.api.id)
+        self.assertEqual(local.referenceid, '')
+
+    def test_auto_link_negado_com_allow_assign_false(self):
+        matching = Api.objects.create(
+            api_name='Match Full', api_type='gsm',
+            api_url='https://matchfull.com/public', api_username='', api_key='CHAVE-MF',
+            status='Active', api_pin='', price_rate=Decimal('0'), price_markup=Decimal('0'),
+        )
+        RemoteServiceList.objects.create(
+            api=matching, referenceid='9001', SERVICETYPE='SERVER',
+            SERVICENAME='UNLOCK TOOL RENT 6 HOURS', CREDIT=Decimal('0.90'),
+        )
+        local = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group,
+            title='UNLOCK TOOL RENT 6 HOURS',
+            original_price=Decimal('5.00'), status='Active', slug='unlock-6h',
+        )
+        remote, score = provider_api.auto_link_service(local, allow_assign=False)
+        local.refresh_from_db()
+        self.assertIsNone(remote)
+        self.assertIsNone(local.api_id)
+
     def test_suggested_price_applies_rate_and_markup(self):
         api = self._rit_api()
         api.price_rate = Decimal('5.35')
@@ -965,6 +1045,41 @@ class ProviderApiAdminTests(TestCase):
         self.assertEqual(self.service.original_price, Decimal('55.00'))
         self.assertEqual(self.service.api_id, self.api.id)
         self.assertEqual(self.service.referenceid, '7')
+
+    def test_service_form_choosing_api_links_by_name_on_save(self):
+        """Ao criar um servico escolhendo a API no formulario (sem digitar o ID),
+        se o titulo for igual ao nome do catalogo, o vinculo automatico acontece."""
+        RemoteServiceList.objects.create(
+            api=self.api, referenceid='42', SERVICETYPE='IMEI',
+            SERVICENAME='Unlock iPhone X Ativação 1 Ano', CREDIT=Decimal('10.00'))
+        self._login()
+        resp = self.client.post(reverse('admin_service_new', args=['activation']), {
+            'title': 'Unlock iPhone X Ativação 1 Ano',
+            'original_price': '29.90',
+            'api': str(self.api.id),
+            'api_enabled': '1',
+        })
+        self.assertEqual(resp.status_code, 302)
+        created = ServiceList.objects.get(title='Unlock iPhone X Ativação 1 Ano')
+        self.assertEqual(created.api_id, self.api.id)
+        self.assertEqual(created.referenceid, '42')
+
+    def test_service_form_nenhuma_skips_auto_link(self):
+        """Escolher 'Nenhuma' no formulario nao dispara vinculo automatico mesmo
+        se o nome bater com o catalogo de alguma API ativa."""
+        RemoteServiceList.objects.create(
+            api=self.api, referenceid='43', SERVICETYPE='IMEI',
+            SERVICENAME='Unlock iPhone Y Ativação 1 Ano', CREDIT=Decimal('10.00'))
+        self._login()
+        resp = self.client.post(reverse('admin_service_new', args=['activation']), {
+            'title': 'Unlock iPhone Y Ativação 1 Ano',
+            'original_price': '29.90',
+            'api': '0',
+        })
+        self.assertEqual(resp.status_code, 302)
+        created = ServiceList.objects.get(title='Unlock iPhone Y Ativação 1 Ano')
+        self.assertIsNone(created.api_id)
+        self.assertEqual(created.referenceid, '')
 
 
 class AdminRefundTests(TestCase):
