@@ -25,8 +25,7 @@
                     <th>ID</th>
                     <th>Cliente</th>
                     <th>Serviço</th>
-                    <th>Entrada</th>
-                    <th>Descrição do Serviço / Dados do pedido</th>
+                    <th>Dados do pedido</th>
                     <th>Valor</th>
                     <th>Pagamento</th>
                     <th>Status</th>
@@ -39,15 +38,14 @@
                     <td>#{{ order.id }}</td>
                     <td>{{ order.customer.name }}</td>
                     <td>{{ order.service_title }}</td>
-                    <td>{{ order.service_input1|default:"-" }}</td>
                     <td>
                         {% if order.service_qnt %}<div><b>Quantidade:</b> {{ order.service_qnt }}</div>{% endif %}
                         {% for item in order.order_inputs.all %}
                         <div><b>{{ item.field_name }}:</b> {{ item.field_value }}</div>
                         {% endfor %}
-                        {% if not order.service_qnt and not order.order_inputs.all and order.service_input1 %}
-                        <div>{{ order.service_input1 }}</div>
-                        {% elif not order.service_qnt and not order.order_inputs.all %}
+                        {% if not order.order_inputs.all and order.service_input1 %}
+                        <div><b>Entrada:</b> {{ order.service_input1 }}</div>
+                        {% elif not order.order_inputs.all and not order.service_input1 %}
                         <span class="text-muted">-</span>
                         {% endif %}
                     </td>
