@@ -343,6 +343,17 @@ class ProviderApiTests(TestCase):
         self.assertEqual(order.trx_id, '5550015')
 
     @patch('core.provider_api._request')
+    def test_submit_local_order_surfaces_provider_message_without_reference(self, req):
+        def fake(api, action, parameters=''):
+            return {'SUCCESS': {'MESSAGE': 'Service Not Available'}, 'apiversion': '1.0'}
+        req.side_effect = fake
+        order = self._order()
+        OrderInput.objects.create(order=order, field_name='IMEI', field_value='351234567890123')
+        ok, reason = provider_api.submit_local_order(order)
+        self.assertFalse(ok)
+        self.assertEqual(reason, 'Service Not Available')
+
+    @patch('core.provider_api._request')
     def test_submit_saves_password_from_separate_fields(self, req):
         def fake(api, action, parameters=''):
             return {'SUCCESS': [{'MESSAGE': 'Order received', 'REFERENCEID': '5550100',

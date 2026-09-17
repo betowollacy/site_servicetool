@@ -796,8 +796,15 @@ def submit_local_order(order):
     except ProviderError as exc:
         _log(api, 'place fail order #{}: {}'.format(order.id, exc))
         return False, str(exc)
+    if not isinstance(row, dict):
+        _log(api, 'place invalid row order #{}: {}'.format(order.id, row))
+        return False, 'Resposta invalida do provedor.'
     ref = row.get('REFERENCEID') or row.get('referenceid') or row.get('ORDERID')
+    message = row.get('MESSAGE') or row.get('message')
     if not str(ref or '').strip():
+        if message:
+            _log(api, 'place unavailable order #{}: {}'.format(order.id, message))
+            return False, str(message)
         _log(api, 'place empty ref order #{}: {}'.format(order.id, row))
         return False, 'Provedor nao retornou numero do pedido.'
     code = _reply_from_row(row)
