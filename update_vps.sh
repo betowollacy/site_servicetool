@@ -15,7 +15,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configurações
-PROJECT_DIR="/var/www/site_servicetool"  # Ajuste conforme seu diretório
+PROJECT_DIR="/opt/site_servicetool"  # Diretório do projeto na VPS
 BACKUP_DIR="/var/backups/site_servicetool"
 VENV_DIR="$PROJECT_DIR/venv"
 SERVICE_NAME="servicetool"  # Nome do serviço systemd
