@@ -456,13 +456,27 @@ def _request(api, action, parameters=''):
         raise ProviderError('Resposta invalida do provedor: {}'.format(str(body)[:200]))
     if isinstance(data, dict) and 'ERROR' in data:
         errs = data.get('ERROR') or []
-        message = errs[0].get('MESSAGE', 'Erro do provedor') if errs else 'Erro do provedor'
-        raise ProviderError(str(message))
+        if isinstance(errs, dict):
+            errs = [errs]
+        elif not isinstance(errs, list):
+            errs = [errs]
+        if errs:
+            first = errs[0]
+            if isinstance(first, dict):
+                message = first.get('MESSAGE') or first.get('message') or 'Erro do provedor'
+            else:
+                message = str(first)
+            raise ProviderError(str(message))
+        raise ProviderError('Erro do provedor')
     return data
 
 
 def _success_rows(data):
     rows = data.get('SUCCESS') or []
+    if isinstance(rows, dict):
+        rows = [rows]
+    elif not isinstance(rows, list):
+        rows = [rows] if rows is not None else []
     if not rows:
         raise ProviderError('Resposta sem SUCCESS do provedor.')
     return rows

@@ -330,6 +330,19 @@ class ProviderApiTests(TestCase):
         self.assertEqual(order.process_type, 'Auto')
 
     @patch('core.provider_api._request')
+    def test_submit_local_order_accepts_single_dict_success(self, req):
+        def fake(api, action, parameters=''):
+            return {'SUCCESS': {'MESSAGE': 'Order received', 'REFERENCEID': '5550015'}, 'apiversion': '1.0'}
+        req.side_effect = fake
+        order = self._order()
+        OrderInput.objects.create(order=order, field_name='IMEI', field_value='351234567890123')
+        ok, ref = provider_api.submit_local_order(order)
+        self.assertTrue(ok)
+        self.assertEqual(ref, '5550015')
+        order.refresh_from_db()
+        self.assertEqual(order.trx_id, '5550015')
+
+    @patch('core.provider_api._request')
     def test_submit_saves_password_from_separate_fields(self, req):
         def fake(api, action, parameters=''):
             return {'SUCCESS': [{'MESSAGE': 'Order received', 'REFERENCEID': '5550100',
