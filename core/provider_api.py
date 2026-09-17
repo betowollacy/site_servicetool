@@ -456,27 +456,13 @@ def _request(api, action, parameters=''):
         raise ProviderError('Resposta invalida do provedor: {}'.format(str(body)[:200]))
     if isinstance(data, dict) and 'ERROR' in data:
         errs = data.get('ERROR') or []
-        if isinstance(errs, dict):
-            errs = [errs]
-        elif not isinstance(errs, list):
-            errs = [errs]
-        if errs:
-            first = errs[0]
-            if isinstance(first, dict):
-                message = first.get('MESSAGE') or first.get('message') or 'Erro do provedor'
-            else:
-                message = str(first)
-            raise ProviderError(str(message))
-        raise ProviderError('Erro do provedor')
+        message = errs[0].get('MESSAGE', 'Erro do provedor') if errs else 'Erro do provedor'
+        raise ProviderError(str(message))
     return data
 
 
 def _success_rows(data):
     rows = data.get('SUCCESS') or []
-    if isinstance(rows, dict):
-        rows = [rows]
-    elif not isinstance(rows, list):
-        rows = [rows] if rows is not None else []
     if not rows:
         raise ProviderError('Resposta sem SUCCESS do provedor.')
     return rows
@@ -796,15 +782,8 @@ def submit_local_order(order):
     except ProviderError as exc:
         _log(api, 'place fail order #{}: {}'.format(order.id, exc))
         return False, str(exc)
-    if not isinstance(row, dict):
-        _log(api, 'place invalid row order #{}: {}'.format(order.id, row))
-        return False, 'Resposta invalida do provedor.'
     ref = row.get('REFERENCEID') or row.get('referenceid') or row.get('ORDERID')
-    message = row.get('MESSAGE') or row.get('message')
     if not str(ref or '').strip():
-        if message:
-            _log(api, 'place unavailable order #{}: {}'.format(order.id, message))
-            return False, str(message)
         _log(api, 'place empty ref order #{}: {}'.format(order.id, row))
         return False, 'Provedor nao retornou numero do pedido.'
     code = _reply_from_row(row)
