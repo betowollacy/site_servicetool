@@ -103,7 +103,7 @@
                             <input type="text" name="code" class="form-control form-control-sm" style="max-width: 320px" value="{{ item.code }}" placeholder="usuario;senha (nova senha)">
                             <div class="input-group input-group-sm" style="max-width: 150px;" title="Vezes que este login pode ser vendido">
                                 <span class="input-group-text">Vezes</span>
-                                <input type="number" name="max_uses" class="form-control" min="1" value="{{ item.max_uses }}">
+                                <input type="number" name="max_uses" class="form-control js-max-uses" min="1" value="{{ item.max_uses }}">
                             </div>
                             <button type="submit" class="btn btn-sm btn-light-primary"><i class="ti ti-edit"></i> Salvar</button>
                         </form>
@@ -128,13 +128,15 @@
                     <td>
                         <div class="d-flex flex-wrap gap-2">
                             {% if item.is_available %}
-                            <form method="post" action="{% url 'admin_inventory_toggle' item.id %}">
+                            <form method="post" action="{% url 'admin_inventory_toggle' item.id %}" class="js-toggle-form">
                                 {% csrf_token %}
+                                <input type="hidden" name="max_uses" class="js-max-hidden" value="{{ item.max_uses }}">
                                 <button type="submit" class="btn btn-sm btn-light-warning" title="Marcar como em uso (indisponível)"><i class="ti ti-lock"></i></button>
                             </form>
                             {% else %}
-                            <form method="post" action="{% url 'admin_inventory_toggle' item.id %}" onsubmit="return confirm('Disponibilizar esta credencial novamente? Ela voltará para o fim da fila de pedidos.')">
+                            <form method="post" action="{% url 'admin_inventory_toggle' item.id %}" class="js-toggle-form" onsubmit="return confirm('Disponibilizar esta credencial novamente? Ela voltará para o fim da fila de pedidos.')">
                                 {% csrf_token %}
+                                <input type="hidden" name="max_uses" class="js-max-hidden" value="{{ item.max_uses }}">
                                 <button type="submit" class="btn btn-sm btn-light-success" title="Disponibilizar novamente"><i class="ti ti-unlock"></i></button>
                             </form>
                             {% endif %}
@@ -175,6 +177,12 @@
         $("#serviceSearch").on("keyup", applyService);
         applyCreds();
         applyService();
+        // Ao clicar em Disponibilizar/Bloquear, aplica tambem o valor atual do
+        // campo "Vezes" da linha (assim nao precisa salvar separado).
+        $(document).on("submit", "form.js-toggle-form", function () {
+            var v = $(this).closest("tr").find(".js-max-uses").val();
+            if (v) { $(this).find(".js-max-hidden").val(v); }
+        });
     });
 </script>
 {% endblock %}

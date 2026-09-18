@@ -1695,6 +1695,9 @@ def _store_inventory_credentials(inv, creds, max_uses):
                 if item.uses_count < max_uses:
                     item.status = 'Available'
                     fields.append('status')
+                elif item.status != 'Sold out':
+                    item.status = 'Sold out'
+                    fields.append('status')
                 item.save(update_fields=fields)
                 updated += 1
         return added, updated, skipped
@@ -1708,6 +1711,9 @@ def _store_inventory_credentials(inv, creds, max_uses):
                 fields = ['max_uses']
                 if item.uses_count < max_uses:
                     item.status = 'Available'
+                    fields.append('status')
+                elif item.status != 'Sold out':
+                    item.status = 'Sold out'
                     fields.append('status')
                 item.save(update_fields=fields)
                 updated += 1
@@ -1904,8 +1910,14 @@ def admin_inventory_edit(request, data_id):
             if new_max != item.max_uses:
                 item.max_uses = new_max
                 fields.append('max_uses')
-                if item.uses_count < new_max and item.status != 'Available':
-                    item.status = 'Available'
+                # Mantem o status coerente com os usos: reabre se ainda ha usos
+                # disponiveis, ou marca como esgotado se o limite foi reduzido.
+                if item.uses_count < new_max:
+                    if item.status != 'Available':
+                        item.status = 'Available'
+                        fields.append('status')
+                elif item.status != 'Sold out':
+                    item.status = 'Sold out'
                     fields.append('status')
         if fields:
             item.save(update_fields=fields)
@@ -1919,14 +1931,19 @@ def admin_inventory_edit(request, data_id):
 def admin_inventory_toggle(request, data_id):
     item = InventoryData.objects.filter(id=data_id).first()
     if item and request.method == 'POST':
-        if item.status == 'Available':
+        if 'max_uses' in request.POST:
+            item.max_uses = _parse_max_uses(request.POST.get('max_uses'))
+        # Usa a mesma regra da tela (status + usos restantes). Antes o botao
+        # comparava so o status, entao um login sem usos restantes mas com status
+        # 'Available' era bloqueado em vez de liberado.
+        if item.is_available:
             item.status = 'Sold out'
             messages.success(request, 'Credencial marcada como em uso (indisponível).')
         else:
             item.status = 'Available'
             item.uses_count = 0
             item.order = None
-            messages.success(request, 'Credencial disponibilizada novamente para o próximo pedido.')
+            messages.success(request, 'Credencial disponibilizada novamente ({} venda(s) liberada(s)).'.format(item.max_uses))
         item.save()
         _refresh_inventory_counts(item.inventory)
         return redirect('admin_inventory_detail', item.inventory_id)

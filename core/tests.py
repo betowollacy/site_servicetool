@@ -1634,6 +1634,23 @@ class InventoryDeliveryTests(TestCase):
         self.assertEqual(inv.availableCount, 1)
         self.assertEqual(inv.soldOutCount, 0)
 
+    def test_toggle_liberates_when_no_uses_left(self):
+        # Caso em que o status ficou 'Available' mas os usos acabaram: o botao
+        # deve liberar (zerar os usos), nao bloquear.
+        inv = Inventory.objects.create(name='AMT Limite')
+        item = InventoryData.objects.create(
+            inventory=inv, code='Usuario: login1 | Senha: senha1',
+            status='Available', max_uses=5, uses_count=5,
+        )
+        resp = self.client.post(reverse('admin_inventory_toggle', args=[item.id]))
+        self.assertEqual(resp.status_code, 302)
+        item.refresh_from_db()
+        inv.refresh_from_db()
+        self.assertEqual(item.uses_count, 0)
+        self.assertEqual(item.status, 'Available')
+        self.assertTrue(item.is_available)
+        self.assertEqual(inv.availableCount, 1)
+
     def test_edit_credential_updates_code(self):
         inv = Inventory.objects.create(name='AMT')
         item = InventoryData.objects.create(inventory=inv, code='Usuario: login1 | Senha: senha1', status='Available')
