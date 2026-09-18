@@ -25,7 +25,12 @@
     .order-data { min-width: 200px; max-width: 340px; white-space: normal; }
     .order-data .gsm-reply-text { font-size: 11.5px; padding-top: 0; }
 
-    .gsm-modal .modal-content { border: 1px solid var(--bs-border-color); border-radius: 10px; overflow: hidden; background: var(--bs-body-bg); }
+    .gsm-modal .modal-content { border: 1px solid var(--bs-border-color); border-radius: 10px; overflow: hidden; background: var(--bs-body-bg); transform: translateZ(0); backface-visibility: hidden; }
+    .gsm-modal .modal-dialog { transition: none !important; transform: none !important; }
+    .gsm-modal .modal-body { scrollbar-gutter: stable both-edges; scrollbar-width: thin; }
+    .gsm-modal .modal-body::-webkit-scrollbar { width: 8px; height: 8px; }
+    .gsm-modal .modal-body::-webkit-scrollbar-track { background: transparent; }
+    .gsm-modal .modal-body::-webkit-scrollbar-thumb { background: rgba(var(--bs-secondary-rgb), 0.45); border-radius: 4px; }
     .gsm-modal-header {
         background: #16307c; color: #fff; padding: 11px 14px;
         font-weight: 700; font-size: 14px; letter-spacing: .3px;
