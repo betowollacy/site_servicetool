@@ -16,6 +16,9 @@
 
             <p>Fatura <b>#{{ invoice.id }}</b> - {{ invoice.invoice_title|default:invoice.invoice_for }}</p>
             <h4 class="mb-4">R$ {{ invoice.invoice_amount|floatformat:2 }}</h4>
+            {% if invoice.payment_gateway == 'Binance' and deposit %}
+                <p class="mb-4">Valor a pagar na Binance: <b>{{ deposit.gateway_amount|floatformat:2 }} USDT</b></p>
+            {% endif %}
 
             {% if deposit %}
                 {% if deposit.status == 'Paid' %}

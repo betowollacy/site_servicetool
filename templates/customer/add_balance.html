@@ -30,8 +30,8 @@
                                 <h2 class="display-1 fs-4 fw-medium">Adicionar Saldo/Fundos</h2>
                                 <hr class="text-muted">
                                 <div class="mb-4 pb-1">
-                                    <label for="addAmountField" class="form-label">Informe o valor em <strong>BRL (R$)</strong></label>
-                                    <input type="text" name="Amount" class="form-control" id="addAmountField" value="{{ add_amount }}" placeholder="Informe o valor">
+                                    <label for="addAmountField" class="form-label">Informe o valor em <strong id="addAmountCurrency">BRL (R$)</strong></label>
+                                    <input type="text" name="Amount" class="form-control" id="addAmountField" value="{{ add_amount }}" placeholder="Informe o valor em BRL">
                                 </div>
                                 <div class="row mb-4 justify-content-center justify-content-md-start mx-auto">
                                     {% for gateway in activeGateway %}
@@ -81,4 +81,24 @@
         </div>
     </div>
 </div>
-{% endblock %}
+{% endblock content %}
+{% block footer_script %}
+<script>
+    (function () {
+        var currency = document.getElementById('addAmountCurrency');
+        var amountField = document.getElementById('addAmountField');
+        if (!currency || !amountField) return;
+        var radios = document.querySelectorAll('input[name="payment_methode"]');
+        function syncCurrency() {
+            var checked = document.querySelector('input[name="payment_methode"]:checked');
+            var isBinance = checked && checked.value.toLowerCase() === 'binance';
+            currency.textContent = isBinance ? 'USDT' : 'BRL (R$)';
+            amountField.placeholder = isBinance ? 'Informe o valor em USDT' : 'Informe o valor em BRL';
+        }
+        radios.forEach(function (radio) {
+            radio.addEventListener('change', syncCurrency);
+        });
+        syncCurrency();
+    })();
+</script>
+{% endblock footer_script %}
