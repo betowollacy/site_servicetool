@@ -124,7 +124,7 @@
                 </thead>
                 <tbody>
                     {% for order in orders %}
-                    <tr class="order-row" data-bs-toggle="modal" data-bs-target="#orderModal-{{ order.id }}" role="button">
+                    <tr class="order-row" data-order-id="{{ order.id }}" role="button">
                         <td class="fw-bold" data-label="Pedido">#{{ order.id }}</td>
                         <td data-label="Data">{{ order.created_at|date:"d-m-Y H:i" }}</td>
                         <td data-label="Serviço">{{ order.service_title }}</td>
@@ -154,84 +154,85 @@
                     {% endfor %}
                 </tbody>
             </table>
-            {% for order in orders %}
-            <div class="modal fade gsm-modal" id="orderModal-{{ order.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal fade gsm-modal" id="orderDetailModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered modal-fullscreen-sm-down">
                     <div class="modal-content">
                         <div class="gsm-modal-header d-flex justify-content-between align-items-center">
-                            <span>ORDER ID: #{{ order.id }}</span>
+                            <span id="odm-order-id">ORDER ID</span>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
                         </div>
-                        <div class="modal-body p-3 p-md-4">
-                            <p class="gsm-service-title">{{ order.service_title }}</p>
-
-                            <div class="gsm-card gray d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <div>
-                                    <div class="gsm-lbl">Amount</div>
-                                    <div class="gsm-amount">{{ order.service_price|floatformat:2 }} <small>BRL</small></div>
-                                </div>
-                                <span class="gsm-badge {% if order.service_status == 'Success' %}success{% elif order.service_status == 'Rejected' %}rejected{% elif order.service_status == 'In Process' %}processing{% else %}waiting{% endif %}">
-                                    {% if order.service_status == 'Success' %}&check; {% endif %}{{ order.service_status }}
-                                </span>
-                            </div>
-
-                            <div class="gsm-card gray">
-                                <div class="gsm-lbl">Timeline</div>
-                                <div class="gsm-timeline-item">
-                                    <div class="gsm-timeline-lbl">Submitted</div>
-                                    <div class="gsm-timeline-val">{{ order.created_at|date:"d-m-Y H:i" }}</div>
-                                </div>
-                                <div class="gsm-timeline-item">
-                                    <div class="gsm-timeline-lbl">Replied</div>
-                                    <div class="gsm-timeline-val">{{ order.updated_at|date:"d-m-Y H:i" }}</div>
-                                </div>
-                                <div class="gsm-timeline-item">
-                                    <div class="gsm-timeline-lbl">Processing</div>
-                                    <div class="gsm-timeline-val green" data-submitted="{{ order.created_at|date:'Y-m-d H:i:s' }}" data-replied="{{ order.updated_at|date:'Y-m-d H:i:s' }}" data-processing>...</div>
-                                </div>
-                            </div>
-
-                            <div class="gsm-card gray">
-                                <div class="gsm-lbl">Dados da compra</div>
-                                {% if order.service_qnt %}
-                                <div class="gsm-reply-text"><b>Quantidade:</b> {{ order.service_qnt }}</div>
-                                {% endif %}
-                                {% for item in order.order_inputs.all %}
-                                <div class="gsm-reply-text"><b>{{ item.field_name }}:</b> {{ item.field_value }}</div>
-                                {% endfor %}
-                                {% if not order.service_qnt and not order.order_inputs.all and order.service_input1 %}
-                                <div class="gsm-reply-text"><b>Entrada:</b> {{ order.service_input1 }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="gsm-card gray">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <div class="gsm-lbl mb-0">Reply</div>
-                                    {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
-                                    <button type="button" class="btn-copy copy-response" data-target="reply-{{ order.id }}"><i class="ti ti-copy"></i> Copy</button>
-                                    {% endif %}
-                                </div>
-                                {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
-                                <div class="gsm-reply-text" id="reply-{{ order.id }}">{{ order.replied_in|default:order.service_comments|richtext }}</div>
-                                {% elif order.service_status == 'In Process' %}
-                                <div class="gsm-reply-text muted">Seu pedido está em processamento. A resposta aparecerá aqui em instantes.</div>
-                                {% elif order.service_status == 'Rejected' %}
-                                <div class="gsm-reply-text muted">Pedido não concluído. O valor foi estornado ao seu saldo.</div>
-                                {% else %}
-                                <div class="gsm-reply-text muted">Aguardando confirmação do pagamento.</div>
-                                {% endif %}
-                            </div>
-
-                            {% if order.service_input1 %}
-                            <div class="gsm-card gray">
-                                <div class="gsm-lbl">Entrada</div>
-                                <div class="gsm-reply-text muted">{{ order.service_input1 }}</div>
-                            </div>
-                            {% endif %}
-                        </div>
+                        <div class="modal-body p-3 p-md-4" id="odm-body"></div>
                     </div>
                 </div>
             </div>
+            {% for order in orders %}
+            <template id="ordertpl-{{ order.id }}">
+                <p class="gsm-service-title">{{ order.service_title }}</p>
+
+                <div class="gsm-card gray d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <div class="gsm-lbl">Amount</div>
+                        <div class="gsm-amount">{{ order.service_price|floatformat:2 }} <small>BRL</small></div>
+                    </div>
+                    <span class="gsm-badge {% if order.service_status == 'Success' %}success{% elif order.service_status == 'Rejected' %}rejected{% elif order.service_status == 'In Process' %}processing{% else %}waiting{% endif %}">
+                        {% if order.service_status == 'Success' %}&check; {% endif %}{{ order.service_status }}
+                    </span>
+                </div>
+
+                <div class="gsm-card gray">
+                    <div class="gsm-lbl">Timeline</div>
+                    <div class="gsm-timeline-item">
+                        <div class="gsm-timeline-lbl">Submitted</div>
+                        <div class="gsm-timeline-val">{{ order.created_at|date:"d-m-Y H:i" }}</div>
+                    </div>
+                    <div class="gsm-timeline-item">
+                        <div class="gsm-timeline-lbl">Replied</div>
+                        <div class="gsm-timeline-val">{{ order.updated_at|date:"d-m-Y H:i" }}</div>
+                    </div>
+                    <div class="gsm-timeline-item">
+                        <div class="gsm-timeline-lbl">Processing</div>
+                        <div class="gsm-timeline-val green" data-submitted="{{ order.created_at|date:'Y-m-d H:i:s' }}" data-replied="{{ order.updated_at|date:'Y-m-d H:i:s' }}" data-processing>...</div>
+                    </div>
+                </div>
+
+                <div class="gsm-card gray">
+                    <div class="gsm-lbl">Dados da compra</div>
+                    {% if order.service_qnt %}
+                    <div class="gsm-reply-text"><b>Quantidade:</b> {{ order.service_qnt }}</div>
+                    {% endif %}
+                    {% for item in order.order_inputs.all %}
+                    <div class="gsm-reply-text"><b>{{ item.field_name }}:</b> {{ item.field_value }}</div>
+                    {% endfor %}
+                    {% if not order.service_qnt and not order.order_inputs.all and order.service_input1 %}
+                    <div class="gsm-reply-text"><b>Entrada:</b> {{ order.service_input1 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="gsm-card gray">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="gsm-lbl mb-0">Reply</div>
+                        {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
+                        <button type="button" class="btn-copy copy-response" data-target="reply-{{ order.id }}"><i class="ti ti-copy"></i> Copy</button>
+                        {% endif %}
+                    </div>
+                    {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
+                    <div class="gsm-reply-text" id="reply-{{ order.id }}">{{ order.replied_in|default:order.service_comments|richtext }}</div>
+                    {% elif order.service_status == 'In Process' %}
+                    <div class="gsm-reply-text muted">Seu pedido está em processamento. A resposta aparecerá aqui em instantes.</div>
+                    {% elif order.service_status == 'Rejected' %}
+                    <div class="gsm-reply-text muted">Pedido não concluído. O valor foi estornado ao seu saldo.</div>
+                    {% else %}
+                    <div class="gsm-reply-text muted">Aguardando confirmação do pagamento.</div>
+                    {% endif %}
+                </div>
+
+                {% if order.service_input1 %}
+                <div class="gsm-card gray">
+                    <div class="gsm-lbl">Entrada</div>
+                    <div class="gsm-reply-text muted">{{ order.service_input1 }}</div>
+                </div>
+                {% endif %}
+            </template>
             {% endfor %}
         </div>
     </div>
@@ -245,32 +246,47 @@
         if (sec < 86400) return Math.floor(sec / 3600) + ' Hrs ' + Math.floor((sec % 3600) / 60) + ' Min';
         return Math.floor(sec / 86400) + ' Days ' + Math.floor((sec % 86400) / 3600) + ' Hrs';
     }
-    document.querySelectorAll('[data-processing]').forEach(function(el) {
-        var s = new Date(el.dataset.submitted.replace(' ', 'T'));
-        var r = new Date(el.dataset.replied.replace(' ', 'T'));
-        var sec = Math.max(0, Math.floor((r - s) / 1000));
-        el.textContent = fmtDuration(sec);
-    });
-    document.querySelectorAll('.copy-response').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var text = document.getElementById(btn.dataset.target).textContent.trim();
-            function done() {
-                var original = btn.innerHTML;
-                btn.innerHTML = '<i class="ti ti-check"></i> Copied';
-                setTimeout(function() { btn.innerHTML = original; }, 2000);
-            }
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(done);
-            } else {
-                var ta = document.createElement('textarea');
-                ta.value = text;
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand('copy');
-                document.body.removeChild(ta);
-                done();
+    var odmBody = document.getElementById('odm-body');
+    var odmOrderId = document.getElementById('odm-order-id');
+    var odmModalEl = document.getElementById('orderDetailModal');
+    document.querySelectorAll('.order-row').forEach(function (tr) {
+        tr.addEventListener('click', function () {
+            var id = tr.getAttribute('data-order-id');
+            var tpl = document.getElementById('ordertpl-' + id);
+            if (!tpl) return;
+            odmOrderId.textContent = 'ORDER ID: #' + id;
+            odmBody.innerHTML = '';
+            odmBody.appendChild(tpl.content.cloneNode(true));
+            odmBody.querySelectorAll('[data-processing]').forEach(function (el) {
+                var s = new Date(el.dataset.submitted.replace(' ', 'T'));
+                var r = new Date(el.dataset.replied.replace(' ', 'T'));
+                el.textContent = fmtDuration(Math.max(0, Math.floor((r - s) / 1000)));
+            });
+            if (window.bootstrap && bootstrap.Modal) {
+                bootstrap.Modal.getOrCreateInstance(odmModalEl).show();
             }
         });
+    });
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('.copy-response');
+        if (!btn) return;
+        var text = document.getElementById(btn.dataset.target).textContent.trim();
+        function done() {
+            var original = btn.innerHTML;
+            btn.innerHTML = '<i class="ti ti-check"></i> Copied';
+            setTimeout(function () { btn.innerHTML = original; }, 2000);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done);
+        } else {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            done();
+        }
     });
 </script>
 {% endblock %}

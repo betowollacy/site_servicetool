@@ -696,6 +696,15 @@
                     requestAnimationFrame(frame);
                 })(loop);
             }
+
+            var fxList = Array.prototype.slice.call(canvases);
+            function setCanvasBehind(on) {
+                for (var i = 0; i < fxList.length; i++) {
+                    fxList[i].classList.toggle('page-effect-canvas-behind', on);
+                }
+            }
+            document.addEventListener('show.bs.modal', function () { setCanvasBehind(true); });
+            document.addEventListener('hidden.bs.modal', function () { setCanvasBehind(false); });
         })();
     </script>
     {% endif %}
