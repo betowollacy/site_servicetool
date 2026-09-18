@@ -711,9 +711,10 @@ def deliver_from_inventory(order):
     item.status = 'Sold out'
     item.order = order
     item.save(update_fields=['status', 'order'])
-    order.replied_in = (item.code or '')[:500]
+    code = (item.code or '')[:500]
+    order.replied_in = code
+    order.service_comments = code
     order.service_status = 'Success'
-    order.service_comments = (order.service_comments or '') + ' Login/senha entregues do estoque #{}.'.format(item.id)
     order.save(update_fields=['replied_in', 'service_status', 'service_comments'])
     from . import notify
     notify.send_order_email(order)

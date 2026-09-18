@@ -123,8 +123,8 @@
                             {% for item in order.order_inputs.all %}
                             <div><b>{{ item.field_name }}:</b> {{ item.field_value }}</div>
                             {% endfor %}
-                            {% if order.service_comments|default:order.replied_in %}
-                            <div class="gsm-reply-text">{{ order.service_comments|default:order.replied_in|richtext }}</div>
+                            {% if order.replied_in|default:order.service_comments %}
+                            <div class="gsm-reply-text">{{ order.replied_in|default:order.service_comments|richtext }}</div>
                             {% elif not order.service_qnt and not order.order_inputs.all and order.service_input1 %}
                             <span class="text-muted">Entrada: {{ order.service_input1 }}</span>
                             {% elif not order.service_qnt and not order.order_inputs.all %}
@@ -187,12 +187,12 @@
                                     <div class="gsm-card gray">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <div class="gsm-lbl mb-0">Reply</div>
-                                            {% if order.service_status == 'Success' and order.service_comments|default:order.replied_in %}
+                                            {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
                                             <button type="button" class="btn-copy copy-response" data-target="reply-{{ order.id }}"><i class="ti ti-copy"></i> Copy</button>
                                             {% endif %}
                                         </div>
-                                        {% if order.service_status == 'Success' and order.service_comments|default:order.replied_in %}
-                                        <div class="gsm-reply-text" id="reply-{{ order.id }}">{{ order.service_comments|default:order.replied_in|richtext }}</div>
+                                        {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
+                                        <div class="gsm-reply-text" id="reply-{{ order.id }}">{{ order.replied_in|default:order.service_comments|richtext }}</div>
                                         {% elif order.service_status == 'In Process' %}
                                         <div class="gsm-reply-text muted">Seu pedido está em processamento. A resposta aparecerá aqui em instantes.</div>
                                         {% elif order.service_status == 'Rejected' %}
