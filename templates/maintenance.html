@@ -106,7 +106,13 @@
         {% endif %}
         {% if siteWaUrl or siteTeleUrl %}
         <div class="contacts">
-            {% if siteWaUrl %}<a href="{{ siteWaUrl }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
+            {% if siteWaContacts %}
+            {% for c in siteWaContacts %}
+            <a href="https://wa.me/{{ c.number }}" target="_blank" rel="noopener">WhatsApp — {% if c.name %}{{ c.name }}{% else %}{{ c.number }}{% endif %}</a>
+            {% endfor %}
+            {% elif siteWaUrl %}
+            <a href="{{ siteWaUrl }}" target="_blank" rel="noopener">WhatsApp</a>
+            {% endif %}
             {% if siteTeleUrl %}<a href="{{ siteTeleUrl }}" target="_blank" rel="noopener">Telegram</a>{% endif %}
         </div>
         {% endif %}
