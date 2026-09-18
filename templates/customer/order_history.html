@@ -149,88 +149,90 @@
                         <td data-label="Status"><span class="badge {% if order.service_status == 'Success' %}bg-light-success{% elif order.service_status == 'Rejected' %}bg-light-danger{% else %}bg-light-warning{% endif %}">{{ order.service_status }}</span></td>
                         <td><i class="ti ti-chevron-right"></i></td>
                     </tr>
-                    <div class="modal fade gsm-modal" id="orderModal-{{ order.id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered modal-fullscreen-sm-down">
-                            <div class="modal-content">
-                                <div class="gsm-modal-header d-flex justify-content-between align-items-center">
-                                    <span>ORDER ID: #{{ order.id }}</span>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-                                </div>
-                                <div class="modal-body p-3 p-md-4">
-                                    <p class="gsm-service-title">{{ order.service_title }}</p>
-
-                                    <div class="gsm-card gray d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                        <div>
-                                            <div class="gsm-lbl">Amount</div>
-                                            <div class="gsm-amount">{{ order.service_price|floatformat:2 }} <small>BRL</small></div>
-                                        </div>
-                                        <span class="gsm-badge {% if order.service_status == 'Success' %}success{% elif order.service_status == 'Rejected' %}rejected{% elif order.service_status == 'In Process' %}processing{% else %}waiting{% endif %}">
-                                            {% if order.service_status == 'Success' %}&check; {% endif %}{{ order.service_status }}
-                                        </span>
-                                    </div>
-
-                                    <div class="gsm-card gray">
-                                        <div class="gsm-lbl">Timeline</div>
-                                        <div class="gsm-timeline-item">
-                                            <div class="gsm-timeline-lbl">Submitted</div>
-                                            <div class="gsm-timeline-val">{{ order.created_at|date:"d-m-Y H:i" }}</div>
-                                        </div>
-                                        <div class="gsm-timeline-item">
-                                            <div class="gsm-timeline-lbl">Replied</div>
-                                            <div class="gsm-timeline-val">{{ order.updated_at|date:"d-m-Y H:i" }}</div>
-                                        </div>
-                                        <div class="gsm-timeline-item">
-                                            <div class="gsm-timeline-lbl">Processing</div>
-                                            <div class="gsm-timeline-val green" data-submitted="{{ order.created_at|date:'Y-m-d H:i:s' }}" data-replied="{{ order.updated_at|date:'Y-m-d H:i:s' }}" data-processing>...</div>
-                                        </div>
-                                    </div>
-
-                                    <div class="gsm-card gray">
-                                        <div class="gsm-lbl">Dados da compra</div>
-                                        {% if order.service_qnt %}
-                                        <div class="gsm-reply-text"><b>Quantidade:</b> {{ order.service_qnt }}</div>
-                                        {% endif %}
-                                        {% for item in order.order_inputs.all %}
-                                        <div class="gsm-reply-text"><b>{{ item.field_name }}:</b> {{ item.field_value }}</div>
-                                        {% endfor %}
-                                        {% if not order.service_qnt and not order.order_inputs.all and order.service_input1 %}
-                                        <div class="gsm-reply-text"><b>Entrada:</b> {{ order.service_input1 }}</div>
-                                        {% endif %}
-                                    </div>
-
-                                    <div class="gsm-card gray">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <div class="gsm-lbl mb-0">Reply</div>
-                                            {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
-                                            <button type="button" class="btn-copy copy-response" data-target="reply-{{ order.id }}"><i class="ti ti-copy"></i> Copy</button>
-                                            {% endif %}
-                                        </div>
-                                        {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
-                                        <div class="gsm-reply-text" id="reply-{{ order.id }}">{{ order.replied_in|default:order.service_comments|richtext }}</div>
-                                        {% elif order.service_status == 'In Process' %}
-                                        <div class="gsm-reply-text muted">Seu pedido está em processamento. A resposta aparecerá aqui em instantes.</div>
-                                        {% elif order.service_status == 'Rejected' %}
-                                        <div class="gsm-reply-text muted">Pedido não concluído. O valor foi estornado ao seu saldo.</div>
-                                        {% else %}
-                                        <div class="gsm-reply-text muted">Aguardando confirmação do pagamento.</div>
-                                        {% endif %}
-                                    </div>
-
-                                    {% if order.service_input1 %}
-                                    <div class="gsm-card gray">
-                                        <div class="gsm-lbl">Entrada</div>
-                                        <div class="gsm-reply-text muted">{{ order.service_input1 }}</div>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     {% empty %}
                     <tr><td colspan="7" class="text-center">Nenhum pedido encontrado.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
+            {% for order in orders %}
+            <div class="modal fade gsm-modal" id="orderModal-{{ order.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered modal-fullscreen-sm-down">
+                    <div class="modal-content">
+                        <div class="gsm-modal-header d-flex justify-content-between align-items-center">
+                            <span>ORDER ID: #{{ order.id }}</span>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                        </div>
+                        <div class="modal-body p-3 p-md-4">
+                            <p class="gsm-service-title">{{ order.service_title }}</p>
+
+                            <div class="gsm-card gray d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <div class="gsm-lbl">Amount</div>
+                                    <div class="gsm-amount">{{ order.service_price|floatformat:2 }} <small>BRL</small></div>
+                                </div>
+                                <span class="gsm-badge {% if order.service_status == 'Success' %}success{% elif order.service_status == 'Rejected' %}rejected{% elif order.service_status == 'In Process' %}processing{% else %}waiting{% endif %}">
+                                    {% if order.service_status == 'Success' %}&check; {% endif %}{{ order.service_status }}
+                                </span>
+                            </div>
+
+                            <div class="gsm-card gray">
+                                <div class="gsm-lbl">Timeline</div>
+                                <div class="gsm-timeline-item">
+                                    <div class="gsm-timeline-lbl">Submitted</div>
+                                    <div class="gsm-timeline-val">{{ order.created_at|date:"d-m-Y H:i" }}</div>
+                                </div>
+                                <div class="gsm-timeline-item">
+                                    <div class="gsm-timeline-lbl">Replied</div>
+                                    <div class="gsm-timeline-val">{{ order.updated_at|date:"d-m-Y H:i" }}</div>
+                                </div>
+                                <div class="gsm-timeline-item">
+                                    <div class="gsm-timeline-lbl">Processing</div>
+                                    <div class="gsm-timeline-val green" data-submitted="{{ order.created_at|date:'Y-m-d H:i:s' }}" data-replied="{{ order.updated_at|date:'Y-m-d H:i:s' }}" data-processing>...</div>
+                                </div>
+                            </div>
+
+                            <div class="gsm-card gray">
+                                <div class="gsm-lbl">Dados da compra</div>
+                                {% if order.service_qnt %}
+                                <div class="gsm-reply-text"><b>Quantidade:</b> {{ order.service_qnt }}</div>
+                                {% endif %}
+                                {% for item in order.order_inputs.all %}
+                                <div class="gsm-reply-text"><b>{{ item.field_name }}:</b> {{ item.field_value }}</div>
+                                {% endfor %}
+                                {% if not order.service_qnt and not order.order_inputs.all and order.service_input1 %}
+                                <div class="gsm-reply-text"><b>Entrada:</b> {{ order.service_input1 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="gsm-card gray">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="gsm-lbl mb-0">Reply</div>
+                                    {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
+                                    <button type="button" class="btn-copy copy-response" data-target="reply-{{ order.id }}"><i class="ti ti-copy"></i> Copy</button>
+                                    {% endif %}
+                                </div>
+                                {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
+                                <div class="gsm-reply-text" id="reply-{{ order.id }}">{{ order.replied_in|default:order.service_comments|richtext }}</div>
+                                {% elif order.service_status == 'In Process' %}
+                                <div class="gsm-reply-text muted">Seu pedido está em processamento. A resposta aparecerá aqui em instantes.</div>
+                                {% elif order.service_status == 'Rejected' %}
+                                <div class="gsm-reply-text muted">Pedido não concluído. O valor foi estornado ao seu saldo.</div>
+                                {% else %}
+                                <div class="gsm-reply-text muted">Aguardando confirmação do pagamento.</div>
+                                {% endif %}
+                            </div>
+
+                            {% if order.service_input1 %}
+                            <div class="gsm-card gray">
+                                <div class="gsm-lbl">Entrada</div>
+                                <div class="gsm-reply-text muted">{{ order.service_input1 }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
