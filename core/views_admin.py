@@ -1727,9 +1727,15 @@ def _store_inventory_credentials(inv, creds, max_uses):
     return added, updated, skipped
 
 
+def _inventory_available_units(inventory):
+    """Total de vendas ainda possiveis = soma dos usos restantes dos logins disponiveis."""
+    return sum(item.uses_left for item in InventoryData.objects.filter(inventory=inventory).available())
+
+
 def _refresh_inventory_counts(inventory):
-    available = InventoryData.objects.filter(inventory=inventory).available().count()
-    sold = InventoryData.objects.filter(inventory=inventory).count() - available
+    available = _inventory_available_units(inventory)
+    available_items = InventoryData.objects.filter(inventory=inventory).available().count()
+    sold = InventoryData.objects.filter(inventory=inventory).count() - available_items
     inventory.available_code = available
     inventory.availableCount = available
     inventory.soldOutCount = sold
@@ -1785,7 +1791,8 @@ def admin_inventory_list(request):
         _inventories.append({
             'inventory': inv,
             'service': ServiceList.objects.filter(inventory=inv).first(),
-            'available': InventoryData.objects.filter(inventory=inv).available().count(),
+            'available': _inventory_available_units(inv),
+            'available_items': InventoryData.objects.filter(inventory=inv).available().count(),
             'total': InventoryData.objects.filter(inventory=inv).count(),
         })
     services = ServiceList.objects.filter(status='Active').order_by('service_type', 'title')
@@ -1830,7 +1837,7 @@ def admin_inventory_detail(request, inventory_id):
         'linked_service': ServiceList.objects.filter(inventory=inv).first(),
         'services': ServiceList.objects.filter(status='Active').order_by('service_type', 'title'),
         'data_items': data_items,
-        'available': InventoryData.objects.filter(inventory=inv).available().count(),
+        'available': _inventory_available_units(inv),
         'in_use': (InventoryData.objects.filter(inventory=inv).count()
                    - InventoryData.objects.filter(inventory=inv).available().count()),
     })

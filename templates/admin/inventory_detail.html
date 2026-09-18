@@ -4,8 +4,8 @@
     <div class="col-12">
         <h4 class="mb-0">Estoque: {{ inventory.name }}</h4>
         <div class="d-flex flex-wrap gap-2 mt-2">
-            <span class="badge bg-light-success">{{ available }} disponível(is)</span>
-            <span class="badge bg-light-warning">{{ in_use }} em uso</span>
+            <span class="badge bg-light-success">{{ available }} venda(s) disponível(is)</span>
+            <span class="badge bg-light-warning">{{ in_use }} login(s) em uso</span>
             <span class="badge bg-light-primary">{{ data_items|length }} total</span>
             {% if linked_service %}<span class="badge bg-light-info">Serviço: {{ linked_service.title }}</span>{% endif %}
         </div>

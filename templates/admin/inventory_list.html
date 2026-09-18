@@ -74,9 +74,9 @@
                     <th>ID</th>
                     <th>Nome</th>
                     <th>Serviço vinculado</th>
-                    <th>Disponíveis</th>
-                    <th>Em uso</th>
-                    <th>Total</th>
+                    <th>Vendas disponíveis</th>
+                    <th>Logins em uso</th>
+                    <th>Logins (total)</th>
                     <th>Ação</th>
                 </tr>
             </thead>
@@ -92,9 +92,9 @@
                         <span class="text-muted">Nenhum serviço vinculado</span>
                         {% endif %}
                     </td>
-                    <td><span class="badge {% if item.available %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ item.available }} disponível(is)</span></td>
+                    <td><span class="badge {% if item.available %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ item.available }} venda(s)</span></td>
                     <td><span class="badge bg-light-warning">{{ item.inventory.soldOutCount }} em uso</span></td>
-                    <td>{{ item.total }}</td>
+                    <td>{{ item.total }} login(s) — {{ item.available_items }} livre(s)</td>
                     <td class="d-flex gap-1">
                         <a href="{% url 'admin_inventory_detail' item.inventory.id %}" class="btn btn-sm btn-light-primary"><i class="ti ti-key"></i> Ver logins</a>
                         <form method="post" action="{% url 'admin_inventory_delete' item.inventory.id %}" onsubmit="return confirm('Excluir o estoque &quot;{{ item.inventory.name }}&quot; e todas as suas credenciais?');">
