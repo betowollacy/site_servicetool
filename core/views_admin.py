@@ -1847,8 +1847,6 @@ def admin_gateway_update(request, gateway_id):
                   'binance_api_key', 'binance_secret_key', 'asaas_api_key']:
             if request.POST.get(f) is not None:
                 setattr(g, f, request.POST[f])
-        if request.POST.get('binance_private_key') is not None:
-            g.binance_private_key = request.POST['binance_private_key']
         g.asaas_sandbox = request.POST.get('asaas_sandbox') == 'on'
         g.save()
         messages.success(request, 'Gateway atualizado com sucesso.')

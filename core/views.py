@@ -908,8 +908,8 @@ def _pay_with_asaas(request, customer, invoice):
 
 def _pay_with_binance(request, customer, invoice):
     gateway = PaymentGateway.objects.filter(name__iexact='Binance', status='Active').first()
-    if not gateway or not (gateway.binance_private_key or '').strip():
-        messages.error(request, 'Gateway Binance nao configurado. Adicione a chave da API no painel.')
+    if not gateway or not (gateway.binance_api_key or '').strip() or not (gateway.binance_secret_key or '').strip():
+        messages.error(request, 'Gateway Binance nao configurado. Adicione a API Key e a API Secret no painel.')
         return redirect('checkout', invoice_id=invoice.id)
     try:
         data = binance.create_order(invoice, gateway)
@@ -1022,7 +1022,7 @@ def payment_status(request, customer, invoice_id):
                     pass
         elif gateway_name == 'binance':
             gateway = PaymentGateway.objects.filter(name__iexact='Binance', status='Active').first()
-            if gateway and (gateway.binance_private_key or '').strip() and deposit.gateway_payment_id:
+            if gateway and (gateway.binance_secret_key or '').strip() and deposit.gateway_payment_id:
                 try:
                     row = binance.query_order(gateway, deposit.gateway_payment_id)
                     if row and row.get('tradeStatus') == 'SUCCESS':
@@ -1064,8 +1064,10 @@ def binance_webhook(request):
     if not gateway:
         return HttpResponse('ok')
     signature = request.headers.get('BinancePay-Signature', '')
+    timestamp = request.headers.get('BinancePay-Timestamp', '')
+    nonce = request.headers.get('BinancePay-Nonce', '')
     payload_str = request.body.decode('utf-8')
-    if not binance.verify_notification(gateway, signature, payload_str):
+    if not binance.verify_notification(gateway, signature, payload_str, timestamp, nonce):
         return HttpResponse('verify failed', status=403)
     try:
         payload = json.loads(payload_str)
