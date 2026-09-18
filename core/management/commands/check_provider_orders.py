@@ -62,7 +62,15 @@ class Command(BaseCommand):
         for order in qs:
             total += 1
             try:
-                if (order.trx_id or '').strip():
+                service = order.service
+                if (order.service_status in ('In Process', 'Waiting Action')
+                        and service and service.inventory_id):
+                    # Serviço com estoque: entrega o login/senha local, sem API.
+                    delivered, _ = provider_api.deliver_from_inventory(order)
+                    if delivered:
+                        ok += 1
+                        notify.send_telegram(notify.completed_order_message(order))
+                elif (order.trx_id or '').strip():
                     if provider_api.sync_local_order(order):
                         ok += 1
                 elif order.service_status == 'In Process':

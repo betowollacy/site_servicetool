@@ -748,18 +748,14 @@ def submit_local_order(order):
     """Envia o pedido local ao provedor. Retorna (None, '') se não automático,
     (False, erro) se falhou, (True, ref) se enviado."""
     service = order.service
-    inventory_tried = False
+    # Serviço com estoque vinculado é entregue APENAS do estoque local (login e
+    # senha). Nunca chama o fornecedor, mesmo que a API esteja habilitada.
     if service and service.inventory_id:
-        inventory_tried = True
-        delivered, code = deliver_from_inventory(order)
-        if delivered:
-            return True, code
-    api = provider_for_order(order)
-    if api is None:
-        if inventory_tried:
-            return (None, '')
         delivered, code = deliver_from_inventory(order)
         return (True, code) if delivered else (None, '')
+    api = provider_for_order(order)
+    if api is None:
+        return (None, '')
     duplicate = _recent_duplicate_order(order)
     if duplicate is not None:
         msg = ('Compra duplicada bloqueada: o pedido #{} do mesmo serviço já '
@@ -845,10 +841,13 @@ def refund_order(order, message):
 
 def sync_local_order(order, notify_complete=True):
     """Consulta o status do pedido no provedor e atualiza o pedido local."""
+    service = order.service
+    # Pedidos de serviços com estoque são entregues localmente: não consulta a API.
+    if service and service.inventory_id:
+        return False
     api = provider_for_order(order)
     if api is None or not (order.trx_id or '').strip():
         return False
-    service = order.service
     actions = actions_for(service)
     get_action = _status_action(api)
     if _protocol(api) == _PROTOCOL_RITUNLOCKER:
