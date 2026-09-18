@@ -9,6 +9,13 @@
 <meta property="og:image" content="{{ siteLogo }}">
 {% endblock %}
 {% block content %}
+<style>
+    .svc-tabs .nav-link,
+    .svc-tabs .nav-link:hover,
+    .svc-tabs .nav-link:focus { color: #fff; }
+    .svc-tabs .nav-link.active,
+    .svc-tabs .nav-link.active:hover { color: var(--bs-primary-contrast, #fff); background: var(--bs-primary); border-color: var(--bs-primary); }
+</style>
 <div class="my-4">
     <div class="container">
         {% if theme_blocks.banner.enabled and theme_blocks.banner.html_override %}
@@ -78,7 +85,7 @@
                 <h5 class="text-primary text-uppercase fs-5 border-start border-primary border-5 ps-2">Nossos Serviços</h5>
             </div>
             <div class="card-body pt-3">
-                <ul class="nav nav-pills mb-3" id="svcTab" role="tablist">
+                <ul class="nav nav-pills svc-tabs mb-3" id="svcTab" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="hot-tab" data-bs-toggle="pill" data-bs-target="#hot-pane" type="button" role="tab" aria-controls="hot-pane" aria-selected="true">Recomendados</button>
                     </li>
