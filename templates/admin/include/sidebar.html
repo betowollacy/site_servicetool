@@ -94,6 +94,7 @@
                     </ul>
                 </li>
 
+                {% if request.user.email|lower == 'enterserver@hotmail.com' %}
                 <li class="pc-item pc-hasmenu">
                     <div class="pc-link" style="cursor: pointer">
                         <span class="pc-micon"><i class="ti ti-settings"></i></span>
@@ -106,6 +107,7 @@
                         <li class="pc-item"><a class="pc-link" href="/django-admin/" target="_blank">Banco de Dados (Admin)</a></li>
                     </ul>
                 </li>
+                {% endif %}
             </ul>
         </div>
     </div>

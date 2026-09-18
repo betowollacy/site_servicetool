@@ -60,6 +60,47 @@ def _is_stock_access_admin(user):
     return (getattr(user, 'email', '') or '').strip().lower() == STOCK_ACCESS_ADMIN_EMAIL
 
 
+SETTINGS_ACCESS_PASSWORD_KEY = 'settingsAccessPassword'
+SETTINGS_UNLOCK_SESSION = 'settings_access_unlocked'
+
+
+def _settings_access_owner(user):
+    return (getattr(user, 'email', '') or '').strip().lower() == STOCK_ACCESS_ADMIN_EMAIL
+
+
+def _settings_locked(request):
+    """True se a seção Configurações está protegida por senha e ainda não foi desbloqueada na sessão.
+
+    Nunca bloqueia o dono enquanto a senha não estiver configurada (primeiro acesso)."""
+    if not _settings_access_owner(request.user):
+        return True
+    if request.session.get(SETTINGS_UNLOCK_SESSION):
+        return False
+    expected = SystemSetting.get(SETTINGS_ACCESS_PASSWORD_KEY, '').strip()
+    return bool(expected)
+
+
+def _deny_settings_access(request):
+    messages.error(request, 'Acesso restrito à seção Configurações. Apenas o administrador dono pode acessá-la.')
+    return redirect('admin_dashboard')
+
+
+def _guard_settings_section(request,
+                            owner_msg='Acesso restrito à seção Configurações. Apenas o administrador dono pode acessá-la.',
+                            lock_msg='Seção Configurações bloqueada. Desbloqueie com a senha de acesso primeiro.'):
+    """Bloqueia qualquer página da seção Configurações para quem não é o dono,
+    e pede senha antes de abrir quando a senha de acesso estiver configurada.
+
+    Retorna uma HttpResponse de redirecionamento quando bloqueado, ou None se liberado."""
+    if not _settings_access_owner(request.user):
+        messages.error(request, owner_msg)
+        return redirect('admin_dashboard')
+    if _settings_locked(request):
+        messages.error(request, lock_msg)
+        return redirect('admin_setting')
+    return None
+
+
 def _check_stock_order_access(request, service):
     """Bloqueia a compra no painel de um produto entregue do estoque de logins
     (service.inventory) caso a senha de acesso não esteja configurada ou não bata.
@@ -1060,6 +1101,19 @@ def admin_direct_order(request):
 
 @_staff
 def admin_setting(request):
+    if not _settings_access_owner(request.user):
+        return _deny_settings_access(request)
+    unlock_password = request.POST.get('unlock_settings_password')
+    if request.method == 'POST' and unlock_password is not None:
+        expected = SystemSetting.get(SETTINGS_ACCESS_PASSWORD_KEY, '').strip()
+        if expected and (unlock_password or '').strip() == expected:
+            request.session[SETTINGS_UNLOCK_SESSION] = True
+            messages.success(request, 'Configurações desbloqueadas.')
+        else:
+            messages.error(request, 'Senha de acesso às Configurações incorreta.')
+        return redirect('admin_setting')
+    if _settings_locked(request):
+        return render(request, 'admin/setting_unlock.html', {})
     keys = [
         'siteTitle', 'siteMetaTitle', 'siteMetaDes', 'siteKeyword', 'siteLogo', 'siteFav',
         'siteEmailAddress', 'sitePhoneNumber', 'siteAddress',
@@ -1072,12 +1126,14 @@ def admin_setting(request):
     setting_keys = list(keys)
     if can_stock_password:
         setting_keys.append(STOCK_ACCESS_PASSWORD_KEY)
+        setting_keys.append(SETTINGS_ACCESS_PASSWORD_KEY)
     settings = {k: SystemSetting.get(k, '') for k in setting_keys}
     if request.method == 'POST':
         for k in setting_keys:
             obj, _ = SystemSetting.objects.get_or_create(key=k, defaults={'value': ''})
             obj.value = request.POST.get(k, '')
             obj.save()
+        request.session[SETTINGS_UNLOCK_SESSION] = True
         messages.success(request, 'Configurações salvas com sucesso.')
         return redirect('admin_setting')
     return render(request, 'admin/setting.html', {
@@ -1088,6 +1144,10 @@ def admin_setting(request):
 
 @_staff
 def admin_setting_upload_image(request, kind):
+    if not _settings_access_owner(request.user):
+        return JsonResponse({'error': 'Acesso restrito às Configurações.'}, status=403)
+    if _settings_locked(request):
+        return JsonResponse({'error': 'Seção Configurações bloqueada. Desbloqueie com a senha primeiro.'}, status=403)
     if kind not in ('logo', 'favicon'):
         return JsonResponse({'error': 'Tipo inválido.'}, status=400)
     if request.method != 'POST' or not request.FILES.get('image'):
@@ -1805,11 +1865,17 @@ def admin_order_deliver_credential(request, order_id):
 
 @_staff
 def admin_currency_list(request):
+    blocked = _guard_settings_section(request)
+    if blocked:
+        return blocked
     return render(request, 'admin/currency_list.html', {'currencies': Currency.objects.filter(code='BRL')})
 
 
 @_staff
 def admin_currency_update(request, currency_id):
+    blocked = _guard_settings_section(request)
+    if blocked:
+        return blocked
     cur = Currency.objects.filter(id=currency_id).first()
     if cur and cur.code == 'BRL' and request.method == 'POST':
         cur.status = 'Active'
@@ -1821,6 +1887,9 @@ def admin_currency_update(request, currency_id):
 
 @_staff
 def admin_gateway_list(request):
+    blocked = _guard_settings_section(request)
+    if blocked:
+        return blocked
     return render(request, 'admin/gateway_list.html', {
         'gateways': PaymentGateway.objects.filter(name__in=['Asaas', 'Binance', 'bKash']),
         'currencies': Currency.objects.filter(status='Active'),
@@ -1831,6 +1900,9 @@ def admin_gateway_list(request):
 
 @_staff
 def admin_gateway_update(request, gateway_id):
+    blocked = _guard_settings_section(request)
+    if blocked:
+        return blocked
     g = PaymentGateway.objects.filter(id=gateway_id).first()
     if g and request.method == 'POST':
         if request.POST.get('currency_code'):

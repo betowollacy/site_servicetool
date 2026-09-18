@@ -102,6 +102,18 @@
     </div>
     {% if can_stock_password %}
     <div class="card">
+        <div class="card-header"><h5>Acesso às Configurações — Senha</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <label class="form-label">Senha para abrir a seção Configurações</label>
+                    <input type="password" class="form-control" name="settingsAccessPassword" value="{{ settings.settingsAccessPassword }}" autocomplete="off">
+                    <div class="form-text">Área restrita: apenas você (enterserver@hotmail.com) acessa Configurações, Moedas e Gateways. Enquanto houver senha definida, ela será solicitada no acesso. Deixe vazio para desativar a proteção.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
         <div class="card-header"><h5>Estoque de Logins — Senha de Acesso</h5></div>
         <div class="card-body">
             <div class="row">

@@ -1,0 +1,26 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+        <div class="card">
+            <div class="card-header"><h5><i class="ti ti-lock me-2"></i>Seção Configurações — Acesso Restrito</h5></div>
+            <div class="card-body">
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+                {% endfor %}
+                {% endif %}
+                <p class="text-muted">Esta seção contém informações sensíveis do site. Digite a senha de acesso para desbloqueá-la.</p>
+                <form method="post" action="{% url 'admin_setting' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Senha de acesso</label>
+                        <input type="password" class="form-control" name="unlock_settings_password" autocomplete="off" autofocus>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100"><i class="ti ti-lock-open me-2"></i> Desbloquear</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
