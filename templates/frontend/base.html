@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="{% static 'frontend/css/select2.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/select2-bootstrap-5-theme.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/tabler-icons.min.css' %}" />
-    <link rel="stylesheet" href="{% static 'frontend/css/orionstyle.css' %}?v=3" />
+    <link rel="stylesheet" href="{% static 'frontend/css/orionstyle.css' %}?v=4" />
     <style>
         :root {
             --orion-primary: {{ site_css.primary }};
@@ -771,10 +771,15 @@
                     .catch(function () { setStatus(false); });
             } catch (e) { setStatus(true); }
             $faqBtn.on("click", function () {
+                if (window.__orionFaqClosed) return;
                 $faqBox.toggleClass("open");
                 if ($faqBox.hasClass("open")) $("#orionFaqSearch").trigger("focus");
             });
-            $("#orionFaqClose").on("click", function () { $faqBox.removeClass("open"); });
+            $("#orionFaqClose").on("click", function () {
+                window.__orionFaqClosed = true;
+                $faqBox.removeClass("open");
+                $faqBtn.hide();
+            });
             $faqBox.on("click", ".faq-q", function () {
                 $(this).closest(".faq-item").toggleClass("active").siblings().removeClass("active");
             });
