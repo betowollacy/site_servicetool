@@ -359,6 +359,7 @@
     <style>
         .page-effect-canvas{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9998}
         .page-effect-canvas-behind{z-index:-1 !important}
+        body.modal-open .page-effect-canvas{display:none}
     </style>
     {% for effect in page_effects %}
     <canvas class="page-effect-canvas{% if effect == 'pageEffectMatrix' %} page-effect-canvas-behind{% endif %}" data-effect="{{ effect }}"></canvas>
