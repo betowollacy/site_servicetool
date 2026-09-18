@@ -138,6 +138,19 @@ def _bool(value, default=False):
     return str(value).strip().lower() in ('1', 'true', 'yes', 'on')
 
 
+def _wa_url(raw):
+    """Normaliza siteWhatsappUrl: numero puro vira https://wa.me/<digits> (evita link relativo 404)."""
+    raw = str(raw or '').strip()
+    if not raw:
+        return ''
+    if raw.startswith('http://') or raw.startswith('https://') or raw.startswith('wa.me/') or raw.startswith('api.whatsapp.com'):
+        return raw
+    digits = ''.join(ch for ch in raw if ch.isdigit())
+    if digits:
+        return 'https://wa.me/' + digits
+    return raw
+
+
 def _parse_wa_contacts(raw):
     """Formato via SystemSetting: 'Nome|5511999999999,Nome2|5521999999998'."""
     contacts = []
@@ -198,7 +211,7 @@ def site_context(request):
         'siteTitle': site_title,
         'siteLogo': SystemSetting.get('siteLogo', '/static/resource/logo.png'),
         'siteFav': SystemSetting.get('siteFav', '/static/resource/fav.png'),
-        'siteWaUrl': SystemSetting.get('siteWhatsappUrl', ''),
+        'siteWaUrl': _wa_url(SystemSetting.get('siteWhatsappUrl', '')),
         'siteWaNumber': SystemSetting.get('siteWhatsappNumber', ''),
         'siteWaContacts': _parse_wa_contacts(SystemSetting.get('siteWhatsappNumber', '')),
         'siteTeleUrl': SystemSetting.get('siteTelegramUrl', ''),
