@@ -8,6 +8,53 @@
 <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
 {% endfor %}
 {% endif %}
+<div class="card mb-3">
+    <div class="card-header"><h5 class="mb-0">IPs bloqueados (tentativas de acesso)</h5></div>
+    <div class="card-body">
+        <p class="text-muted">Após <strong>{{ axes_failure_limit }}</strong> tentativas erradas de login, o IP fica bloqueado automaticamente por <strong>{{ axes_cooloff_total }}</strong>. Libere aqui na hora, ou espere o tempo passar.</p>
+        {% if blocked_ips %}
+        <table class="table table-hover dataTable">
+            <thead>
+                <tr>
+                    <th>IP</th>
+                    <th>Tentativas</th>
+                    <th>Desbloqueia às</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in blocked_ips %}
+                <tr>
+                    <td><code>{{ b.ip }}</code></td>
+                    <td>{{ b.failures }}</td>
+                    <td>{{ b.unlocked_at|date:"d/m/Y H:i" }} <small class="text-muted">(em {{ b.remain_label }})</small></td>
+                    <td>
+                        <form method="post" action="{% url 'admin_unblock_ip' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="ip" value="{{ b.ip }}">
+                            <button type="submit" class="btn btn-sm btn-light-danger"><i class="ti ti-unlock me-1"></i> Desbloquear</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="alert alert-success mb-0"><i class="ti ti-check me-1"></i> Nenhum IP bloqueado no momento.</div>
+        {% endif %}
+        <hr class="my-3">
+        <form method="post" action="{% url 'admin_unblock_ip' %}" class="row g-3 align-items-end">
+            {% csrf_token %}
+            <div class="col-md-5">
+                <label class="form-label">Desbloquear um IP específico</label>
+                <input type="text" class="form-control" name="ip" placeholder="Ex.: 189.123.45.67">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary"><i class="ti ti-unlock me-1"></i> Desbloquear</button>
+            </div>
+        </form>
+    </div>
+</div>
 <form method="post">
     {% csrf_token %}
     <div class="card">

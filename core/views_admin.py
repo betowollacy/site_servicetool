@@ -15,7 +15,7 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import logout
 from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Max, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -1195,7 +1195,101 @@ def admin_setting(request):
     return render(request, 'admin/setting.html', {
         'settings': settings,
         'can_stock_password': can_stock_password,
+        'blocked_ips': _axes_blocked_ips(),
+        'axes_failure_limit': getattr(settings, 'AXES_FAILURE_LIMIT', 5),
+        'axes_cooloff_total': _axes_cooloff_label(),
     })
+
+
+def _axes_cooloff_label():
+    cooloff = getattr(settings, 'AXES_COOLOFF_TIME', None)
+    if cooloff is None:
+        return ''
+    if isinstance(cooloff, (int, float)):
+        h = float(cooloff)
+        if h == int(h):
+            return '{}h'.format(int(h))
+        return '{:g}h'.format(h)
+    total = int(cooloff.total_seconds())
+    hours, rem = divmod(total, 3600)
+    mins = rem // 60
+    if hours and mins:
+        return '{}h {:02d}min'.format(hours, mins)
+    if hours:
+        return '{}h'.format(hours)
+    return '{}min'.format(mins)
+
+
+def _axes_blocked_ips():
+    """Lista de IPs atualmente bloqueados pela proteção de tentativas (django-axes)."""
+    try:
+        from axes.models import AccessAttempt
+    except Exception:
+        return []
+    limit = getattr(settings, 'AXES_FAILURE_LIMIT', 5)
+    cooloff = getattr(settings, 'AXES_COOLOFF_TIME', None)
+    if not cooloff:
+        return []
+    if isinstance(cooloff, (int, float)):
+        cooloff_delta = timedelta(hours=cooloff)
+    else:
+        cooloff_delta = cooloff
+    threshold = timezone.now() - cooloff_delta
+    try:
+        rows = (
+            AccessAttempt.objects
+            .filter(attempt_time__gte=threshold)
+            .filter(ip_address__isnull=False)
+            .values('ip_address')
+            .annotate(total=Sum('failures_since_start'), last=Max('attempt_time'))
+            .filter(total__gte=limit)
+            .order_by('-last')
+        )
+    except Exception:
+        return []
+    blocked = []
+    now = timezone.now()
+    for r in rows:
+        ip = r['ip_address'] or ''
+        last = r['last']
+        unlocked_at = (last + cooloff_delta) if last else now
+        seconds = max(0, int((unlocked_at - now).total_seconds()))
+        hours, rem = divmod(seconds, 3600)
+        mins = rem // 60
+        if hours >= 1:
+            label = '{:d}h {:02d}min'.format(hours, mins)
+        else:
+            label = '{:02d}min'.format(mins)
+        blocked.append({
+            'ip': ip,
+            'failures': r['total'],
+            'last_attempt': last,
+            'unlocked_at': unlocked_at,
+            'remain_label': label,
+        })
+    return blocked
+
+
+@_staff
+def admin_unblock_ip(request):
+    if not _settings_access_owner(request.user):
+        return _deny_settings_access(request)
+    if _settings_locked(request):
+        messages.error(request, 'Desbloqueie a seção Configurações primeiro para gerenciar IPs.')
+        return redirect('admin_setting')
+    if request.method != 'POST':
+        return redirect('admin_setting')
+    ip = (request.POST.get('ip') or '').strip()
+    if not ip:
+        messages.error(request, 'Informe o IP que deseja desbloquear.')
+        return redirect('admin_setting')
+    try:
+        from axes.handlers.proxy import AxesProxyHandler
+        AxesProxyHandler.reset_attempts(ip_address=ip)
+    except Exception:
+        pass
+    messages.success(request, 'IP {} desbloqueado com sucesso.'.format(ip))
+    return redirect('admin_setting')
 
 
 @_staff
