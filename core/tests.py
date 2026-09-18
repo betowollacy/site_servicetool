@@ -1409,6 +1409,33 @@ class InventoryDeliveryTests(TestCase):
         self.assertEqual(inv.availableCount, 0)
         self.assertEqual(inv.soldOutCount, 1)
 
+    def test_submit_local_order_prefers_inventory_over_api(self):
+        api = Api.objects.create(
+            api_name='Provedor Teste', api_type='gsm', api_url='https://provedor.teste/public',
+            api_username='user', api_key='KEY', status='Active',
+        )
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',
+            original_price=Decimal('20.00'), status='Active', slug='amt-api-estoque',
+            api_enabled=True, api=api, referenceid='123',
+        )
+        inv = Inventory.objects.create(name='AMT API Estoque')
+        self.service.inventory = inv
+        self.service.save(update_fields=['inventory'])
+        InventoryData.objects.create(inventory=inv, code='Usuario: estoque | Senha: estoque123', status='Available')
+
+        order = self._order(status='In Process')
+        with patch('core.provider_api._request') as req:
+            ok, code = provider_api.submit_local_order(order)
+        self.assertTrue(ok)
+        self.assertIn('estoque123', code)
+        req.assert_not_called()
+        order.refresh_from_db()
+        self.assertEqual(order.service_status, 'Success')
+        item = InventoryData.objects.get(inventory=inv)
+        self.assertEqual(item.status, 'Sold out')
+        self.assertEqual(item.order_id, order.id)
+
     def test_submit_local_order_with_api_off_keeps_waiting_when_no_stock(self):
         self.service = ServiceList.objects.create(
             service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',

@@ -747,8 +747,17 @@ def _recent_duplicate_order(order):
 def submit_local_order(order):
     """Envia o pedido local ao provedor. Retorna (None, '') se não automático,
     (False, erro) se falhou, (True, ref) se enviado."""
+    service = order.service
+    inventory_tried = False
+    if service and service.inventory_id:
+        inventory_tried = True
+        delivered, code = deliver_from_inventory(order)
+        if delivered:
+            return True, code
     api = provider_for_order(order)
     if api is None:
+        if inventory_tried:
+            return (None, '')
         delivered, code = deliver_from_inventory(order)
         return (True, code) if delivered else (None, '')
     duplicate = _recent_duplicate_order(order)
@@ -759,7 +768,6 @@ def submit_local_order(order):
         _log(api, 'block duplicate order #{} (ref #{} trx={})'.format(
             order.id, duplicate.id, duplicate.trx_id))
         return False, msg
-    service = order.service
     actions = actions_for(service)
     fields = _fields_dict(order)
     if _protocol(api) == _PROTOCOL_RITUNLOCKER:

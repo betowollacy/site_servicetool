@@ -22,8 +22,13 @@
 
             {% if deposit %}
                 {% if deposit.status == 'Paid' %}
+                    {% if invoice.invoice_for == 'Order' %}
+                    <div class="alert alert-success">Pagamento confirmado! Seu pedido foi realizado com sucesso.</div>
+                    <a href="{% url 'customer_order_history' %}" class="btn btn-primary rounded">Ver Histórico de Compras</a>
+                    {% else %}
                     <div class="alert alert-success">Pagamento confirmado! O saldo foi creditado na sua conta.</div>
                     <a href="{% url 'customer_invoice_detail' invoice.id %}" class="btn btn-primary rounded">Ver Fatura</a>
+                    {% endif %}
                 {% else %}
                     {% if deposit.qrcode_url %}
                         <p>Pague o PIX abaixo para concluir. O valor não será cobrado da sua conta até a confirmação.</p>
@@ -69,7 +74,11 @@
                 if (d.paid) {
                     el.textContent = 'Pagamento confirmado!';
                     el.className = 'badge bg-success';
+                    {% if invoice.invoice_for == 'Order' %}
+                    setTimeout(function () { window.location.href = '{% url "customer_order_history" %}'; }, 1500);
+                    {% else %}
                     setTimeout(function () { window.location.reload(); }, 1500);
+                    {% endif %}
                 }
             })
             .catch(function () {});
