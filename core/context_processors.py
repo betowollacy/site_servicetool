@@ -66,6 +66,16 @@ def _active_page_effects():
     return [e['key'] for e in PAGE_EFFECTS if _bool(SystemSetting.get(e['key'], 'off'))]
 
 
+PAGE_EFFECT_SPEEDS = ('slow', 'normal', 'fast')
+
+
+def _page_effect_speed():
+    speed = str(SystemSetting.get('pageEffectSpeed', 'normal')).strip().lower()
+    if speed not in PAGE_EFFECT_SPEEDS:
+        speed = 'normal'
+    return speed
+
+
 def _bool(value, default=False):
     if value is None:
         return default
@@ -134,6 +144,7 @@ def site_context(request):
         'themeColor': theme_color,
         'theme_blocks': _load_theme_blocks(),
         'page_effects': _active_page_effects(),
+        'page_effect_speed': _page_effect_speed(),
         'currencies_list': currencies,
         'currency_code': 'BRL',
         'site_url': getattr(settings, 'SITE_URL', 'http://127.0.0.1:8000'),

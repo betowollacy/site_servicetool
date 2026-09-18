@@ -30,7 +30,7 @@ from .models import (
     collect_data_codes, collect_field_code_by_name,
 )
 from . import asaas, catalog_images, notify, provider_api, public_api
-from .context_processors import PAGE_EFFECTS
+from .context_processors import PAGE_EFFECTS, _page_effect_speed
 
 STATUS_MAP = {
     'waiting': ('Waiting Action', 'Aguardando Ação'),
@@ -2851,6 +2851,12 @@ def admin_effects(request):
             obj, _ = SystemSetting.objects.get_or_create(key=key, defaults={'value': ''})
             obj.value = val
             obj.save(update_fields=['value'])
+        speed = (request.POST.get('page_effect_speed') or 'normal').strip().lower()
+        if speed not in ('slow', 'normal', 'fast'):
+            speed = 'normal'
+        obj, _ = SystemSetting.objects.get_or_create(key='pageEffectSpeed', defaults={'value': 'normal'})
+        obj.value = speed
+        obj.save(update_fields=['value'])
         messages.success(request, 'Efeitos de página atualizados.')
         return redirect('admin_effects')
     ctx = {
@@ -2858,5 +2864,6 @@ def admin_effects(request):
             {**e, 'active': str(SystemSetting.get(e['key'], 'off')).strip().lower() == 'on'}
             for e in PAGE_EFFECTS
         ],
+        'page_effect_speed': _page_effect_speed(),
     }
     return render(request, 'admin/effects.html', ctx)
