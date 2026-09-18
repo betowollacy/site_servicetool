@@ -161,7 +161,7 @@
                     <tr class="order-row" data-order-id="{{ order.id }}" role="button">
                         <td class="fw-bold" data-label="Pedido">#{{ order.id }}</td>
                         <td data-label="Data">{{ order.created_at|date:"d-m-Y H:i" }}</td>
-                        <td data-label="Serviço">{{ order.service_title }}</td>
+                        <td data-label="Serviço">{{ order|order_service_label }}</td>
                         <td data-label="Dados do pedido" class="order-data">
                             {% if order.service_qnt %}<div><b>Quantidade:</b> {{ order.service_qnt }}</div>{% endif %}
                             {% for item in order.order_inputs.all %}
@@ -202,11 +202,11 @@
             </div>
             {% for order in orders %}
             <template id="ordertpl-{{ order.id }}">
-                <p class="gsm-service-title">{{ order.service_title }}</p>
+                <p class="gsm-service-title">{{ order|order_service_label }}</p>
 
                 <div class="gsm-card gray d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
-                        <div class="gsm-lbl">Amount</div>
+                        <div class="gsm-lbl">Valor</div>
                         <div class="gsm-amount">{{ order.service_price|floatformat:2 }} <small>BRL</small></div>
                     </div>
                     <span class="gsm-badge {% if order.service_status == 'Success' %}success{% elif order.service_status == 'Rejected' %}rejected{% elif order.service_status == 'In Process' %}processing{% else %}waiting{% endif %}">
@@ -225,13 +225,13 @@
                         <div class="gsm-timeline-val">{{ order.updated_at|date:"d-m-Y H:i" }}</div>
                     </div>
                     <div class="gsm-timeline-item">
-                        <div class="gsm-timeline-lbl">Processing</div>
+                        <div class="gsm-timeline-lbl">Terminado</div>
                         <div class="gsm-timeline-val green" data-submitted="{{ order.created_at|date:'Y-m-d H:i:s' }}" data-replied="{{ order.updated_at|date:'Y-m-d H:i:s' }}" data-processing>...</div>
                     </div>
                 </div>
 
                 <div class="gsm-card gray">
-                    <div class="gsm-lbl">Dados da compra</div>
+                    <div class="gsm-lbl">{{ order|order_service_label }}</div>
                     {% if order.service_qnt %}
                     <div class="gsm-reply-text"><b>Quantidade:</b> {{ order.service_qnt }}</div>
                     {% endif %}

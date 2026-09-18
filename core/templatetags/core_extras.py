@@ -40,3 +40,14 @@ def richtext(value):
     html = re.sub(r'<a (?![^>]*target=)', '<a target="_blank" rel="noopener" ', html)
     html = html.replace('\r\n', '\n').replace('\r', '\n').replace('\n', '<br>')
     return mark_safe(html)
+
+
+@register.filter(is_safe=True)
+def order_service_label(value):
+    """Rótulo do serviço exibido ao cliente: Aluguel, IMEI ou o nome do produto."""
+    st = str(getattr(value, 'service_type', '') or '').lower()
+    if st == 'server_service':
+        return 'Aluguel'
+    if st == 'imei_service':
+        return 'IMEI'
+    return value.service_title if getattr(value, 'service_title', None) else 'Serviço'
