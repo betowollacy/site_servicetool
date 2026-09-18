@@ -1,0 +1,370 @@
+/* ============================================================
+   SERVICETOOL — Tema "OrionGSM"
+   Overlay do layout oriongsm.com.br sobre o tema GSM existente.
+   ============================================================ */
+
+:root {
+    --orion-primary: #673ab7;
+    --orion-primary-rgb: 103, 58, 183;
+    --orion-secondary: #512da8;
+    --orion-accent: #d1c4e9;
+    --orion-cyan: #00d4ff;
+    --orion-violet: #8b5cf6;
+    --orion-soft: #f7f4ff;
+    --orion-ink: #1f2937;
+    --orion-glow: #7a1fa2;
+    --bs-primary: #673ab7 !important;
+    --bs-primary-rgb: 103, 58, 183 !important;
+    --bs-link-color: #673ab7;
+    --bs-link-hover-color: #512da8;
+}
+
+/* ---------- Botões / badges / bordas roxos ---------- */
+html[data-bs-theme="light"] .btn-primary,
+html[data-bs-theme="dark"] .btn-primary,
+body .btn-primary {
+    color: #fff !important;
+    background: linear-gradient(90deg, #673ab7, #512da8) !important;
+    border-color: #673ab7 !important;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary.active {
+    background: linear-gradient(90deg, #512da8, #673ab7) !important;
+    border-color: #512da8 !important;
+    color: #fff !important;
+}
+.btn-outline-primary {
+    border-color: #673ab7 !important;
+    color: #673ab7 !important;
+}
+.btn-outline-primary:hover { background: #673ab7 !important; color: #fff !important; }
+.pagination .page-item.active .page-link { background: #673ab7 !important; border-color: #673ab7 !important; }
+body .nav-pills .nav-link.active {
+    background: linear-gradient(90deg, #673ab7, #512da8) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+}
+.text-primary { color: #673ab7 !important; }
+a.text-primary:hover { color: #512da8 !important; }
+
+/* ---------- Header roxo ---------- */
+.servicetool-header {
+    background: linear-gradient(90deg, #673ab7, #512da8) !important;
+    border-bottom: 2px solid rgba(74, 20, 140, 0.9) !important;
+}
+.servicetool-theme-header .nav-links a { color: #fff !important; text-decoration: none; }
+.servicetool-theme-header .nav-links a:hover { color: #e9d5ff !important; }
+.servicetool-theme-header .nav-links a .chevron { stroke: #fff !important; }
+.servicetool-theme-header .nav-arrow { background: rgba(255, 255, 255, 0.16) !important; color: #fff !important; }
+.servicetool-theme-header .nav-arrow i { color: #fff !important; }
+#themeToggleBtn,
+#themeToggleBtnMobile,
+.servicetool-theme-header .theme-toggle-btn {
+    background: rgba(255, 255, 255, 0.16) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+}
+.servicetool-theme-header .login-btn,
+.servicetool-theme-header .btn-primary.rounded-2,
+.servicetool-theme-header .customer-nav-menu .btn-primary {
+    background: rgba(255, 255, 255, 0.16) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    color: #fff !important;
+}
+.servicetool-theme-header .login-btn:hover,
+.servicetool-theme-header .customer-nav-menu .btn-primary:hover { background: rgba(255, 255, 255, 0.28) !important; }
+
+/* Dropdowns do menu */
+.servicetool-dropdown,
+.customer-nav-dropdown {
+    background: #fff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 12px 28px rgba(31, 41, 55, 0.16) !important;
+}
+.servicetool-dropdown a { color: #1f2937 !important; }
+.servicetool-dropdown a:hover,
+.customer-nav-dropdown .dropdown-item:hover {
+    background: #f3edff !important;
+    color: #673ab7 !important;
+}
+
+/* ---------- Banner superior (marquee + status) ---------- */
+.orion-banner {
+    width: 100%;
+    overflow: hidden;
+    background: linear-gradient(90deg, #673ab7, #512da8);
+    color: #fff;
+    padding: 8px 0;
+    font-size: 13px;
+    font-weight: 700;
+    position: relative;
+    border-bottom: 2px solid #4a148c;
+    display: flex;
+    align-items: center;
+    font-family: sans-serif;
+}
+.server-status {
+    position: relative;
+    flex: 0 0 auto;
+    min-width: 132px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 11px;
+    padding: 4px 10px;
+    margin-right: 12px;
+    background: rgba(0, 0, 0, 0.18);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 0 999px 999px 0;
+    white-space: nowrap;
+}
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex: 0 0 auto; }
+.status-dot.online { background: #00e676; box-shadow: 0 0 6px #00e676; }
+.status-dot.offline { background: #ff5252; box-shadow: 0 0 6px #ff5252; }
+.orion-marquee-wrapper {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent);
+}
+.orion-marquee {
+    display: inline-flex;
+    align-items: center;
+    gap: 64px;
+    width: max-content;
+    min-width: 100%;
+    animation: orionScroll 45s linear infinite;
+    padding-left: 32px;
+    box-sizing: border-box;
+}
+.orion-marquee span { display: inline-flex; align-items: center; gap: 64px; }
+.orion-marquee:hover { animation-play-state: paused; }
+@keyframes orionScroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+
+/* ---------- Loader premium ---------- */
+#servicetooltheme-loader {
+    background:
+        radial-gradient(circle at 16% 20%, rgba(103, 58, 183, 0.5), transparent 34%),
+        radial-gradient(circle at 84% 18%, rgba(0, 212, 255, 0.25), transparent 32%),
+        radial-gradient(circle at 52% 84%, rgba(139, 92, 246, 0.3), transparent 36%),
+        linear-gradient(135deg, #02030a 0%, #090316 35%, #0d0625 63%, #001522 100%) !important;
+    color: #fff;
+}
+.orion-loader-card {
+    width: min(92vw, 470px);
+    padding: 30px 26px 26px;
+    border-radius: 26px;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.055)), rgba(7, 5, 22, 0.72);
+    border: 1px solid rgba(179, 156, 255, 0.3);
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.62), 0 0 0 1px rgba(0, 212, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+.orion-loader-card::before {
+    content: "";
+    position: absolute;
+    left: 18px; right: 18px; top: 14px;
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #673ab7, #00d4ff, #b39cff, #673ab7);
+    box-shadow: 0 0 22px rgba(0, 212, 255, 0.4);
+}
+.orion-loader-logo {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 1.6px;
+    line-height: 1;
+    margin: 4px 0 10px;
+    background: linear-gradient(90deg, #b39cff, #00d4ff 55%, #7c3aed);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+.orion-loader-subtitle { color: rgba(255, 255, 255, 0.8); font-size: 13px; line-height: 1.45; margin: 0 0 18px; }
+.orion-loader-pulse-row { display: flex; justify-content: center; gap: 8px; margin: 0 0 18px; }
+.orion-loader-pulse-row span {
+    width: 8px; height: 8px; border-radius: 999px;
+    background: #00d4ff; box-shadow: 0 0 14px currentColor;
+    animation: orionPulse 1s ease-in-out infinite;
+}
+.orion-loader-pulse-row span:nth-child(2) { background: #b39cff; animation-delay: 0.16s; }
+.orion-loader-pulse-row span:nth-child(3) { background: #7c3aed; animation-delay: 0.32s; }
+.orion-loader-progress { height: 7px; border-radius: 999px; overflow: hidden; background: rgba(255, 255, 255, 0.13); }
+.orion-loader-progress span {
+    display: block; height: 100%; width: 46%; border-radius: inherit;
+    background: linear-gradient(90deg, #673ab7, #8b5cf6, #00d4ff, #b39cff);
+    animation: orionLoaderBar 1.75s ease-in-out infinite;
+    box-shadow: 0 0 22px rgba(0, 212, 255, 0.42);
+}
+.orion-loader-note {
+    display: inline-flex; align-items: center; gap: 7px;
+    margin-top: 16px; padding: 7px 13px; border-radius: 999px;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.25px;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid rgba(179, 156, 255, 0.26);
+}
+.orion-loader-note::before {
+    content: "";
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #00e5ff; box-shadow: 0 0 12px #00e5ff;
+    animation: orionPulse 1.35s ease-in-out infinite;
+}
+@keyframes orionPulse {
+    0%, 100% { transform: translateY(0) scale(0.86); opacity: 0.45; }
+    50% { transform: translateY(-4px) scale(1.15); opacity: 1; }
+}
+@keyframes orionLoaderBar {
+    0% { transform: translateX(-105%); }
+    55% { transform: translateX(45%); }
+    100% { transform: translateX(210%); }
+}
+
+/* ---------- Glow roxo nos produtos/cards ---------- */
+.product-filter-item, .card, #promoCarousel .product-card,
+#unlockCarousel .product-card, .product-filter-item img, .card img {
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, filter 0.25s ease;
+}
+.product-filter-item:hover, .card:hover,
+#promoCarousel .product-card:hover, #unlockCarousel .product-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(103, 58, 183, 0.45) !important;
+    box-shadow: 0 0 0 1px rgba(103, 58, 183, 0.4), 0 12px 30px rgba(103, 58, 183, 0.4), 0 0 22px rgba(103, 58, 183, 0.2);
+}
+.product-filter-item:hover img, .card:hover img { filter: brightness(1.06); }
+
+/* ---------- Botão FAQ + painel ---------- */
+#orionFaqBtn {
+    position: fixed;
+    top: 50%; right: 20px;
+    transform: translateY(-50%);
+    z-index: 10000;
+    background: linear-gradient(90deg, #673ab7, #512da8);
+    color: #fff;
+    padding: 12px 22px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 20px rgba(103, 58, 183, 0.6);
+    transition: 0.3s;
+    font-family: sans-serif;
+    font-size: 14px;
+}
+#orionFaqBtn:hover { transform: translateY(-50%) scale(1.07); background: linear-gradient(90deg, #512da8, #673ab7); }
+#orionFaqBox {
+    display: none;
+    position: fixed;
+    top: 50%; right: 92px;
+    transform: translateY(-50%);
+    width: 380px; max-width: calc(100vw - 30px);
+    z-index: 10001;
+    background: #fff;
+    border: 2px solid #673ab7;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: -10px 10px 40px rgba(0, 0, 0, 0.3);
+    font-family: sans-serif;
+    flex-direction: column;
+}
+#orionFaqBox.open { display: flex; }
+.faq-head {
+    background: linear-gradient(90deg, #673ab7, #512da8);
+    color: #fff;
+    padding: 14px 16px;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+.faq-head button { background: rgba(255, 255, 255, 0.2); color: #fff; border: 0; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; }
+.faq-search-wrap { padding: 10px; background: #f3f3f3; border-bottom: 1px solid #eee; }
+.faq-search-wrap input {
+    width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 20px;
+    outline: none; font-size: 13px; box-sizing: border-box;
+}
+.faq-search-wrap input:focus { border-color: #673ab7; }
+.faq-content { max-height: 55vh; overflow-y: auto; padding: 0; }
+.faq-item { border-bottom: 1px solid #eee; }
+.faq-item.hide { display: none; }
+.faq-q {
+    padding: 14px 16px; cursor: pointer; color: #1f2937; font-weight: 600; font-size: 13px;
+    background: #f9f9f9; display: flex; justify-content: space-between; align-items: center; gap: 8px; transition: 0.2s;
+}
+.faq-q i { transition: transform 0.2s; color: #673ab7; }
+.faq-item.active .faq-q i { transform: rotate(180deg); }
+.faq-q:hover { background: #f3edff; color: #673ab7; }
+.faq-a { display: none; padding: 14px 16px; background: #fff; color: #555; font-size: 13px; line-height: 1.55; border-top: 1px solid #eee; }
+.faq-item.active .faq-a { display: block; }
+
+/* ---------- Botões flutuantes + voltar ao topo ---------- */
+.orion-sidebar {
+    position: fixed;
+    right: 20px; bottom: 24px;
+    z-index: 9998;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.orion-fab {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transition: 0.3s;
+    text-decoration: none;
+    font-size: 22px;
+}
+.orion-fab:hover { transform: scale(1.1); color: #fff !important; }
+.orion-fab.bg-tlg { background: #0088cc; }
+.orion-fab.bg-wpp { background: #25d366; }
+.orion-fab.bg-pix { background: linear-gradient(45deg, #32bcad, #26a69a); }
+body:has(.orion-sidebar) #waSupportWidget { display: none !important; }
+#orionBackTop {
+    position: fixed;
+    bottom: 96px; left: 20px;
+    width: 45px; height: 45px;
+    z-index: 9998;
+    background: linear-gradient(90deg, #673ab7, #512da8);
+    color: #fff;
+    border: 0; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    opacity: 0; visibility: hidden; transition: 0.3s;
+}
+#orionBackTop.show { opacity: 1; visibility: visible; }
+#orionBackTop:hover { transform: translateY(-3px); }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 768px) {
+    .server-status { min-width: 0; font-size: 9px; margin-right: 8px; border-right: 0; border-radius: 999px; }
+    .orion-banner { font-size: 11px; padding: 5px 0; }
+    .orion-marquee { gap: 40px; }
+    .orion-marquee span { gap: 40px; }
+    #orionFaqBtn {
+        width: 50px; height: 50px; padding: 0; justify-content: center;
+        right: 12px; bottom: 100px; top: auto; transform: none;
+    }
+    #orionFaqBtn:hover { transform: scale(1.07); }
+    #orionFaqBtn .desktop-text { display: none; }
+    #orionFaqBtn i { font-size: 20px; margin: 0; }
+    #orionFaqBox { right: 12px; left: 12px; width: auto; top: auto; bottom: 160px; transform: none; }
+    .orion-sidebar { right: 10px; bottom: 12px; gap: 10px; }
+    .orion-fab { width: 46px; height: 46px; font-size: 19px; }
+    #orionBackTop { bottom: 12px; left: 10px; width: 42px; height: 42px; }
+    .orion-loader-card { padding: 24px 18px; border-radius: 20px; }
+    .orion-loader-logo { font-size: 24px; }
+}

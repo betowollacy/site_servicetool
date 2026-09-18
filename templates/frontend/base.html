@@ -27,6 +27,7 @@
     <link rel="stylesheet" href="{% static 'frontend/css/select2.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/select2-bootstrap-5-theme.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/tabler-icons.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'frontend/css/orionstyle.css' %}?v=1" />
     <style>
         img { -webkit-user-drag: none; user-drag: none; -webkit-user-select: none; user-select: none; }
     </style>
@@ -43,9 +44,14 @@
 </head>
 <body data-pc-direction="ltr">
 
-    <div id="servicetooltheme-loader" class="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center" style="z-index:99999;background:var(--bs-body-bg,#ffffff);">
-        <img src="{{ siteLogo }}" alt="logo" style="max-width:220px;max-height:90px;width:auto;height:auto;object-fit:contain;margin-bottom:18px;" />
-        <div class="spinner-border text-primary" role="status" style="width:3.5rem;height:3.5rem;"></div>
+    <div id="servicetooltheme-loader" class="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center" style="z-index:99999;">
+        <div class="orion-loader-card">
+            <div class="orion-loader-logo">{{ siteTitle }}</div>
+            <div class="orion-loader-subtitle">Conectando ao servidor de ferramentas e preparando sua experiência...</div>
+            <div class="orion-loader-pulse-row"><span></span><span></span><span></span></div>
+            <div class="orion-loader-progress"><span></span></div>
+            <div class="orion-loader-note">Conexão segura ativada</div>
+        </div>
     </div>
 
     <div id="servicetooltheme-content" class="d-none">
@@ -112,6 +118,28 @@
             </button>
         </div>
     </header>
+
+    <div class="orion-banner">
+        <div class="server-status"><span class="status-dot" id="orionStatusDot"></span><span id="orionStatusText">Servidor</span></div>
+        <div class="orion-marquee-wrapper">
+            <div class="orion-marquee" id="orionMarquee">
+                <span>
+                    ⚡ Ativação automática e entrega de logins em minutos
+                    <i aria-hidden="true">✦</i> 🔐 Ferramentas GSM: AMT, UnlockTool, iRemoval e mais
+                    <i aria-hidden="true">✦</i> 💳 Pagamento via PIX com confirmação automática 24/7
+                    <i aria-hidden="true">✦</i> 🛡️ Suporte 24/7 para resolver qualquer dúvida rapidamente
+                    <i aria-hidden="true">✦</i> 🚀 Servidor estável e seguro para você trabalhar
+                </span>
+                <span>
+                    ⚡ Ativação automática e entrega de logins em minutos
+                    <i aria-hidden="true">✦</i> 🔐 Ferramentas GSM: AMT, UnlockTool, iRemoval e mais
+                    <i aria-hidden="true">✦</i> 💳 Pagamento via PIX com confirmação automática 24/7
+                    <i aria-hidden="true">✦</i> 🛡️ Suporte 24/7 para resolver qualquer dúvida rapidamente
+                    <i aria-hidden="true">✦</i> 🚀 Servidor estável e seguro para você trabalhar
+                </span>
+            </div>
+        </div>
+    </div>
 
     <div class="servicetool-dropdown" id="drop-down-2">
         {% for cat in category_links %}
@@ -269,6 +297,53 @@
         })();
     </script>
     {% endif %}
+
+    <button type="button" id="orionFaqBtn" aria-label="Dúvidas frequentes" title="Dúvidas Frequentes">
+        <i class="bi bi-question-circle"></i> <span class="desktop-text">Dúvidas Frequentes</span>
+    </button>
+    <div id="orionFaqBox">
+        <div class="faq-head">
+            <span>Dúvidas Frequentes</span>
+            <button type="button" id="orionFaqClose" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="faq-search-wrap"><input type="text" id="orionFaqSearch" placeholder="Buscar dúvida..."></div>
+        <div class="faq-content">
+            <div class="faq-item">
+                <div class="faq-q">Como funciona o aluguel de ferramentas? <i class="bi bi-chevron-down"></i></div>
+                <div class="faq-a">Você escolhe a ferramenta, adiciona saldo na conta e faz o pedido. O login da ferramenta é entregue automaticamente no pedido, com valor renovável conforme a opção escolhida.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Quais são as formas de pagamento? <i class="bi bi-chevron-down"></i></div>
+                <div class="faq-a">O pagamento é feito via PIX, com confirmação automática 24/7. Assim que o PIX é confirmado, o saldo cai na hora na sua conta e você pode fazer seus pedidos.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Em quanto tempo recebo minha entrega? <i class="bi bi-chevron-down"></i></div>
+                <div class="faq-a">A entrega é automática e leva apenas alguns minutos. Em caso de qualquer pendência, a equipe acompanha o pedido até a conclusão.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Como adiciono saldo na minha conta? <i class="bi bi-chevron-down"></i></div>
+                <div class="faq-a">Entre no seu painel e clique em "Adicionar saldo" ou "Recarga". Gere o PIX, pague e o valor é creditado automaticamente após a confirmação.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Preciso instalar algo para usar a ferramenta? <i class="bi bi-chevron-down"></i></div>
+                <div class="faq-a">Sim, cada ferramenta possui seu próprio instalador e requisitos. Em caso de dúvida, nosso suporte orienta a instalação e ativação.</div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-q">Como falo com o suporte? <i class="bi bi-chevron-down"></i></div>
+                <div class="faq-a">Pelo WhatsApp ou Telegram disponíveis nos botões flutuantes ao lado, ou pelos contatos de suporte do site. Atendimento 24/7.</div>
+            </div>
+        </div>
+    </div>
+
+    {% if siteTeleUrl or siteWaUrl %}
+    <div class="orion-sidebar">
+        {% if siteTeleUrl %}<a class="orion-fab bg-tlg" href="{{ siteTeleUrl }}" target="_blank" rel="noopener" title="Telegram" aria-label="Telegram"><i class="bi bi-send-fill"></i></a>{% endif %}
+        {% if siteWaUrl %}<a class="orion-fab bg-wpp" href="{{ siteWaUrl }}" target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>{% endif %}
+        <a class="orion-fab bg-pix" href="{% url 'customer_add_balance' %}" title="Recarga via PIX" aria-label="Recarga via PIX"><i class="bi bi-qr-code-scan"></i></a>
+    </div>
+    {% endif %}
+
+    <button type="button" id="orionBackTop" aria-label="Voltar ao topo"><i class="bi bi-arrow-up"></i></button>
 
     {% include 'frontend/include/login.html' %}
 
@@ -678,6 +753,46 @@
             $(".theme-toggle-btn").on("click", function(){
                 var current = document.documentElement.getAttribute("data-bs-theme");
                 applyTheme(current === "dark" ? "light" : "dark");
+            });
+        });
+    </script>
+
+    <script>
+        $(function () {
+            var $faqBtn = $("#orionFaqBtn");
+            var $faqBox = $("#orionFaqBox");
+            var $statusDot = $("#orionStatusDot");
+            var $statusText = $("#orionStatusText");
+            function setStatus(online) {
+                if (!$statusDot.length) return;
+                $statusDot.removeClass("online offline").addClass(online ? "online" : "offline");
+                if ($statusText.length) $statusText.text(online ? "Servidor online" : "Servidor offline");
+            }
+            try {
+                fetch(window.location.origin + "/login/", { method: "HEAD", cache: "no-store" })
+                    .then(function (r) { setStatus(r.ok); })
+                    .catch(function () { setStatus(false); });
+            } catch (e) { setStatus(true); }
+            $faqBtn.on("click", function () {
+                $faqBox.toggleClass("open");
+                if ($faqBox.hasClass("open")) $("#orionFaqSearch").trigger("focus");
+            });
+            $("#orionFaqClose").on("click", function () { $faqBox.removeClass("open"); });
+            $faqBox.on("click", ".faq-q", function () {
+                $(this).closest(".faq-item").toggleClass("active").siblings().removeClass("active");
+            });
+            $("#orionFaqSearch").on("input", function () {
+                var q = $(this).val().toLowerCase().trim();
+                $faqBox.find(".faq-item").each(function () {
+                    $(this).toggleClass("hide", $(this).text().toLowerCase().indexOf(q) === -1);
+                });
+            });
+            var $backTop = $("#orionBackTop");
+            $(window).on("scroll", function () {
+                $backTop.toggleClass("show", $(this).scrollTop() > 400);
+            });
+            $backTop.on("click", function () {
+                $("html, body").animate({ scrollTop: 0 }, 300);
             });
         });
     </script>
