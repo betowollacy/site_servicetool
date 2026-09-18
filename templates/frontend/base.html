@@ -109,7 +109,7 @@
                         <span class="badge rounded-pill ms-1" style="background:var(--off);color:var(--ink);border:1px solid var(--border);"><i class="bi bi-wallet2 me-1"></i>R$ {{ customer.balance|floatformat:2 }}</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end customer-nav-dropdown">
-                        <li><a class="dropdown-item" href="{% url 'customer_dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+                        <li><a class="dropdown-item" href="{% url 'customer_dashboard' %}"><i class="bi bi-speedometer2"></i> Painel</a></li>
                         <li><a class="dropdown-item" href="{% url 'customer_add_balance' %}"><i class="bi bi-wallet2"></i> Adicionar saldo</a></li>
                         <li><a class="dropdown-item" href="{% url 'customer_order_history' %}"><i class="bi bi-bag-check"></i> Histórico de ordem</a></li>
                         <li><hr class="dropdown-divider"></li>
