@@ -30,6 +30,7 @@ from .models import (
     collect_data_codes, collect_field_code_by_name,
 )
 from . import asaas, catalog_images, notify, provider_api, public_api
+from .context_processors import PAGE_EFFECTS
 
 STATUS_MAP = {
     'waiting': ('Waiting Action', 'Aguardando Ação'),
@@ -2839,3 +2840,23 @@ def admin_theme_list(request):
         messages.success(request, 'Configurações de Tema salvas com sucesso.')
         return redirect('admin_theme_list')
     return render(request, 'admin/theme_list.html', {'blocks': blocks})
+
+
+@_staff
+def admin_effects(request):
+    if request.method == 'POST':
+        for effect in PAGE_EFFECTS:
+            key = effect['key']
+            val = 'on' if request.POST.get(key) == 'on' else 'off'
+            obj, _ = SystemSetting.objects.get_or_create(key=key, defaults={'value': ''})
+            obj.value = val
+            obj.save(update_fields=['value'])
+        messages.success(request, 'Efeitos de página atualizados.')
+        return redirect('admin_effects')
+    ctx = {
+        'effects': [
+            {**e, 'active': str(SystemSetting.get(e['key'], 'off')).strip().lower() == 'on'}
+            for e in PAGE_EFFECTS
+        ],
+    }
+    return render(request, 'admin/effects.html', ctx)

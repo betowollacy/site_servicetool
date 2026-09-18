@@ -1,0 +1,60 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h4 class="mb-0">Efeitos de Página</h4>
+        <small class="text-muted">Ative efeitos visuais que aparecem sobre todo o site (neve no Natal, matriz, confete e mais). Cada efeito pode ser ligado e desligado independentemente.</small>
+    </div>
+</div>
+{% if messages %}
+<div class="row">
+    <div class="col-12">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+<form method="post">
+    {% csrf_token %}
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header"><h5 class="mb-0"><i class="ti ti-sparkles me-2"></i>Efeitos ativos no site</h5></div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% for effect in effects %}
+                        <div class="col-md-6 col-xl-3">
+                            <div class="card h-100 border">
+                                <div class="card-body text-center">
+                                    <div class="fs-1 mb-2">{{ effect.icon }}</div>
+                                    <h6 class="mb-1">{{ effect.name }}</h6>
+                                    <p class="text-muted small mb-3">{{ effect.desc }}</p>
+                                    <div class="form-check form-switch form-check-inline">
+                                        <input class="form-check-input" type="checkbox" name="{{ effect.key }}" value="on" id="fx-{{ effect.key }}" {% if effect.active %}checked{% endif %}>
+                                        <label class="form-check-label" for="fx-{{ effect.key }}">{% if effect.active %}Ativado{% else %}Desativado{% endif %}</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="card-footer text-end">
+                    <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i> Salvar Efeitos</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+{% block footer_script %}
+<script>
+    document.querySelectorAll('input[type="checkbox"][name$="pageEffect"]').forEach(function (el) {
+        el.addEventListener('change', function () {
+            var lbl = document.getElementById('fx-' + el.name);
+            if (lbl) { lbl.textContent = el.checked ? 'Ativado' : 'Desativado'; }
+        });
+    });
+</script>
+{% endblock %}
