@@ -77,6 +77,7 @@ def create_pix_payment(invoice, gateway):
         'dueDate': timezone.localdate().isoformat(),
         'description': f'Fatura #{invoice.id} - {invoice.invoice_title or invoice.invoice_for or "Deposito"}',
         'externalReference': f'invoice-{invoice.id}',
+        'notificationDisabled': True,
     }
     payment = call(gateway, 'POST', '/payments', body)
     if not payment.get('id'):

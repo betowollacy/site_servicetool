@@ -493,7 +493,7 @@ def admin_dashboard(request):
         'online_count': _online_customers().count(),
         'online_window': ONLINE_WINDOW_MINUTES,
         'total_services': ServiceList.objects.count(),
-        'total_invoices': Invoice.objects.count(),
+        'total_invoices': Invoice.objects.filter(invoice_status='Paid').count(),
         'status_counts': status_counts,
         'count_waiting': status_counts['Waiting Action'],
         'count_in_process': status_counts['In Process'],
@@ -653,7 +653,7 @@ def admin_customer_refund(request, customer_id):
 
 @_staff
 def admin_invoice_list(request):
-    return render(request, 'admin/invoice_list.html', {'invoices': Invoice.objects.all()})
+    return render(request, 'admin/invoice_list.html', {'invoices': Invoice.objects.filter(invoice_status='Paid').order_by('-id')})
 
 
 @_staff
