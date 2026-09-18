@@ -389,6 +389,111 @@
                 };
             };
 
+            FX.pageEffectFireworks = function (canvas) {
+                var ctx = canvas.getContext('2d');
+                var rockets = [], particles = [];
+                var colors = ['#ff3366', '#33ccff', '#ffcc00', '#66ff66', '#ff9933', '#cc66ff'];
+                function burst(x, y, color) {
+                    var n = 60;
+                    for (var i = 0; i < n; i++) {
+                        var a = (Math.PI * 2 * i) / n;
+                        var v = 2 + Math.random() * 3;
+                        particles.push({ x: x, y: y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, g: 0.06, drag: 0.98, life: 60 + Math.random() * 30, c: color });
+                    }
+                }
+                return function () {
+                    canvas.width = W(); canvas.height = H();
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    if (rockets.length < 3 && Math.random() < 0.04) {
+                        rockets.push({ x: Math.random() * W(), y: H() + 10, vy: -(7 + Math.random() * 4), c: colors[Math.floor(Math.random() * colors.length)] });
+                    }
+                    for (var i = rockets.length - 1; i >= 0; i--) {
+                        var r = rockets[i];
+                        r.y += r.vy; r.vy += 0.12;
+                        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                        ctx.fillRect(r.x, r.y, 2.5, 8);
+                        if (r.vy >= -1) { burst(r.x, r.y, r.c); rockets.splice(i, 1); }
+                    }
+                    for (var j = particles.length - 1; j >= 0; j--) {
+                        var p = particles[j];
+                        p.vy += p.g; p.vx *= p.drag; p.vy *= p.drag;
+                        p.x += p.vx; p.y += p.vy; p.life--;
+                        if (p.life <= 0) { particles.splice(j, 1); continue; }
+                        ctx.globalAlpha = Math.max(p.life / 80, 0);
+                        ctx.fillStyle = p.c;
+                        ctx.fillRect(p.x, p.y, 2.5, 2.5);
+                    }
+                    ctx.globalAlpha = 1;
+                };
+            };
+
+            FX.pageEffectStars = function (canvas) {
+                var ctx = canvas.getContext('2d');
+                var stars = [];
+                function make() { return { x: Math.random() * W(), y: -20, vx: 4 + Math.random() * 4, vy: 2 + Math.random() * 2, len: 40 + Math.random() * 40 }; }
+                return function () {
+                    canvas.width = W(); canvas.height = H();
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    if (stars.length < 8 && Math.random() < 0.05) stars.push(make());
+                    for (var i = 0; i < stars.length; i++) {
+                        var s = stars[i];
+                        s.x += s.vx; s.y += s.vy;
+                        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(s.x, s.y);
+                        ctx.lineTo(s.x - s.vx * s.len / 50, s.y - s.vy * s.len / 50);
+                        ctx.stroke();
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath(); ctx.arc(s.x, s.y, 1.8, 0, Math.PI * 2); ctx.fill();
+                        if (s.x > W() + 60 || s.y > H() + 60) { stars[i] = make(); }
+                    }
+                };
+            };
+
+            FX.pageEffectPetals = function (canvas) {
+                var ctx = canvas.getContext('2d');
+                var petals = [];
+                var colors = ['#ff8fab', '#ff9eb5', '#ffb7c9', '#f7c6d8', '#ffc4d6'];
+                function make() { return { x: Math.random() * W(), y: -20, s: 6 + Math.random() * 7, sp: Math.random() * 1.6 + 0.8, ph: Math.random() * Math.PI * 2, rot: Math.random() * Math.PI * 2, vr: (Math.random() - 0.5) * 0.08, c: colors[Math.floor(Math.random() * colors.length)] }; }
+                return function () {
+                    canvas.width = W(); canvas.height = H();
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    if (petals.length < 45) petals.push(make());
+                    for (var i = 0; i < petals.length; i++) {
+                        var p = petals[i];
+                        p.y += p.sp; p.ph += 0.03; p.rot += p.vr;
+                        p.x += Math.sin(p.ph) * 0.9;
+                        if (p.y > H() + 20) { petals[i] = make(); continue; }
+                        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(1, 0.55);
+                        ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(0, 0, p.s, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+                    }
+                };
+            };
+
+            FX.pageEffectBubbles = function (canvas) {
+                var ctx = canvas.getContext('2d');
+                var bubbles = [];
+                function make() { return { x: Math.random() * W(), y: H() + 20, r: 3 + Math.random() * 8, sp: Math.random() * 1.2 + 0.5, ph: Math.random() * Math.PI * 2 }; }
+                return function () {
+                    canvas.width = W(); canvas.height = H();
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    if (bubbles.length < 25) bubbles.push(make());
+                    for (var i = 0; i < bubbles.length; i++) {
+                        var q = bubbles[i];
+                        q.y -= q.sp; q.ph += 0.01; q.x += Math.sin(q.ph) * 0.4;
+                        if (q.y < -20) { bubbles[i] = make(); continue; }
+                        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, Math.PI * 2); ctx.stroke();
+                        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+                        ctx.fill();
+                        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                        ctx.beginPath(); ctx.arc(q.x - q.r * 0.35, q.y - q.r * 0.35, q.r * 0.18, 0, Math.PI * 2); ctx.fill();
+                    }
+                };
+            };
+
             var canvases = document.querySelectorAll('canvas[data-effect]');
             for (var i = 0; i < canvases.length; i++) {
                 var el = canvases[i];

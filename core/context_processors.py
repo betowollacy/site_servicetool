@@ -43,6 +43,14 @@ PAGE_EFFECTS = (
      'desc': 'Confetes coloridos caindo pela página.'},
     {'key': 'pageEffectHearts', 'name': 'Corações', 'icon': '❤️',
      'desc': 'Corações flutuando para cima.'},
+    {'key': 'pageEffectFireworks', 'name': 'Fogos de Artifício', 'icon': '🎆',
+     'desc': 'Fogos explodindo em cores pelo céu da página.'},
+    {'key': 'pageEffectStars', 'name': 'Estrelas Cadentes', 'icon': '🌠',
+     'desc': 'Estrelas caindo com rastro luminoso.'},
+    {'key': 'pageEffectPetals', 'name': 'Pétalas de Flores', 'icon': '🌸',
+     'desc': 'Pétalas rosas caindo suavemente.'},
+    {'key': 'pageEffectBubbles', 'name': 'Bolhas', 'icon': '🫧',
+     'desc': 'Bolhas de sabão subindo pela tela.'},
 )
 
 
