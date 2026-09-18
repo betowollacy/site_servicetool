@@ -124,18 +124,10 @@
         <div class="orion-marquee-wrapper">
             <div class="orion-marquee" id="orionMarquee">
                 <span>
-                    ⚡ Ativação automática e entrega de logins em minutos
-                    <i aria-hidden="true">✦</i> 🔐 Ferramentas GSM: AMT, UnlockTool, iRemoval e mais
-                    <i aria-hidden="true">✦</i> 💳 Pagamento via PIX com confirmação automática 24/7
-                    <i aria-hidden="true">✦</i> 🛡️ Suporte 24/7 para resolver qualquer dúvida rapidamente
-                    <i aria-hidden="true">✦</i> 🚀 Servidor estável e seguro para você trabalhar
+                    {% for m in siteMarqueeLines %}<span class="mq-item">{{ m }} ✦</span>{% endfor %}
                 </span>
                 <span>
-                    ⚡ Ativação automática e entrega de logins em minutos
-                    <i aria-hidden="true">✦</i> 🔐 Ferramentas GSM: AMT, UnlockTool, iRemoval e mais
-                    <i aria-hidden="true">✦</i> 💳 Pagamento via PIX com confirmação automática 24/7
-                    <i aria-hidden="true">✦</i> 🛡️ Suporte 24/7 para resolver qualquer dúvida rapidamente
-                    <i aria-hidden="true">✦</i> 🚀 Servidor estável e seguro para você trabalhar
+                    {% for m in siteMarqueeLines %}<span class="mq-item">{{ m }} ✦</span>{% endfor %}
                 </span>
             </div>
         </div>

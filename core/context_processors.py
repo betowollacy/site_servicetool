@@ -15,6 +15,15 @@ THEME_BLOCK_KEYS = (
 )
 
 
+_DEFAULT_MARQUEE_TEXT = "\n".join([
+    '⚡ Ativação automática e entrega de logins em minutos',
+    '🔐 Ferramentas GSM: AMT, UnlockTool, iRemoval e mais',
+    '💳 Pagamento via PIX com confirmação automática 24/7',
+    '🛡️ Suporte 24/7 para resolver qualquer dúvida rapidamente',
+    '🚀 Servidor estável e seguro para você trabalhar',
+])
+
+
 def _load_theme_blocks():
     blocks = {}
     for key, setting_key in THEME_BLOCK_KEYS:
@@ -141,6 +150,8 @@ def site_context(request):
         'sitePhone': SystemSetting.get('sitePhoneNumber', ''),
         'siteAddress': SystemSetting.get('siteAddress', ''),
         'headerCode': SystemSetting.get('headerCode', ''),
+        'siteMarqueeText': SystemSetting.get('siteMarqueeText', _DEFAULT_MARQUEE_TEXT),
+        'siteMarqueeLines': [line.strip() for line in SystemSetting.get('siteMarqueeText', _DEFAULT_MARQUEE_TEXT).splitlines() if line.strip()],
         'site_meta_des': SystemSetting.get('siteMetaDes', ''),
         'site_keyword': SystemSetting.get('siteKeyword', ''),
         'site_meta_title': SystemSetting.get('siteMetaTitle', ''),

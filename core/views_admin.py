@@ -31,7 +31,7 @@ from .models import (
     collect_data_codes, collect_field_code_by_name,
 )
 from . import asaas, catalog_images, notify, provider_api, public_api
-from .context_processors import PAGE_EFFECTS, _page_effect_speed
+from .context_processors import PAGE_EFFECTS, _DEFAULT_MARQUEE_TEXT, _page_effect_speed
 
 STATUS_MAP = {
     'waiting': ('Waiting Action', 'Aguardando Ação'),
@@ -2698,21 +2698,30 @@ def admin_api_link(request):
 # Sliders
 # --------------------------------------------------------------------------- #
 
+# Sliders
+# --------------------------------------------------------------------------- #
+
 @_staff
 def admin_slider_list(request):
     if request.method == 'POST':
         mode = 'on' if request.POST.get('slider_static_mode') == 'on' else 'off'
         slider_id = (request.POST.get('slider_static_image') or '').strip()
-        for key, value in (('sliderStaticMode', mode), ('sliderStaticImageId', slider_id)):
+        marquee = request.POST.get('site_marquee_text') or ''
+        for key, value in (
+            ('sliderStaticMode', mode),
+            ('sliderStaticImageId', slider_id),
+            ('siteMarqueeText', marquee),
+        ):
             obj, _ = SystemSetting.objects.get_or_create(key=key, defaults={'value': ''})
             obj.value = value
             obj.save(update_fields=['value'])
-        messages.success(request, 'Preferência de exibição do banner salva.')
+        messages.success(request, 'Preferências de exibição salvas.')
         return redirect('admin_slider_list')
     ctx = {
         'sliders': Slider.objects.all().order_by('-id'),
         'slider_static_mode': str(SystemSetting.get('sliderStaticMode', 'off')).strip().lower() == 'on',
         'slider_static_image_id': SystemSetting.get('sliderStaticImageId', ''),
+        'site_marquee_text': SystemSetting.get('siteMarqueeText', _DEFAULT_MARQUEE_TEXT),
     }
     return render(request, 'admin/slider_list.html', ctx)
 
