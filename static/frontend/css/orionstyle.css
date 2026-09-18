@@ -368,3 +368,16 @@ body:has(.orion-sidebar) #waSupportWidget { display: none !important; }
     .orion-loader-card { padding: 24px 18px; border-radius: 20px; }
     .orion-loader-logo { font-size: 24px; }
 }
+
+/* Promoções do dia: rolagem contínua e lenta (infinita) */
+.orion-promo-scroll{overflow:hidden;position:relative;border-radius:14px}
+.orion-promo-scroll::before,.orion-promo-scroll::after{content:"";position:absolute;top:0;bottom:0;width:60px;z-index:2;pointer-events:none}
+.orion-promo-scroll::before{left:0;background:linear-gradient(90deg,#fff,rgba(255,255,255,0))}
+.orion-promo-scroll::after{right:0;background:linear-gradient(-90deg,#fff,rgba(255,255,255,0))}
+.orion-promo-track{display:flex;width:max-content;padding:6px 0;animation:orionpromo var(--orion-dur,75s) linear infinite;will-change:transform}
+.orion-promo-scroll:hover .orion-promo-track{animation-play-state:paused}
+.orion-promo-card{display:flex;gap:12px;align-items:center;width:340px;min-width:340px;margin-right:16px;padding:10px;border:1px solid rgba(103,58,183,.22);border-radius:12px;background:#fff;box-shadow:0 6px 18px rgba(103,58,183,.08);transition:transform .25s ease,box-shadow .25s ease}
+.orion-promo-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(103,58,183,.18)}
+.orion-promo-card img{width:112px;height:76px;min-width:112px;object-fit:cover;border-radius:10px;border:1px solid #eee}
+@media (max-width:575px){.orion-promo-card{width:300px;min-width:300px}.orion-promo-card img{width:96px;height:66px;min-width:96px}}
+@keyframes orionpromo{from{transform:translateX(0)}to{transform:translateX(-50%)}}

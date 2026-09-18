@@ -4,6 +4,31 @@
         <h5 class="text-primary text-uppercase fs-5 border-start border-primary border-5 ps-2">{{ carousel_title }}</h5>
     </div>
     <div class="card-body pt-3">
+        {% if carousel_id == 'promoCarousel' %}
+        <div id="promoCarousel" class="orion-promo-scroll">
+            <div class="orion-promo-track">
+                {% for dup in '12' %}{% for group in groups %}{% for s in group %}
+                <a href="{% url 'service_view' s.slug %}" class="orion-promo-card">
+                    <img src="{{ s.thumbnail }}" alt="{{ s.title }}" loading="lazy">
+                    <div class="overflow-hidden">
+                        <p class="text-muted mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
+                        {% if customer %}<div><span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span><span class="badge bg-light-warning text-uppercase" style="font-size:11px">{{ s.delivery_time }}</span></div>{% endif %}
+                    </div>
+                </a>
+                {% endfor %}{% endfor %}{% endfor %}
+            </div>
+        </div>
+        <script>
+            (function () {
+                var t = document.getElementById('promoCarousel');
+                var track = t && t.querySelector('.orion-promo-track');
+                if (!track || !track.children.length) return;
+                var w = track.scrollWidth / 2;
+                if (!w) return;
+                t.style.setProperty('--orion-dur', Math.max(50, Math.round(w / 28)) + 's');
+            })();
+        </script>
+        {% else %}
         <div id="{{ carousel_id }}" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000">
             <div class="carousel-inner">
                 {% for group in groups %}
@@ -37,6 +62,7 @@
             </button>
             {% endif %}
         </div>
+        {% endif %}
     </div>
 </div>
 {% endif %}
