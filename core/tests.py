@@ -1550,6 +1550,40 @@ class InventoryDeliveryTests(TestCase):
         inv.refresh_from_db()
         self.assertEqual(inv.availableCount, 2)
 
+    def test_quick_add_updates_limit_of_existing_login(self):
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='AMT Limite',
+            original_price=Decimal('20.00'), status='Active', slug='amt-limite',
+        )
+        self.client.post(reverse('admin_inventory_quick_add'), {
+            'service_id': self.service.id,
+            'codes': 'login1;senha1',
+            'max_uses': '5',
+        })
+        self.service.refresh_from_db()
+        inv = self.service.inventory
+        item = InventoryData.objects.get(inventory=inv)
+        self.assertEqual(item.max_uses, 5)
+
+        # Reenviar o mesmo login apenas atualiza o limite, sem duplicar.
+        self.client.post(reverse('admin_inventory_quick_add'), {
+            'service_id': self.service.id,
+            'codes': 'login1;senha1',
+            'max_uses': '100',
+        })
+        self.assertEqual(InventoryData.objects.filter(inventory=inv).count(), 1)
+        item.refresh_from_db()
+        self.assertEqual(item.max_uses, 100)
+
+        # Sem logins informados, o limite vale para todos os ja cadastrados.
+        self.client.post(reverse('admin_inventory_quick_add'), {
+            'service_id': self.service.id,
+            'codes': '',
+            'max_uses': '3',
+        })
+        item.refresh_from_db()
+        self.assertEqual(item.max_uses, 3)
+
     def test_quick_add_groups_login_and_password_on_separate_lines(self):
         self.service = ServiceList.objects.create(
             service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',

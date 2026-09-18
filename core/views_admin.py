@@ -1678,6 +1678,49 @@ def _parse_max_uses(value, default=1):
     return max(max_uses, 1)
 
 
+def _store_inventory_credentials(inv, creds, max_uses):
+    """Adiciona credenciais ao estoque. Se a credencial ja existir, atualiza o
+    limite de vendas (max_uses) em vez de recusar. Reabre o login quando o novo
+    limite for maior que os usos ja feitos. Retorna (added, updated, skipped)."""
+    existing = dict(InventoryData.objects.filter(inventory=inv).values_list('code', 'id'))
+    existing = {code.lower(): item_id for code, item_id in existing.items()}
+    added = updated = skipped = 0
+    if not creds:
+        # Sem logins informados: aplica o limite de vendas a todos os logins ja
+        # cadastrados no estoque (atalho para "vender este produto N vezes").
+        for item in InventoryData.objects.filter(inventory=inv):
+            if item.max_uses != max_uses:
+                item.max_uses = max_uses
+                fields = ['max_uses']
+                if item.uses_count < max_uses:
+                    item.status = 'Available'
+                    fields.append('status')
+                item.save(update_fields=fields)
+                updated += 1
+        return added, updated, skipped
+    for cred in creds:
+        key = cred.lower()
+        item_id = existing.get(key)
+        if item_id is not None:
+            item = InventoryData.objects.filter(id=item_id).first()
+            if item and item.max_uses != max_uses:
+                item.max_uses = max_uses
+                fields = ['max_uses']
+                if item.uses_count < max_uses:
+                    item.status = 'Available'
+                    fields.append('status')
+                item.save(update_fields=fields)
+                updated += 1
+            else:
+                skipped += 1
+            continue
+        obj = InventoryData.objects.create(
+            inventory=inv, code=cred, status='Available', max_uses=max_uses)
+        existing[key] = obj.id
+        added += 1
+    return added, updated, skipped
+
+
 def _refresh_inventory_counts(inventory):
     available = InventoryData.objects.filter(inventory=inventory).available().count()
     sold = InventoryData.objects.filter(inventory=inventory).count() - available
@@ -1706,26 +1749,25 @@ def admin_inventory_quick_add(request):
             service.save(update_fields=['inventory'])
         creds = _parse_credentials(request.POST.get('codes', ''))
         max_uses = _parse_max_uses(request.POST.get('max_uses'))
-        existing = {c.lower() for c in InventoryData.objects.filter(inventory=inv).values_list('code', flat=True)}
-        added = 0
-        skipped = 0
-        for cred in creds:
-            if cred.lower() in existing:
-                skipped += 1
-                continue
-            InventoryData.objects.create(inventory=inv, code=cred, status='Available', max_uses=max_uses)
-            existing.add(cred.lower())
-            added += 1
+        added, updated, skipped = _store_inventory_credentials(inv, creds, max_uses)
         _refresh_inventory_counts(inv)
-        msg = '{} credencial(is) adicionada(s) ao estoque de "{}".'.format(added, service.title)
-        if max_uses > 1:
-            msg += ' Cada login pode ser vendido ate {} vez(es).'.format(max_uses)
-        if skipped:
-            msg += ' {} já existia(m) e foi(ram) ignorada(s).'.format(skipped)
+        parts = []
         if added:
+            parts.append('{} credencial(is) adicionada(s)'.format(added))
+        if updated:
+            parts.append('{} login(s) com limite de venda atualizado'.format(updated))
+        if skipped:
+            parts.append('{} já existia(m) com o mesmo limite'.format(skipped))
+        if added or updated:
+            msg = 'Estoque de "{}": {}.'.format(service.title, ', '.join(parts))
+            if max_uses > 1:
+                msg += ' Cada login pode ser vendido ate {} vez(es).'.format(max_uses)
             messages.success(request, msg)
         else:
-            messages.error(request, msg if skipped else 'Nenhuma credencial válida informada.')
+            messages.error(
+                request,
+                'Nenhuma credencial válida informada. ' + ', '.join(parts) + '.' if parts
+                else 'Nenhuma credencial válida informada.')
         return redirect('admin_inventory_detail', inv.id)
     return redirect('admin_inventory_list')
 
@@ -1824,28 +1866,27 @@ def admin_inventory_add(request, inventory_id):
     if inv and request.method == 'POST':
         creds = _parse_credentials(request.POST.get('codes', ''))
         max_uses = _parse_max_uses(request.POST.get('max_uses'))
-        existing = {c.lower() for c in InventoryData.objects.filter(inventory=inv).values_list('code', flat=True)}
-        added = 0
-        skipped = 0
-        for cred in creds:
-            if cred.lower() in existing:
-                skipped += 1
-                continue
-            InventoryData.objects.create(inventory=inv, code=cred, status='Available', max_uses=max_uses)
-            existing.add(cred.lower())
-            added += 1
+        added, updated, skipped = _store_inventory_credentials(inv, creds, max_uses)
         _refresh_inventory_counts(inv)
         linked = ServiceList.objects.filter(inventory=inv).first()
         service_name = linked.title if linked else 'nenhum serviço vinculado'
-        msg = '{} credencial(is) adicionada(s) ao estoque "{}" (serviço vinculado: {}).'.format(added, inv.name, service_name)
-        if max_uses > 1:
-            msg += ' Cada login pode ser vendido ate {} vez(es).'.format(max_uses)
-        if skipped:
-            msg += ' {} já existia(m) e foi(ram) ignorada(s).'.format(skipped)
+        parts = []
         if added:
+            parts.append('{} credencial(is) adicionada(s)'.format(added))
+        if updated:
+            parts.append('{} login(s) com limite de venda atualizado'.format(updated))
+        if skipped:
+            parts.append('{} já existia(m) com o mesmo limite'.format(skipped))
+        if added or updated:
+            msg = 'Estoque "{}" (serviço vinculado: {}): {}.'.format(inv.name, service_name, ', '.join(parts))
+            if max_uses > 1:
+                msg += ' Cada login pode ser vendido ate {} vez(es).'.format(max_uses)
             messages.success(request, msg)
         else:
-            messages.error(request, msg if skipped else 'Nenhuma credencial válida informada.')
+            messages.error(
+                request,
+                'Nenhuma credencial válida informada. ' + ', '.join(parts) + '.' if parts
+                else 'Nenhuma credencial válida informada.')
     return redirect('admin_inventory_detail', inventory_id)
 
 
@@ -1859,8 +1900,13 @@ def admin_inventory_edit(request, data_id):
             item.code = new_code
             fields.append('code')
         if 'max_uses' in request.POST:
-            item.max_uses = _parse_max_uses(request.POST.get('max_uses'))
-            fields.append('max_uses')
+            new_max = _parse_max_uses(request.POST.get('max_uses'))
+            if new_max != item.max_uses:
+                item.max_uses = new_max
+                fields.append('max_uses')
+                if item.uses_count < new_max and item.status != 'Available':
+                    item.status = 'Available'
+                    fields.append('status')
         if fields:
             item.save(update_fields=fields)
         messages.success(request, 'Credencial salva. Caso tenha trocado a senha na ferramenta, disponibilize-a novamente.')
