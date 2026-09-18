@@ -2551,7 +2551,20 @@ def admin_api_link(request):
 
 @_staff
 def admin_slider_list(request):
-    ctx = {'sliders': Slider.objects.all().order_by('-id')}
+    if request.method == 'POST':
+        mode = 'on' if request.POST.get('slider_static_mode') == 'on' else 'off'
+        slider_id = (request.POST.get('slider_static_image') or '').strip()
+        for key, value in (('sliderStaticMode', mode), ('sliderStaticImageId', slider_id)):
+            obj, _ = SystemSetting.objects.get_or_create(key=key, defaults={'value': ''})
+            obj.value = value
+            obj.save(update_fields=['value'])
+        messages.success(request, 'Preferência de exibição do banner salva.')
+        return redirect('admin_slider_list')
+    ctx = {
+        'sliders': Slider.objects.all().order_by('-id'),
+        'slider_static_mode': str(SystemSetting.get('sliderStaticMode', 'off')).strip().lower() == 'on',
+        'slider_static_image_id': SystemSetting.get('sliderStaticImageId', ''),
+    }
     return render(request, 'admin/slider_list.html', ctx)
 
 

@@ -16,7 +16,9 @@
         {% endif %}
         <div class="homepage-banner">
             <div class="homepage-banner-image">
-                {% if sliders %}
+                {% if slider_static_mode and slider_static_image %}
+                <a href="{{ slider_static_image.url|default:'#' }}"><img class="homepage-banner-img" src="{{ slider_static_image.img }}" alt="banner"></a>
+                {% elif sliders %}
                 <div id="carouselExampleIndicators" class="carousel slide" data-bs-ride="carousel" data-bs-interval="3500">
                     <ol class="carousel-indicators">
                         {% for slider in sliders %}

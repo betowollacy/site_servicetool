@@ -140,9 +140,19 @@ def _base_ctx(request):
         }
         for slug, cfg in CATEGORY_SLUGS.items()
     ]
+    static_slider_mode = str(SystemSetting.get('sliderStaticMode', 'off')).strip().lower() == 'on'
+    static_slider = None
+    active_sliders = Slider.objects.filter(status='Active').order_by('id')
+    if static_slider_mode:
+        sid = SystemSetting.get('sliderStaticImageId', '').strip()
+        static_slider = active_sliders.filter(id=sid).first() if sid else None
+        if not static_slider:
+            static_slider = active_sliders.first()
     return {
         'currency_icon': 'R$',
-        'sliders': Slider.objects.filter(status='Active').order_by('id'),
+        'sliders': active_sliders,
+        'slider_static_mode': static_slider_mode,
+        'slider_static_image': static_slider,
         'groups': groups,
         'category_links': category_links,
         'activeGateway': PaymentGateway.objects.filter(name__in=['Asaas', 'Binance'], status='Active'),
