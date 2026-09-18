@@ -2759,3 +2759,70 @@ def admin_daily_report(request):
         'day_count': len(ordered_days),
     }
     return render(request, 'admin/daily_report.html', ctx)
+
+
+THEME_BLOCKS = [
+    ('banner', 'themeBlockBanner', 'Banner / Topo'),
+    ('products', 'themeBlockProducts', 'Seções de Produtos'),
+    ('footer', 'themeBlockFooter', 'Rodapé'),
+]
+
+THEME_TEMPLATE_TYPES = [
+    ('default', 'Padrão'),
+    ('compact', 'Compacto'),
+    ('featured', 'Destaque'),
+]
+
+
+def _theme_block_defaults():
+    return {
+        'enabled': False,
+        'template_type': 'default',
+        'note': '',
+        'html_override': '',
+    }
+
+
+def _load_theme_blocks():
+    blocks = []
+    for key, setting_key, label in THEME_BLOCKS:
+        raw = SystemSetting.get(setting_key, '{}')
+        try:
+            data = json.loads(raw)
+        except Exception:
+            data = {}
+        if not isinstance(data, dict):
+            data = {}
+        for field, default in _theme_block_defaults().items():
+            data.setdefault(field, default)
+        blocks.append({
+            'key': key,
+            'setting_key': setting_key,
+            'label': label,
+            'enabled': bool(data.get('enabled')),
+            'template_type': data.get('template_type'),
+            'note': data.get('note'),
+            'html_override': data.get('html_override'),
+            'template_types': THEME_TEMPLATE_TYPES,
+        })
+    return blocks
+
+
+@_staff
+def admin_theme_list(request):
+    blocks = _load_theme_blocks()
+    if request.method == 'POST':
+        for block in blocks:
+            key = block['key']
+            payload = {
+                'enabled': request.POST.get('{0}_enabled'.format(key)) == 'on',
+                'template_type': request.POST.get('{0}_type'.format(key), 'default'),
+                'note': request.POST.get('{0}_note'.format(key), ''),
+                'html_override': request.POST.get('{0}_html'.format(key), ''),
+            }
+            obj, _ = SystemSetting.objects.get_or_create(key=block['setting_key'], defaults={'value': '{}'})
+            obj.value = json.dumps(payload, ensure_ascii=False)
+            obj.save()
+        messages.success(request, 'Configurações de Tema salvas com sucesso.')
+        return redirect('admin_theme_list')
+    return render(request, 'admin/theme_list.html', {'blocks': blocks})

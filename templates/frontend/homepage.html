@@ -11,6 +11,9 @@
 {% block content %}
 <div class="my-4">
     <div class="container">
+        {% if theme_blocks.banner.enabled and theme_blocks.banner.html_override %}
+        <div class="theme-block theme-block-banner mb-3 theme-tpl-{{ theme_blocks.banner.template_type }}">{{ theme_blocks.banner.html_override|safe }}</div>
+        {% endif %}
         <div class="homepage-banner">
             <div class="homepage-banner-image">
                 {% if sliders %}
@@ -33,6 +36,10 @@
                 {% endif %}
             </div>
         </div>
+
+        {% if theme_blocks.products.enabled and theme_blocks.products.html_override %}
+        <div class="theme-block theme-block-products my-3 theme-tpl-{{ theme_blocks.products.template_type }}">{{ theme_blocks.products.html_override|safe }}</div>
+        {% endif %}
 
         {% include 'frontend/include/product_carousel.html' with carousel_id='promoCarousel' carousel_title='Promoções do Dia' groups=promo_groups %}
 

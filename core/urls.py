@@ -78,6 +78,8 @@ path('admin-panel/apis/<int:api_id>/import/', views_admin.admin_api_import,
     path('admin-panel/pages/<int:page_id>/edit/', views_admin.admin_page_edit, name='admin_page_edit'),
     path('admin-panel/pages/<int:page_id>/delete/', views_admin.admin_page_delete, name='admin_page_delete'),
 
+    path('admin-panel/themes/', views_admin.admin_theme_list, name='admin_theme_list'),
+
     path('', views.homepage, name='homepage'),
     path('public/api/index.php', public_api.public_api, name='public_api'),
     path('public/api/', public_api.public_api, name='public_api_index'),

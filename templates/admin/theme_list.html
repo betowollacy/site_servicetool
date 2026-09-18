@@ -1,0 +1,62 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h4 class="mb-0">Temas — Configurações de Template</h4>
+        <small class="text-muted">Configure os blocos de template da homepage. Cada bloco pode ser ativado, ter o layout escolhido e conteúdo personalizado (modifique depois quando quiser).</small>
+    </div>
+</div>
+{% if messages %}
+<div class="row">
+    <div class="col-12">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+<form method="post">
+    {% csrf_token %}
+    <div class="row g-3">
+        {% for block in blocks %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="ti ti-layout-grid me-2"></i>{{ block.label }}</h5>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="{{ block.key }}_enabled" id="{{ block.key }}_enabled" {% if block.enabled %}checked{% endif %}>
+                        <label class="form-check-label" for="{{ block.key }}_enabled">Ativado</label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Template</label>
+                            <select class="form-control" name="{{ block.key }}_type">
+                                {% for value, label in block.template_types %}
+                                <option value="{{ value }}" {% if block.template_type == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Observação (referência)</label>
+                            <input type="text" class="form-control" name="{{ block.key }}_note" value="{{ block.note }}" placeholder="Ex.: usar em campanha..." maxlength="255">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Conteúdo personalizado (HTML/shortcode)</label>
+                            <textarea class="form-control" name="{{ block.key }}_html" rows="4" placeholder="&lt;!-- conteúdo customizado deste bloco --&gt;">{{ block.html_override }}</textarea>
+                            <div class="form-text">Este conteúdo será usado pelo template quando o bloco estiver ativo. Deixe vazio para usar o padrão do sistema.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="card mt-3">
+        <div class="card-body">
+            <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-2"></i> Salvar Configurações de Tema</button>
+        </div>
+    </div>
+</form>
+{% endblock %}

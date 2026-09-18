@@ -125,6 +125,10 @@
 
     {% block content %}{% endblock %}
 
+    {% if theme_blocks.footer.enabled and theme_blocks.footer.html_override %}
+    <div class="theme-block theme-block-footer theme-tpl-{{ theme_blocks.footer.template_type }}">{{ theme_blocks.footer.html_override|safe }}</div>
+    {% endif %}
+
     <div class="top-footer">
         <div class="top-footer-content text-white">
             <div class="row g-3">

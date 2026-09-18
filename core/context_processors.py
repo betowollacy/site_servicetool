@@ -1,9 +1,37 @@
+import json
+
 from django.conf import settings
 
 from .models import (
     SystemSetting, Currency, Customer, ServiceList, CustomerOrder, Api,
     RemoteServiceList, User, Inventory,
 )
+
+
+THEME_BLOCK_KEYS = (
+    ('banner', 'themeBlockBanner'),
+    ('products', 'themeBlockProducts'),
+    ('footer', 'themeBlockFooter'),
+)
+
+
+def _load_theme_blocks():
+    blocks = {}
+    for key, setting_key in THEME_BLOCK_KEYS:
+        raw = SystemSetting.get(setting_key, '{}')
+        try:
+            data = json.loads(raw)
+        except Exception:
+            data = {}
+        if not isinstance(data, dict):
+            data = {}
+        blocks[key] = {
+            'enabled': _bool(data.get('enabled')),
+            'template_type': data.get('template_type', 'default'),
+            'note': data.get('note', ''),
+            'html_override': data.get('html_override', ''),
+        }
+    return blocks
 
 
 def _bool(value, default=False):
@@ -72,6 +100,7 @@ def site_context(request):
         'currency_icon': 'R$',
         'themMode': them_mode,
         'themeColor': theme_color,
+        'theme_blocks': _load_theme_blocks(),
         'currencies_list': currencies,
         'currency_code': 'BRL',
         'site_url': getattr(settings, 'SITE_URL', 'http://127.0.0.1:8000'),
