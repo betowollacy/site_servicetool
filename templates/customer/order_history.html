@@ -39,6 +39,16 @@
         padding: 4px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
     }
     .gsm-back-btn:hover { background: rgba(255,255,255,.3); }
+    /* Tema escuro: letras do modal sempre claras (independente da cor custom das letras) */
+    html[data-bs-theme="dark"] #orderDetailModal .modal-content,
+    html[data-bs-theme="dark"] #orderDetailModal .modal-body { color: #fff !important; }
+    html[data-bs-theme="dark"] #orderDetailModal .gsm-amount,
+    html[data-bs-theme="dark"] #orderDetailModal .gsm-timeline-val,
+    html[data-bs-theme="dark"] #orderDetailModal .gsm-reply-text,
+    html[data-bs-theme="dark"] #orderDetailModal .gsm-service-title { color: #fff !important; }
+    html[data-bs-theme="dark"] #orderDetailModal .gsm-lbl,
+    html[data-bs-theme="dark"] #orderDetailModal .gsm-timeline-lbl,
+    html[data-bs-theme="dark"] #orderDetailModal .gsm-reply-text.muted { color: rgba(255,255,255,.62) !important; }
     #orderDetailModal { position: fixed !important; animation: none !important; }
     #orderDetailModal .modal-dialog,
     #orderDetailModal .modal-content,
