@@ -42,10 +42,6 @@
                         <span class="text-muted small">{{ c.last_seen|time_ago }}</span>
                     </td>
                 </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center text-muted py-4">Nenhum cliente online no momento.</td>
-                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -56,6 +52,9 @@
 <script>
     $(function () {
         var dt = $('#onlineTable').DataTable();
+        var lang = dt.settings()[0].oLanguage;
+        lang.sZeroRecords = 'Nenhum cliente online no momento.';
+        lang.sEmptyTable = 'Nenhum cliente online no momento.';
         $('#onlineSearch').on('keyup', function () {
             dt.search(this.value.trim()).draw();
         });
