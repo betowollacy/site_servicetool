@@ -332,6 +332,40 @@ a.text-primary:hover { color: var(--orion-secondary) !important; }
 .orion-fab.bg-tlg { background: #0088cc; }
 .orion-fab.bg-wpp { background: #25d366; }
 .orion-fab.bg-pix { background: linear-gradient(45deg, #32bcad, #26a69a); }
+.orion-fab { border: 0; cursor: pointer; }
+.orion-wa-wrap { position: relative; display: flex; justify-content: flex-end; }
+.orion-wa-menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 10px);
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 210px;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+    padding: 8px;
+    z-index: 9999;
+}
+.orion-wa-menu.show { display: flex; }
+.orion-wa-menu a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    color: #25d366;
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+    text-decoration: none;
+}
+.orion-wa-menu a:hover { background: #25d366; color: #fff !important; }
+html[data-bs-theme="dark"] .orion-wa-menu { background: #1e2a36; border-color: #2c3a48; }
+html[data-bs-theme="dark"] .orion-wa-menu a { color: #25d366; }
+html[data-bs-theme="dark"] .orion-wa-menu a:hover { background: #25d366; color: #fff !important; }
 body:has(.orion-sidebar) #waSupportWidget { display: none !important; }
 #orionBackTop {
     position: fixed;

@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="{% static 'frontend/css/select2.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/select2-bootstrap-5-theme.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/tabler-icons.min.css' %}" />
-    <link rel="stylesheet" href="{% static 'frontend/css/orionstyle.css' %}?v=5" />
+    <link rel="stylesheet" href="{% static 'frontend/css/orionstyle.css' %}?v=6" />
     <style>
         :root {
             --orion-primary: {{ site_css.primary }};
@@ -305,6 +305,16 @@
                 try { localStorage.setItem('waSupportHidden', '1'); } catch(e) {}
             });
         })();
+        document.addEventListener('click', function (e) {
+            var fab2 = document.getElementById('orionWaFab');
+            var waMenu2 = document.querySelector('.orion-wa-menu');
+            if (!fab2 || !waMenu2) return;
+            if (fab2.contains(e.target)) {
+                waMenu2.classList.toggle('show');
+            } else if (!waMenu2.contains(e.target)) {
+                waMenu2.classList.remove('show');
+            }
+        });
     </script>
     {% endif %}
 
@@ -345,10 +355,21 @@
         </div>
     </div>
 
-    {% if siteTeleUrl or siteWaUrl %}
+    {% if siteTeleUrl or siteWaUrl or siteWaContacts %}
     <div class="orion-sidebar">
         {% if siteTeleUrl %}<a class="orion-fab bg-tlg" href="{{ siteTeleUrl }}" target="_blank" rel="noopener" title="Telegram" aria-label="Telegram"><i class="bi bi-send-fill"></i></a>{% endif %}
-        {% if siteWaUrl %}<a class="orion-fab bg-wpp" href="{{ siteWaUrl }}" target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>{% endif %}
+        {% if siteWaContacts %}
+        <div class="orion-wa-wrap">
+            <div class="orion-wa-menu">
+                {% for c in siteWaContacts %}
+                <a href="https://wa.me/{{ c.number }}" target="_blank" rel="noopener"><i class="bi bi-whatsapp"></i> {% if c.name %}{{ c.name }}{% else %}{{ c.number }}{% endif %}</a>
+                {% endfor %}
+            </div>
+            <button type="button" class="orion-fab bg-wpp" id="orionWaFab" title="Suporte via WhatsApp" aria-label="Suporte via WhatsApp"><i class="bi bi-whatsapp"></i></button>
+        </div>
+        {% elif siteWaUrl %}
+        <a class="orion-fab bg-wpp" href="{{ siteWaUrl }}" target="_blank" rel="noopener" title="WhatsApp" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+        {% endif %}
         <a class="orion-fab bg-pix" href="{% url 'customer_add_balance' %}" title="Recarga via PIX" aria-label="Recarga via PIX"><i class="bi bi-qr-code-scan"></i></a>
     </div>
     {% endif %}
