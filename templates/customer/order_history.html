@@ -231,7 +231,7 @@
                 </div>
 
                 <div class="gsm-card gray">
-                    <div class="gsm-lbl">{{ order|order_service_label }}</div>
+                    <div class="gsm-lbl">{% if order.service_title %}{{ order.service_title }}{% else %}{{ order|order_service_label }}{% endif %}</div>
                     {% if order.service_qnt %}
                     <div class="gsm-reply-text"><b>Quantidade:</b> {{ order.service_qnt }}</div>
                     {% endif %}
