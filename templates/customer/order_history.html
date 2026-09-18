@@ -39,6 +39,10 @@
         padding: 4px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
     }
     .gsm-back-btn:hover { background: rgba(255,255,255,.3); }
+    #orderDetailModal { position: fixed !important; animation: none !important; }
+    #orderDetailModal .modal-dialog,
+    #orderDetailModal .modal-content,
+    #orderDetailModal .modal-backdrop { animation: none !important; transition: none !important; }
     /* Enquanto QUALQUER modal estiver aberto: nada flutuante/animação na frente (inline p/ evitar cache de static) */
     body.modal-open #orionFaqBtn,
     body.modal-open #orionFaqBox,
@@ -268,6 +272,7 @@
     var odmBody = document.getElementById('odm-body');
     var odmOrderId = document.getElementById('odm-order-id');
     var odmModalEl = document.getElementById('orderDetailModal');
+    document.body.appendChild(odmModalEl);
     document.querySelectorAll('.order-row').forEach(function (tr) {
         tr.addEventListener('click', function () {
             var id = tr.getAttribute('data-order-id');
