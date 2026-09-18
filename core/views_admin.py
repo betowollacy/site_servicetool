@@ -32,7 +32,7 @@ from .models import (
 )
 from . import asaas, catalog_images, notify, provider_api, public_api
 from .context_processors import (
-    COLOR_PRESETS, FONT_OPTIONS, PAGE_EFFECTS, _DEFAULT_MARQUEE_TEXT, _page_effect_speed,
+    COLOR_PRESETS, FONT_OPTIONS, PAGE_EFFECTS, TEXT_COLOR_PRESETS, _DEFAULT_MARQUEE_TEXT, _page_effect_speed,
 )
 
 STATUS_MAP = {
@@ -3131,17 +3131,25 @@ def admin_appearance(request):
         font = (request.POST.get('themeFont') or '').strip()
         if font not in [f['key'] for f in FONT_OPTIONS]:
             font = ''
+        text_color = (request.POST.get('themeTextColor') or '').strip()
+        if text_color not in [t['key'] for t in TEXT_COLOR_PRESETS]:
+            text_color = ''
         obj, _ = SystemSetting.objects.get_or_create(key='themeColor', defaults={'value': ''})
         obj.value = color
         obj.save(update_fields=['value'])
         obj, _ = SystemSetting.objects.get_or_create(key='themeFont', defaults={'value': ''})
         obj.value = font
         obj.save(update_fields=['value'])
-        messages.success(request, 'Cor e fonte do site atualizadas.')
+        obj, _ = SystemSetting.objects.get_or_create(key='themeTextColor', defaults={'value': ''})
+        obj.value = text_color
+        obj.save(update_fields=['value'])
+        messages.success(request, 'Cor, fonte e cor das letras atualizadas.')
         return redirect('admin_appearance')
     return render(request, 'admin/appearance.html', {
         'color_presets': COLOR_PRESETS,
         'font_options': FONT_OPTIONS,
+        'text_color_presets': TEXT_COLOR_PRESETS,
         'theme_color': SystemSetting.get('themeColor', 'roxo'),
         'theme_font': SystemSetting.get('themeFont', ''),
+        'theme_text_color': SystemSetting.get('themeTextColor', ''),
     })

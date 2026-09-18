@@ -40,6 +40,12 @@
         }
         body { font-family: {{ site_css.font_family }} !important; }
         {% endif %}
+        {% if site_css.text_color %}
+        html[data-bs-theme="light"] { --bs-body-color: {{ site_css.text_color }} !important; }
+        html[data-bs-theme="dark"] { --bs-body-color: {{ site_css.text_color }} !important; }
+        :root { --bs-body-color: {{ site_css.text_color }} !important; --ink: {{ site_css.text_color }} !important; }
+        body { color: var(--bs-body-color) !important; }
+        {% endif %}
     </style>
     {% if site_css.font_url %}<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="{{ site_css.font_url }}" rel="stylesheet">{% endif %}
     <style>

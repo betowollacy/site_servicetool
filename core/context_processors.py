@@ -105,6 +105,16 @@ FONT_OPTIONS = (
 )
 
 
+TEXT_COLOR_PRESETS = (
+    {'key': '', 'name': 'Padrão (automático)', 'value': ''},
+    {'key': 'branca', 'name': 'Branca', 'value': '#ffffff'},
+    {'key': 'suave', 'name': 'Branca suave', 'value': '#e6edf3'},
+    {'key': 'escura', 'name': 'Escura', 'value': '#111827'},
+    {'key': 'cinza', 'name': 'Cinza escuro', 'value': '#374151'},
+    {'key': 'dourada', 'name': 'Dourada', 'value': '#d4af37'},
+)
+
+
 def _hex_rgb(hexcolor):
     h = (hexcolor or '').strip().lstrip('#')
     if len(h) != 6:
@@ -173,12 +183,15 @@ def _site_css():
     preset = next((p for p in COLOR_PRESETS if p['key'] == color), COLOR_PRESETS[0])
     font_key = SystemSetting.get('themeFont', '')
     font = next((f for f in FONT_OPTIONS if f['key'] == font_key), FONT_OPTIONS[0])
+    text_key = SystemSetting.get('themeTextColor', '')
+    text_preset = next((t for t in TEXT_COLOR_PRESETS if t['key'] == text_key), TEXT_COLOR_PRESETS[0])
     return {
         'primary': preset['primary'],
         'secondary': preset['secondary'],
         'rgb': _hex_rgb(preset['primary']),
         'font_family': font['family'],
         'font_url': font.get('url') or '',
+        'text_color': text_preset['value'],
     }
 
 
