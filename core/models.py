@@ -743,6 +743,11 @@ class InventoryData(models.Model):
     def is_reusable(self):
         return (self.max_uses or 1) > 1
 
+    @property
+    def is_available(self):
+        """Mesma regra do queryset available(): status Available e usos restantes."""
+        return self.status == 'Available' and (self.uses_count or 0) < (self.max_uses or 1)
+
 
 class Media(models.Model):
     name = models.CharField(max_length=500)
