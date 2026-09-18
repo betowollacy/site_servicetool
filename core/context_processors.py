@@ -66,7 +66,7 @@ def _active_page_effects():
     return [e['key'] for e in PAGE_EFFECTS if _bool(SystemSetting.get(e['key'], 'off'))]
 
 
-PAGE_EFFECT_SPEEDS = ('slow', 'normal', 'fast')
+PAGE_EFFECT_SPEEDS = ('very_slow', 'slow', 'normal', 'fast')
 
 
 def _page_effect_speed():

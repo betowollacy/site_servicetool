@@ -2852,7 +2852,7 @@ def admin_effects(request):
             obj.value = val
             obj.save(update_fields=['value'])
         speed = (request.POST.get('page_effect_speed') or 'normal').strip().lower()
-        if speed not in ('slow', 'normal', 'fast'):
+        if speed not in ('very_slow', 'slow', 'normal', 'fast'):
             speed = 'normal'
         obj, _ = SystemSetting.objects.get_or_create(key='pageEffectSpeed', defaults={'value': 'normal'})
         obj.value = speed

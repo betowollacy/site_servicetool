@@ -286,7 +286,7 @@
             function W() { return window.innerWidth; }
             function H() { return window.innerHeight; }
             var FX = {};
-            var SP = {% if page_effect_speed == 'slow' %}0.55{% elif page_effect_speed == 'fast' %}1.65{% else %}1{% endif %};
+            var SP = {% if page_effect_speed == 'very_slow' %}0.35{% elif page_effect_speed == 'slow' %}0.55{% elif page_effect_speed == 'fast' %}1.65{% else %}1{% endif %};
 
             FX.pageEffectSnow = function (canvas) {
                 var ctx = canvas.getContext('2d');
@@ -321,7 +321,7 @@
                 window.addEventListener('resize', resize);
                 return function () {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    var stepFrames = SP <= 0.6 ? 6 : (SP >= 1.5 ? 2 : 4);
+                    var stepFrames = SP <= 0.36 ? 9 : (SP <= 0.6 ? 6 : (SP >= 1.5 ? 2 : 4));
                     var advance = (tick % stepFrames) === 0;
                     ctx.font = font + 'px monospace';
                     for (var i = 0; i < cols; i++) {

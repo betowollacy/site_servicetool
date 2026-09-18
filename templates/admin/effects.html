@@ -22,9 +22,11 @@
         <div class="card-body">
             <label class="form-label">Ajusta a velocidade de todos os efeitos ativos no site.</label>
             <div class="btn-group" role="group" aria-label="Velocidade das animações">
+                <input type="radio" class="btn-check" name="page_effect_speed" id="speedVerySlow" value="very_slow" {% if page_effect_speed == 'very_slow' %}checked{% endif %}>
+                <label class="btn btn-outline-primary" for="speedVerySlow">Bem Lenta</label>
                 <input type="radio" class="btn-check" name="page_effect_speed" id="speedSlow" value="slow" {% if page_effect_speed == 'slow' %}checked{% endif %}>
                 <label class="btn btn-outline-primary" for="speedSlow">Lenta</label>
-                <input type="radio" class="btn-check" name="page_effect_speed" id="speedNormal" value="normal" {% if page_effect_speed != 'slow' and page_effect_speed != 'fast' %}checked{% endif %}>
+                <input type="radio" class="btn-check" name="page_effect_speed" id="speedNormal" value="normal" {% if page_effect_speed != 'slow' and page_effect_speed != 'fast' and page_effect_speed != 'very_slow' %}checked{% endif %}>
                 <label class="btn btn-outline-primary" for="speedNormal">Normal</label>
                 <input type="radio" class="btn-check" name="page_effect_speed" id="speedFast" value="fast" {% if page_effect_speed == 'fast' %}checked{% endif %}>
                 <label class="btn btn-outline-primary" for="speedFast">Rápida</label>
