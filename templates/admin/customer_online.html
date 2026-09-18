@@ -1,0 +1,65 @@
+{% extends 'admin/base.html' %}
+{% load core_extras %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <h4 class="mb-0">Clientes online <span class="badge bg-light-success">{{ customers|length }}</span></h4>
+            <small class="text-muted">Clientes com atividade nos últimos {{ online_window }} minutos</small>
+        </div>
+        <a href="{% url 'admin_customer_list' %}" class="btn btn-sm btn-light-primary"><i class="ti ti-users"></i> Todos os clientes</a>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <div class="input-group" style="max-width: 320px;">
+            <span class="input-group-text"><i class="ti ti-search"></i></span>
+            <input type="text" id="onlineSearch" class="form-control" placeholder="Buscar cliente online..." data-st-persist>
+        </div>
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-hover dataTable" id="onlineTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>Papel</th>
+                    <th>Saldo</th>
+                    <th>Última atividade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in customers %}
+                <tr>
+                    <td>#{{ c.id }}</td>
+                    <td class="fw-semibold">{{ c.name }}</td>
+                    <td>{{ c.email }}</td>
+                    <td>{{ c.role }}</td>
+                    <td>R$ {{ c.balance|floatformat:2 }}</td>
+                    <td>
+                        <span class="badge bg-light-success"><i class="ti ti-point-filled"></i> online</span>
+                        <span class="text-muted small">{{ c.last_seen|time_ago }}</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">Nenhum cliente online no momento.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+{% block footer_script %}
+<script>
+    $(function () {
+        var dt = $('#onlineTable').DataTable();
+        $('#onlineSearch').on('keyup', function () {
+            dt.search(this.value.trim()).draw();
+        });
+        dt.search($('#onlineSearch').val().trim()).draw();
+    });
+</script>
+{% endblock %}

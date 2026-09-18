@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 import io
@@ -39,6 +40,19 @@ STATUS_MAP = {
     'rejected': ('Rejected', 'Rejeitados'),
 }
 SERVICE_STATUS_CHOICES = ['Waiting Action', 'In Process', 'Success', 'Rejected']
+
+# Um cliente é considerado online se teve atividade nos últimos N minutos.
+ONLINE_WINDOW_MINUTES = 5
+
+
+def _online_since():
+    return timezone.now() - timedelta(minutes=ONLINE_WINDOW_MINUTES)
+
+
+def _online_customers():
+    return (Customer.objects
+            .filter(status='Active', last_seen__gte=_online_since())
+            .order_by('-last_seen'))
 
 TYPE_MAP = {
     'server': ('Server Service', 'Aluguel'),
@@ -474,6 +488,8 @@ def admin_dashboard(request):
         'period': period,
         'periods': AVAILABLE_PERIODS,
         'total_customers': Customer.objects.count(),
+        'online_count': _online_customers().count(),
+        'online_window': ONLINE_WINDOW_MINUTES,
         'total_services': ServiceList.objects.count(),
         'total_invoices': Invoice.objects.count(),
         'status_counts': status_counts,
@@ -664,6 +680,14 @@ def admin_customer_list(request):
         'roles': Customer.ROLES,
         'statuses': Customer.STATUS,
         'admin_usernames': set(User.objects.filter(is_staff=True).values_list('username', flat=True)),
+    })
+
+
+@_staff
+def admin_customer_online(request):
+    return render(request, 'admin/customer_online.html', {
+        'customers': _online_customers(),
+        'online_window': ONLINE_WINDOW_MINUTES,
     })
 
 

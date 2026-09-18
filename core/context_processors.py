@@ -115,6 +115,11 @@ def site_context(request):
                 customer = None
                 request.session.pop('customer_id', None)
                 request.session.pop('customer_session_token', None)
+            else:
+                try:
+                    customer.touch_activity()
+                except Exception:  # noqa: BLE001 - presenca nao deve quebrar a pagina
+                    pass
 
     them_mode = SystemSetting.get('themeMode', 'dark')
     theme_color = SystemSetting.get('themeColor', 'preset-1')

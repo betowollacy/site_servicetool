@@ -57,6 +57,7 @@ class Customer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     session_token = models.CharField(max_length=64, blank=True, null=True)
+    last_seen = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         db_table = 'customers'
@@ -70,6 +71,13 @@ class Customer(models.Model):
 
     def check_password(self, raw_password):
         return hashers.check_password(raw_password, self.password or '')
+
+    def touch_activity(self, min_interval=60):
+        """Marca o cliente como visto agora (no maximo a cada min_interval segundos)."""
+        now = timezone.now()
+        if self.last_seen is None or (now - self.last_seen).total_seconds() >= min_interval:
+            self.last_seen = now
+            self.save(update_fields=['last_seen'])
 
     @property
     def currency_icon(self):

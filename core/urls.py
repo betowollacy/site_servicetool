@@ -13,6 +13,7 @@ urlpatterns = [
     path('admin-panel/invoices/<int:invoice_id>/delete/', views_admin.admin_invoice_delete, name='admin_invoice_delete'),
     path('admin-panel/invoices/<int:invoice_id>/status/', views_admin.admin_invoice_toggle_paid, name='admin_invoice_toggle_paid'),
     path('admin-panel/customers/', views_admin.admin_customer_list, name='admin_customer_list'),
+    path('admin-panel/customers/online/', views_admin.admin_customer_online, name='admin_customer_online'),
     path('admin-panel/customers/<int:customer_id>/api-toggle/', views_admin.admin_customer_api_toggle, name='admin_customer_api_toggle'),
     path('admin-panel/customers/<int:customer_id>/refund/', views_admin.admin_customer_refund, name='admin_customer_refund'),
     path('admin-panel/customers/<int:customer_id>/edit/', views_admin.admin_customer_edit, name='admin_customer_edit'),

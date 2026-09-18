@@ -85,6 +85,10 @@ def _get_customer(request):
         request.session.pop('customer_id', None)
         request.session.pop(CUSTOMER_SESSION_TOKEN, None)
         return None
+    try:
+        customer.touch_activity()
+    except Exception:  # noqa: BLE001 - presenca nao deve quebrar a requisicao
+        pass
     return customer
 
 
@@ -304,6 +308,7 @@ def login_view(request):
         customer = Customer.objects.filter(email__iexact=email).first()
         if customer and customer.check_password(password) and customer.status == 'Active':
             _issue_session_token(customer)
+            customer.touch_activity(min_interval=0)
             request.session['customer_id'] = customer.id
             request.session[CUSTOMER_SESSION_TOKEN] = customer.session_token
             if request.POST.get('remember_login') == 'on':

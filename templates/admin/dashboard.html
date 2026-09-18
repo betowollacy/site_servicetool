@@ -22,6 +22,25 @@
 {% endfor %}
 {% endif %}
 
+<div class="row mb-3">
+    <div class="col-sm-6 col-xl-3">
+        <a href="{% url 'admin_customer_online' %}" class="text-decoration-none">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted">Clientes online</span>
+                            <h3 class="mb-0 text-success">{{ online_count }}</h3>
+                            <small class="text-muted">Ativos nos últimos {{ online_window }} min · clique para ver a lista</small>
+                        </div>
+                        <div class="wid-40 hp-40 rounded-circle bg-light-success d-flex align-items-center justify-content-center"><i class="ti ti-wifi"></i></div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-sm-6 col-xl-3">
         <div class="card">

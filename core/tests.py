@@ -2273,6 +2273,33 @@ class AdminPromoteTests(TestCase):
         self.assertContains(resp, 'comconta@teste.com')
         self.assertContains(resp, 'Administrador')
 
+    def test_online_list_only_shows_recent_activity(self):
+        Customer.objects.create(
+            name='Online', email='online@teste.com',
+            password=Customer.make_password('x'), currency='BRL',
+            last_seen=timezone.now(),
+        )
+        Customer.objects.create(
+            name='Offline', email='off@teste.com',
+            password=Customer.make_password('x'), currency='BRL',
+            last_seen=timezone.now() - timedelta(hours=2),
+        )
+        resp = self.client.get(reverse('admin_customer_online'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'online@teste.com')
+        self.assertNotContains(resp, 'off@teste.com')
+
+    def test_dashboard_shows_online_count(self):
+        Customer.objects.create(
+            name='Online', email='dashonline@teste.com',
+            password=Customer.make_password('x'), currency='BRL',
+            last_seen=timezone.now(),
+        )
+        resp = self.client.get(reverse('admin_dashboard'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Clientes online')
+        self.assertContains(resp, reverse('admin_customer_online'))
+
 
 class AdminServiceBulkDeleteTests(TestCase):
     def setUp(self):
