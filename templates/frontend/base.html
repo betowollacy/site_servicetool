@@ -307,27 +307,38 @@
 
             FX.pageEffectMatrix = function (canvas) {
                 var ctx = canvas.getContext('2d');
-                var font = 16, cols, drops;
+                var font = 18, cols, drops = [], cur = [], tick = 0;
                 var chars = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEF';
                 function resize() {
                     canvas.width = W(); canvas.height = H();
                     cols = Math.ceil(canvas.width / font);
-                    drops = [];
-                    for (var i = 0; i < cols; i++) drops.push(Math.random() * -50);
+                    drops = []; cur = [];
+                    for (var i = 0; i < cols; i++) { drops.push(Math.random() * -60); cur.push(' '); }
                 }
                 resize();
                 window.addEventListener('resize', resize);
                 return function () {
-                    ctx.fillStyle = 'rgba(0,0,0,0.06)';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = '#0f0';
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    var advance = (tick % 4) === 0;
                     ctx.font = font + 'px monospace';
                     for (var i = 0; i < cols; i++) {
-                        var ch = chars.charAt(Math.floor(Math.random() * chars.length));
-                        ctx.fillText(ch, i * font, drops[i] * font);
-                        if (drops[i] * font > canvas.height && Math.random() > 0.975) drops[i] = 0;
-                        drops[i]++;
+                        var x = i * font;
+                        var y = drops[i] * font;
+                        if (advance) {
+                            cur[i] = chars.charAt(Math.floor(Math.random() * chars.length));
+                            drops[i]++;
+                        } else if (cur[i] === ' ') {
+                            cur[i] = chars.charAt(Math.floor(Math.random() * chars.length));
+                        }
+                        ctx.fillStyle = 'rgba(0,255,0,0.28)';
+                        ctx.fillText(cur[i], x, y - font);
+                        ctx.fillStyle = 'rgba(0,255,0,0.12)';
+                        ctx.fillText(cur[i], x, y - 2 * font);
+                        ctx.fillStyle = '#00eb00';
+                        ctx.fillText(cur[i], x, y);
+                        if (y > canvas.height + 2 * font && Math.random() > 0.975) drops[i] = 0;
                     }
+                    tick++;
                 };
             };
 
