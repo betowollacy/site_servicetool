@@ -207,7 +207,7 @@
                 <div class="gsm-card gray d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
                         <div class="gsm-lbl">Valor</div>
-                        <div class="gsm-amount">{{ order.service_price|floatformat:2 }} <small>BRL</small></div>
+                        <div class="gsm-amount">R$ {{ order.service_price|floatformat:2 }}</div>
                     </div>
                     <span class="gsm-badge {% if order.service_status == 'Success' %}success{% elif order.service_status == 'Rejected' %}rejected{% elif order.service_status == 'In Process' %}processing{% else %}waiting{% endif %}">
                         {% if order.service_status == 'Success' %}&check; {% endif %}{{ order.service_status }}
