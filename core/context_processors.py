@@ -51,6 +51,14 @@ PAGE_EFFECTS = (
      'desc': 'Pétalas rosas caindo suavemente.'},
     {'key': 'pageEffectBubbles', 'name': 'Bolhas', 'icon': '🫧',
      'desc': 'Bolhas de sabão subindo pela tela.'},
+    {'key': 'pageEffectRain', 'name': 'Chuva', 'icon': '🌧️',
+     'desc': 'Chuva fina caindo sobre a página.'},
+    {'key': 'pageEffectSparkles', 'name': 'Brilhos', 'icon': '✨',
+     'desc': 'Pequenos brilhos dourados piscando pela página.'},
+    {'key': 'pageEffectLights', 'name': 'Luzes de Natal', 'icon': '🎄',
+     'desc': 'Pisca-pisca colorido no topo da página.'},
+    {'key': 'pageEffectStarField', 'name': 'Estrelas Brilhando', 'icon': '⭐',
+     'desc': 'Estrelas cintilantes na parte superior.'},
 )
 
 
