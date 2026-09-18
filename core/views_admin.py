@@ -120,23 +120,38 @@ def _check_stock_order_access(request, service):
 
 
 AVAILABLE_PERIODS = {
-    'all': 'Tudo',
-    '30': 'Últimos 30 dias',
-    '7': 'Últimos 7 dias',
     'today': 'Hoje',
+    '7': 'Últimos 7 dias',
+    '30': 'Últimos 30 dias',
+    'all': 'Tudo',
 }
+
+ORDERS_PERIODS = [
+    ('today', 'Hoje'),
+    ('7', 'Últimos 7 dias'),
+    ('30', 'Últimos 30 dias'),
+    ('all', 'Tudo'),
+]
+
+
+def _period_since(period):
+    """Retorna o início do período no fuso local (America/Sao_Paulo).
+
+    O dia começa à meia-noite local, para que cada dia seja um novo ciclo
+    e os pedidos não se misturem entre datas."""
+    if period == 'today':
+        now_local = timezone.localtime(timezone.now())
+        return now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+    if period in ('7', '30'):
+        return timezone.now() - timezone.timedelta(days=int(period))
+    return None
 
 
 def _dashboard_period(request):
     period = request.GET.get('period', '').strip().lower()
     if period not in AVAILABLE_PERIODS:
-        period = 'all'
-    since = None
-    if period == 'today':
-        since = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    elif period in ('7', '30'):
-        since = timezone.now() - timezone.timedelta(days=int(period))
-    return period, since
+        period = 'today'
+    return period, _period_since(period)
 
 
 def _order_qty(order):
@@ -498,10 +513,19 @@ def admin_dashboard(request):
 @_staff
 def admin_orders(request, status):
     db_status, label = STATUS_MAP.get(status, ('Waiting Action', 'Aguardando Ação'))
-    orders = list(CustomerOrder.objects.filter(service_status=db_status)
-                  .select_related('customer', 'service__inventory')
-                  .prefetch_related('order_inputs'))
-    CustomerOrder.objects.filter(service_status=db_status, seen='false').update(seen='true')
+    period = (request.GET.get('period') or 'today').strip().lower()
+    if period not in dict(ORDERS_PERIODS):
+        period = 'today'
+    since = _period_since(period)
+    orders_qs = (CustomerOrder.objects.filter(service_status=db_status)
+                 .select_related('customer', 'service__inventory')
+                 .prefetch_related('order_inputs'))
+    if since is not None:
+        orders_qs = orders_qs.filter(created_at__gte=since)
+    orders = list(orders_qs.order_by('-id'))
+    seen_ids = [o.id for o in orders]
+    if seen_ids:
+        CustomerOrder.objects.filter(id__in=seen_ids, seen='false').update(seen='true')
     inv_ids = {o.service.inventory_id for o in orders if o.service and o.service.inventory_id}
     avail = dict(
         InventoryData.objects.filter(inventory_id__in=inv_ids, status='Available')
@@ -511,11 +535,18 @@ def admin_orders(request, status):
         inv = order.service.inventory if order.service else None
         order.inventory_id_for_delivery = inv.id if inv else None
         order.available_count = avail.get(inv.id, 0) if inv else 0
+    older_count = 0
+    if since is not None:
+        older_count = CustomerOrder.objects.filter(
+            service_status=db_status, created_at__lt=since).count()
     ctx = {
         'status': status,
         'status_label': label,
         'orders': orders,
         'status_choices': SERVICE_STATUS_CHOICES,
+        'period': period,
+        'periods': ORDERS_PERIODS,
+        'older_count': older_count,
     }
     return render(request, 'admin/orders.html', ctx)
 

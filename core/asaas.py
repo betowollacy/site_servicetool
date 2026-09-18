@@ -2,7 +2,8 @@ import json
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import date
+
+from django.utils import timezone
 
 
 class AsaasError(Exception):
@@ -73,7 +74,7 @@ def create_pix_payment(invoice, gateway):
         'customer': customer_id,
         'billingType': 'PIX',
         'value': float(invoice.invoice_amount) + fee,
-        'dueDate': date.today().isoformat(),
+        'dueDate': timezone.localdate().isoformat(),
         'description': f'Fatura #{invoice.id} - {invoice.invoice_title or invoice.invoice_for or "Deposito"}',
         'externalReference': f'invoice-{invoice.id}',
     }

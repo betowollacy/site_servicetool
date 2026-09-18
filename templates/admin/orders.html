@@ -3,13 +3,28 @@
 <div class="row mb-3">
     <div class="col-12"><h4 class="mb-0">Pedidos - {{ status_label }}</h4>
         <ul class="nav nav-pills mt-3">
-            <li class="nav-item"><a class="nav-link {% if status == 'waiting' %}active{% endif %}" href="{% url 'admin_orders' 'waiting' %}">Aguardando Ação</a></li>
-            <li class="nav-item"><a class="nav-link {% if status == 'in_process' %}active{% endif %}" href="{% url 'admin_orders' 'in_process' %}">Em Processo</a></li>
-            <li class="nav-item"><a class="nav-link {% if status == 'success' %}active{% endif %}" href="{% url 'admin_orders' 'success' %}">Sucesso</a></li>
-            <li class="nav-item"><a class="nav-link {% if status == 'rejected' %}active{% endif %}" href="{% url 'admin_orders' 'rejected' %}">Rejeitados</a></li>
+            <li class="nav-item"><a class="nav-link {% if status == 'waiting' %}active{% endif %}" href="{% url 'admin_orders' 'waiting' %}?period={{ period }}">Aguardando Ação</a></li>
+            <li class="nav-item"><a class="nav-link {% if status == 'in_process' %}active{% endif %}" href="{% url 'admin_orders' 'in_process' %}?period={{ period }}">Em Processo</a></li>
+            <li class="nav-item"><a class="nav-link {% if status == 'success' %}active{% endif %}" href="{% url 'admin_orders' 'success' %}?period={{ period }}">Sucesso</a></li>
+            <li class="nav-item"><a class="nav-link {% if status == 'rejected' %}active{% endif %}" href="{% url 'admin_orders' 'rejected' %}?period={{ period }}">Rejeitados</a></li>
         </ul>
+        <div class="d-flex flex-wrap align-items-center gap-2 mt-3">
+            <span class="text-muted small">Período:</span>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Período">
+                {% for key, lbl in periods %}
+                <a class="btn btn-outline-secondary {% if period == key %}active{% endif %}" href="{% url 'admin_orders' status %}?period={{ key }}">{{ lbl }}</a>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 </div>
+
+{% if older_count %}
+<div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span><i class="ti ti-clock me-1"></i> Existem <strong>{{ older_count }}</strong> pedido(s) em "{{ status_label }}" de períodos anteriores.</span>
+    <a href="{% url 'admin_orders' status %}?period=all" class="btn btn-sm btn-warning">Ver todos os períodos</a>
+</div>
+{% endif %}
 
 {% if messages %}
 {% for message in messages %}
@@ -23,6 +38,7 @@
             <thead>
                 <tr>
                     <th>ID</th>
+                    <th>Data</th>
                     <th>Cliente</th>
                     <th>Serviço</th>
                     <th>Dados do pedido</th>
@@ -36,6 +52,7 @@
                 {% for order in orders %}
                 <tr>
                     <td>#{{ order.id }}</td>
+                    <td>{{ order.created_at|date:"d/m/Y H:i" }}</td>
                     <td>{{ order.customer.name }}</td>
                     <td>{{ order.service_title }}</td>
                     <td>
@@ -91,7 +108,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center">Nenhum pedido nesta categoria.</td></tr>
+                <tr><td colspan="9" class="text-center">Nenhum pedido neste período.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

@@ -99,6 +99,8 @@ def _dt(value):
     if not value:
         return '-'
     try:
+        if timezone.is_aware(value):
+            value = timezone.localtime(value)
         return value.strftime('%d-%m-%Y %H:%M')
     except AttributeError:
         return '-'
