@@ -35,9 +35,9 @@
                         <td><span class="badge {% if inv.invoice_status == 'Paid' %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ inv.invoice_status }}</span></td>
                         <td>
                             {% if inv.invoice_status == 'Unpaid' %}
-                            <a href="{% url 'checkout' inv.id %}" class="btn btn-sm btn-primary">Pagar</a>
+                            <a href="{% url 'checkout' inv.id %}" class="btn btn-sm btn-primary px-2" title="Pagar"><i class="bi bi-credit-card-fill"></i></a>
                             {% endif %}
-                            <a href="{% url 'customer_invoice_detail' inv.id %}" class="btn btn-sm btn-light-primary">Ver</a>
+                            <a href="{% url 'customer_invoice_detail' inv.id %}" class="btn btn-sm btn-light-primary px-2" title="Ver fatura"><i class="bi bi-eye"></i></a>
                         </td>
                     </tr>
                     {% empty %}
