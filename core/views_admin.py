@@ -31,7 +31,9 @@ from .models import (
     collect_data_codes, collect_field_code_by_name,
 )
 from . import asaas, catalog_images, notify, provider_api, public_api
-from .context_processors import PAGE_EFFECTS, _DEFAULT_MARQUEE_TEXT, _page_effect_speed
+from .context_processors import (
+    COLOR_PRESETS, FONT_OPTIONS, PAGE_EFFECTS, _DEFAULT_MARQUEE_TEXT, _page_effect_speed,
+)
 
 STATUS_MAP = {
     'waiting': ('Waiting Action', 'Aguardando Ação'),
@@ -3118,3 +3120,28 @@ def admin_effects(request):
         'page_effect_speed': _page_effect_speed(),
     }
     return render(request, 'admin/effects.html', ctx)
+
+
+@_staff
+def admin_appearance(request):
+    if request.method == 'POST':
+        color = (request.POST.get('themeColor') or 'roxo').strip()
+        if color not in [p['key'] for p in COLOR_PRESETS]:
+            color = 'roxo'
+        font = (request.POST.get('themeFont') or '').strip()
+        if font not in [f['key'] for f in FONT_OPTIONS]:
+            font = ''
+        obj, _ = SystemSetting.objects.get_or_create(key='themeColor', defaults={'value': ''})
+        obj.value = color
+        obj.save(update_fields=['value'])
+        obj, _ = SystemSetting.objects.get_or_create(key='themeFont', defaults={'value': ''})
+        obj.value = font
+        obj.save(update_fields=['value'])
+        messages.success(request, 'Cor e fonte do site atualizadas.')
+        return redirect('admin_appearance')
+    return render(request, 'admin/appearance.html', {
+        'color_presets': COLOR_PRESETS,
+        'font_options': FONT_OPTIONS,
+        'theme_color': SystemSetting.get('themeColor', 'roxo'),
+        'theme_font': SystemSetting.get('themeFont', ''),
+    })

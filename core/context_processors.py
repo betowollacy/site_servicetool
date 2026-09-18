@@ -71,6 +71,50 @@ PAGE_EFFECTS = (
 )
 
 
+COLOR_PRESETS = (
+    {'key': 'roxo', 'name': 'Roxo (padrão)', 'primary': '#673ab7', 'secondary': '#512da8'},
+    {'key': 'azul', 'name': 'Azul Royal', 'primary': '#1e5eff', 'secondary': '#0f3fd0'},
+    {'key': 'verde', 'name': 'Verde Esmeralda', 'primary': '#0f9d6b', 'secondary': '#067a50'},
+    {'key': 'teal', 'name': 'Teal', 'primary': '#0097a7', 'secondary': '#00616e'},
+    {'key': 'vermelho', 'name': 'Vermelho Vinho', 'primary': '#c62828', 'secondary': '#8e1515'},
+    {'key': 'rosa', 'name': 'Rosa Neon', 'primary': '#e91e8c', 'secondary': '#c0166f'},
+    {'key': 'laranja', 'name': 'Laranja', 'primary': '#f57c00', 'secondary': '#c25e00'},
+    {'key': 'dourado', 'name': 'Dourado', 'primary': '#b08d13', 'secondary': '#8a6d0a'},
+    {'key': 'grafite', 'name': 'Grafite', 'primary': '#3b4252', 'secondary': '#262b36'},
+)
+
+FONT_OPTIONS = (
+    {'key': '', 'name': 'Padrão (DM Sans)', 'family': 'DM Sans, sans-serif', 'url': ''},
+    {'key': 'Inter', 'name': 'Inter', 'family': "'Inter', 'DM Sans', sans-serif",
+     'url': 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap'},
+    {'key': 'Poppins', 'name': 'Poppins', 'family': "'Poppins', 'DM Sans', sans-serif",
+     'url': 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap'},
+    {'key': 'Nunito', 'name': 'Nunito', 'family': "'Nunito', 'DM Sans', sans-serif",
+     'url': 'https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap'},
+    {'key': 'Roboto', 'name': 'Roboto', 'family': "'Roboto', 'DM Sans', sans-serif",
+     'url': 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap'},
+    {'key': 'Montserrat', 'name': 'Montserrat', 'family': "'Montserrat', 'DM Sans', sans-serif",
+     'url': 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap'},
+    {'key': 'Lato', 'name': 'Lato', 'family': "'Lato', 'DM Sans', sans-serif",
+     'url': 'https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap'},
+    {'key': 'Open Sans', 'name': 'Open Sans', 'family': "'Open Sans', 'DM Sans', sans-serif",
+     'url': 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap'},
+    {'key': 'Raleway', 'name': 'Raleway', 'family': "'Raleway', 'DM Sans', sans-serif",
+     'url': 'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800&display=swap'},
+)
+
+
+def _hex_rgb(hexcolor):
+    h = (hexcolor or '').strip().lstrip('#')
+    if len(h) != 6:
+        return '103, 58, 183'
+    try:
+        r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    except ValueError:
+        return '103, 58, 183'
+    return '{}, {}, {}'.format(r, g, b)
+
+
 def _active_page_effects():
     return [e['key'] for e in PAGE_EFFECTS if _bool(SystemSetting.get(e['key'], 'off'))]
 
@@ -110,6 +154,20 @@ def _parse_wa_contacts(raw):
     return contacts
 
 
+def _site_css():
+    color = SystemSetting.get('themeColor', 'roxo')
+    preset = next((p for p in COLOR_PRESETS if p['key'] == color), COLOR_PRESETS[0])
+    font_key = SystemSetting.get('themeFont', '')
+    font = next((f for f in FONT_OPTIONS if f['key'] == font_key), FONT_OPTIONS[0])
+    return {
+        'primary': preset['primary'],
+        'secondary': preset['secondary'],
+        'rgb': _hex_rgb(preset['primary']),
+        'font_family': font['family'],
+        'font_url': font.get('url') or '',
+    }
+
+
 def site_context(request):
     site_title = SystemSetting.get('siteTitle', 'SERVICETOOL')
     currencies = list(Currency.objects.filter(status='Active').values('id', 'code', 'icon', 'name', 'rate', 'created_at'))
@@ -131,7 +189,7 @@ def site_context(request):
                     pass
 
     them_mode = SystemSetting.get('themeMode', 'dark')
-    theme_color = SystemSetting.get('themeColor', 'preset-1')
+    theme_color = SystemSetting.get('themeColor', 'roxo')
     if them_mode != 'dark':
         them_mode = 'light'
 
@@ -158,6 +216,8 @@ def site_context(request):
         'currency_icon': 'R$',
         'themMode': them_mode,
         'themeColor': theme_color,
+        'theme_font': SystemSetting.get('themeFont', ''),
+        'site_css': _site_css(),
         'theme_blocks': _load_theme_blocks(),
         'page_effects': _active_page_effects(),
         'page_effect_speed': _page_effect_speed(),

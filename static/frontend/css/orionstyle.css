@@ -1,5 +1,5 @@
-/* ============================================================
-   SERVICETOOL — Tema "OrionGSM"
+﻿/* ============================================================
+   SERVICETOOL â€” Tema "OrionGSM"
    Overlay do layout oriongsm.com.br sobre o tema GSM existente.
    ============================================================ */
 
@@ -7,49 +7,49 @@
     --orion-primary: #673ab7;
     --orion-primary-rgb: 103, 58, 183;
     --orion-secondary: #512da8;
-    --orion-accent: #d1c4e9;
+    --orion-accent: var(--orion-primary);
     --orion-cyan: #00d4ff;
-    --orion-violet: #8b5cf6;
+    --orion-violet: var(--orion-primary);
     --orion-soft: #f7f4ff;
     --orion-ink: #1f2937;
-    --orion-glow: #7a1fa2;
-    --bs-primary: #673ab7 !important;
-    --bs-primary-rgb: 103, 58, 183 !important;
+    --orion-glow: var(--orion-secondary);
+    --bs-primary: #673ab7;
+    --bs-primary-rgb: 103, 58, 183;
     --bs-link-color: #673ab7;
     --bs-link-hover-color: #512da8;
 }
 
-/* ---------- Botões / badges / bordas roxos ---------- */
+/* ---------- BotÃµes / badges / bordas roxos ---------- */
 html[data-bs-theme="light"] .btn-primary,
 html[data-bs-theme="dark"] .btn-primary,
 body .btn-primary {
     color: #fff !important;
-    background: linear-gradient(90deg, #673ab7, #512da8) !important;
-    border-color: #673ab7 !important;
+    background: linear-gradient(90deg, var(--orion-primary), var(--orion-secondary)) !important;
+    border-color: var(--orion-primary) !important;
 }
 .btn-primary:hover, .btn-primary:focus, .btn-primary.active {
-    background: linear-gradient(90deg, #512da8, #673ab7) !important;
-    border-color: #512da8 !important;
+    background: linear-gradient(90deg, var(--orion-secondary), var(--orion-primary)) !important;
+    border-color: var(--orion-secondary) !important;
     color: #fff !important;
 }
 .btn-outline-primary {
-    border-color: #673ab7 !important;
-    color: #673ab7 !important;
+    border-color: var(--orion-primary) !important;
+    color: var(--orion-primary) !important;
 }
-.btn-outline-primary:hover { background: #673ab7 !important; color: #fff !important; }
-.pagination .page-item.active .page-link { background: #673ab7 !important; border-color: #673ab7 !important; }
+.btn-outline-primary:hover { background: var(--orion-primary) !important; color: #fff !important; }
+.pagination .page-item.active .page-link { background: var(--orion-primary) !important; border-color: var(--orion-primary) !important; }
 body .nav-pills .nav-link.active {
-    background: linear-gradient(90deg, #673ab7, #512da8) !important;
+    background: linear-gradient(90deg, var(--orion-primary), var(--orion-secondary)) !important;
     color: #fff !important;
     border-color: transparent !important;
 }
-.text-primary { color: #673ab7 !important; }
-a.text-primary:hover { color: #512da8 !important; }
+.text-primary { color: var(--orion-primary) !important; }
+a.text-primary:hover { color: var(--orion-secondary) !important; }
 
 /* ---------- Header roxo ---------- */
 .servicetool-header {
-    background: linear-gradient(90deg, #673ab7, #512da8) !important;
-    border-bottom: 2px solid rgba(74, 20, 140, 0.9) !important;
+    background: linear-gradient(90deg, var(--orion-primary), var(--orion-secondary)) !important;
+    border-bottom: 2px solid rgba(var(--orion-primary-rgb), 0.9) !important;
 }
 .servicetool-theme-header .nav-links a { color: #fff !important; text-decoration: none; }
 .servicetool-theme-header .nav-links a:hover { color: #e9d5ff !important; }
@@ -83,21 +83,21 @@ a.text-primary:hover { color: #512da8 !important; }
 .servicetool-dropdown a { color: #1f2937 !important; }
 .servicetool-dropdown a:hover,
 .customer-nav-dropdown .dropdown-item:hover {
-    background: #f3edff !important;
-    color: #673ab7 !important;
+    background: rgba(var(--orion-primary-rgb), 0.10) !important;
+    color: var(--orion-primary) !important;
 }
 
 /* ---------- Banner superior (marquee + status) ---------- */
 .orion-banner {
     width: 100%;
     overflow: hidden;
-    background: linear-gradient(90deg, #673ab7, #512da8);
+    background: linear-gradient(90deg, var(--orion-primary), var(--orion-secondary));
     color: #fff;
     padding: 8px 0;
     font-size: 13px;
     font-weight: 700;
     position: relative;
-    border-bottom: 2px solid #4a148c;
+    border-bottom: 2px solid var(--orion-secondary);
     display: flex;
     align-items: center;
     font-family: sans-serif;
@@ -150,7 +150,7 @@ a.text-primary:hover { color: #512da8 !important; }
 /* ---------- Loader premium ---------- */
 #servicetooltheme-loader {
     background:
-        radial-gradient(circle at 16% 20%, rgba(103, 58, 183, 0.5), transparent 34%),
+        radial-gradient(circle at 16% 20%, rgba(var(--orion-primary-rgb), 0.5), transparent 34%),
         radial-gradient(circle at 84% 18%, rgba(0, 212, 255, 0.25), transparent 32%),
         radial-gradient(circle at 52% 84%, rgba(139, 92, 246, 0.3), transparent 36%),
         linear-gradient(135deg, #02030a 0%, #090316 35%, #0d0625 63%, #001522 100%) !important;
@@ -173,7 +173,7 @@ a.text-primary:hover { color: #512da8 !important; }
     left: 18px; right: 18px; top: 14px;
     height: 3px;
     border-radius: 999px;
-    background: linear-gradient(90deg, #673ab7, #00d4ff, #b39cff, #673ab7);
+    background: linear-gradient(90deg, var(--orion-primary), #00d4ff, var(--orion-primary), var(--orion-primary));
     box-shadow: 0 0 22px rgba(0, 212, 255, 0.4);
 }
 .orion-loader-logo {
@@ -182,7 +182,7 @@ a.text-primary:hover { color: #512da8 !important; }
     letter-spacing: 1.6px;
     line-height: 1;
     margin: 4px 0 10px;
-    background: linear-gradient(90deg, #b39cff, #00d4ff 55%, #7c3aed);
+    background: linear-gradient(90deg, var(--orion-primary), #00d4ff 55%, var(--orion-primary));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -194,12 +194,12 @@ a.text-primary:hover { color: #512da8 !important; }
     background: #00d4ff; box-shadow: 0 0 14px currentColor;
     animation: orionPulse 1s ease-in-out infinite;
 }
-.orion-loader-pulse-row span:nth-child(2) { background: #b39cff; animation-delay: 0.16s; }
-.orion-loader-pulse-row span:nth-child(3) { background: #7c3aed; animation-delay: 0.32s; }
+.orion-loader-pulse-row span:nth-child(2) { background: var(--orion-primary); animation-delay: 0.16s; }
+.orion-loader-pulse-row span:nth-child(3) { background: var(--orion-primary); animation-delay: 0.32s; }
 .orion-loader-progress { height: 7px; border-radius: 999px; overflow: hidden; background: rgba(255, 255, 255, 0.13); }
 .orion-loader-progress span {
     display: block; height: 100%; width: 46%; border-radius: inherit;
-    background: linear-gradient(90deg, #673ab7, #8b5cf6, #00d4ff, #b39cff);
+    background: linear-gradient(90deg, var(--orion-primary), var(--orion-primary), #00d4ff, var(--orion-primary));
     animation: orionLoaderBar 1.75s ease-in-out infinite;
     box-shadow: 0 0 22px rgba(0, 212, 255, 0.42);
 }
@@ -235,18 +235,18 @@ a.text-primary:hover { color: #512da8 !important; }
 .product-filter-item:hover, .card:hover,
 #promoCarousel .product-card:hover, #unlockCarousel .product-card:hover {
     transform: translateY(-2px);
-    border-color: rgba(103, 58, 183, 0.45) !important;
-    box-shadow: 0 0 0 1px rgba(103, 58, 183, 0.4), 0 12px 30px rgba(103, 58, 183, 0.4), 0 0 22px rgba(103, 58, 183, 0.2);
+    border-color: rgba(var(--orion-primary-rgb), 0.45) !important;
+    box-shadow: 0 0 0 1px rgba(var(--orion-primary-rgb), 0.4), 0 12px 30px rgba(var(--orion-primary-rgb), 0.4), 0 0 22px rgba(var(--orion-primary-rgb), 0.2);
 }
 .product-filter-item:hover img, .card:hover img { filter: brightness(1.06); }
 
-/* ---------- Botão FAQ + painel ---------- */
+/* ---------- BotÃ£o FAQ + painel ---------- */
 #orionFaqBtn {
     position: fixed;
     top: 50%; right: 20px;
     transform: translateY(-50%);
     z-index: 10000;
-    background: linear-gradient(90deg, #673ab7, #512da8);
+    background: linear-gradient(90deg, var(--orion-primary), var(--orion-secondary));
     color: #fff;
     padding: 12px 22px;
     border-radius: 50px;
@@ -256,12 +256,12 @@ a.text-primary:hover { color: #512da8 !important; }
     align-items: center;
     gap: 10px;
     border: 2px solid rgba(255, 255, 255, 0.25);
-    box-shadow: 0 4px 20px rgba(103, 58, 183, 0.6);
+    box-shadow: 0 4px 20px rgba(var(--orion-primary-rgb), 0.6);
     transition: 0.3s;
     font-family: sans-serif;
     font-size: 14px;
 }
-#orionFaqBtn:hover { transform: translateY(-50%) scale(1.07); background: linear-gradient(90deg, #512da8, #673ab7); }
+#orionFaqBtn:hover { transform: translateY(-50%) scale(1.07); background: linear-gradient(90deg, var(--orion-secondary), var(--orion-primary)); }
 #orionFaqBox {
     display: none;
     position: fixed;
@@ -270,7 +270,7 @@ a.text-primary:hover { color: #512da8 !important; }
     width: 380px; max-width: calc(100vw - 30px);
     z-index: 10001;
     background: #fff;
-    border: 2px solid #673ab7;
+    border: 2px solid var(--orion-primary);
     border-radius: 12px;
     overflow: hidden;
     box-shadow: -10px 10px 40px rgba(0, 0, 0, 0.3);
@@ -279,7 +279,7 @@ a.text-primary:hover { color: #512da8 !important; }
 }
 #orionFaqBox.open { display: flex; }
 .faq-head {
-    background: linear-gradient(90deg, #673ab7, #512da8);
+    background: linear-gradient(90deg, var(--orion-primary), var(--orion-secondary));
     color: #fff;
     padding: 14px 16px;
     font-weight: 700;
@@ -294,7 +294,7 @@ a.text-primary:hover { color: #512da8 !important; }
     width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 20px;
     outline: none; font-size: 13px; box-sizing: border-box;
 }
-.faq-search-wrap input:focus { border-color: #673ab7; }
+.faq-search-wrap input:focus { border-color: var(--orion-primary); }
 .faq-content { max-height: 55vh; overflow-y: auto; padding: 0; }
 .faq-item { border-bottom: 1px solid #eee; }
 .faq-item.hide { display: none; }
@@ -302,13 +302,13 @@ a.text-primary:hover { color: #512da8 !important; }
     padding: 14px 16px; cursor: pointer; color: #1f2937; font-weight: 600; font-size: 13px;
     background: #f9f9f9; display: flex; justify-content: space-between; align-items: center; gap: 8px; transition: 0.2s;
 }
-.faq-q i { transition: transform 0.2s; color: #673ab7; }
+.faq-q i { transition: transform 0.2s; color: var(--orion-primary); }
 .faq-item.active .faq-q i { transform: rotate(180deg); }
-.faq-q:hover { background: #f3edff; color: #673ab7; }
+.faq-q:hover { background: rgba(var(--orion-primary-rgb), 0.10); color: var(--orion-primary); }
 .faq-a { display: none; padding: 14px 16px; background: #fff; color: #555; font-size: 13px; line-height: 1.55; border-top: 1px solid #eee; }
 .faq-item.active .faq-a { display: block; }
 
-/* ---------- Botões flutuantes + voltar ao topo ---------- */
+/* ---------- BotÃµes flutuantes + voltar ao topo ---------- */
 .orion-sidebar {
     position: fixed;
     right: 20px; bottom: 24px;
@@ -337,7 +337,7 @@ body:has(.orion-sidebar) #waSupportWidget { display: none !important; }
     bottom: 96px; left: 20px;
     width: 45px; height: 45px;
     z-index: 9998;
-    background: linear-gradient(90deg, #673ab7, #512da8);
+    background: linear-gradient(90deg, var(--orion-primary), var(--orion-secondary));
     color: #fff;
     border: 0; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -369,15 +369,15 @@ body:has(.orion-sidebar) #waSupportWidget { display: none !important; }
     .orion-loader-logo { font-size: 24px; }
 }
 
-/* Promoções do dia: rolagem contínua e lenta (infinita) */
+/* PromoÃ§Ãµes do dia: rolagem contÃ­nua e lenta (infinita) */
 .orion-promo-scroll{overflow:hidden;position:relative;border-radius:14px}
 .orion-promo-scroll::before,.orion-promo-scroll::after{content:"";position:absolute;top:0;bottom:0;width:60px;z-index:2;pointer-events:none}
 .orion-promo-scroll::before{left:0;background:linear-gradient(90deg,#fff,rgba(255,255,255,0))}
 .orion-promo-scroll::after{right:0;background:linear-gradient(-90deg,#fff,rgba(255,255,255,0))}
 .orion-promo-track{display:flex;width:max-content;padding:6px 0;animation:orionpromo var(--orion-dur,75s) linear infinite;will-change:transform}
 .orion-promo-scroll:hover .orion-promo-track{animation-play-state:paused}
-.orion-promo-card{display:flex;gap:12px;align-items:center;width:340px;min-width:340px;margin-right:16px;padding:10px;border:1px solid rgba(103,58,183,.22);border-radius:12px;background:#fff;box-shadow:0 6px 18px rgba(103,58,183,.08);transition:transform .25s ease,box-shadow .25s ease}
-.orion-promo-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(103,58,183,.18)}
+.orion-promo-card{display:flex;gap:12px;align-items:center;width:340px;min-width:340px;margin-right:16px;padding:10px;border:1px solid rgba(var(--orion-primary-rgb),.22);border-radius:12px;background:#fff;box-shadow:0 6px 18px rgba(var(--orion-primary-rgb),.08);transition:transform .25s ease,box-shadow .25s ease}
+.orion-promo-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(var(--orion-primary-rgb),.18)}
 .orion-promo-card img{width:112px;height:76px;min-width:112px;object-fit:cover;border-radius:10px;border:1px solid #eee}
 @media (max-width:575px){.orion-promo-card{width:300px;min-width:300px}.orion-promo-card img{width:96px;height:66px;min-width:96px}}
 @keyframes orionpromo{from{transform:translateX(0)}to{transform:translateX(-50%)}}

@@ -82,6 +82,7 @@ path('admin-panel/apis/<int:api_id>/import/', views_admin.admin_api_import,
 
     path('admin-panel/themes/', views_admin.admin_theme_list, name='admin_theme_list'),
     path('admin-panel/effects/', views_admin.admin_effects, name='admin_effects'),
+    path('admin-panel/appearance/', views_admin.admin_appearance, name='admin_appearance'),
 
     path('', views.homepage, name='homepage'),
     path('public/api/index.php', public_api.public_api, name='public_api'),

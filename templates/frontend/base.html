@@ -24,7 +24,24 @@
     <link rel="stylesheet" href="{% static 'frontend/css/select2.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/select2-bootstrap-5-theme.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/tabler-icons.min.css' %}" />
-    <link rel="stylesheet" href="{% static 'frontend/css/orionstyle.css' %}?v=2" />
+    <link rel="stylesheet" href="{% static 'frontend/css/orionstyle.css' %}?v=3" />
+    <style>
+        :root {
+            --orion-primary: {{ site_css.primary }};
+            --orion-primary-rgb: {{ site_css.rgb }};
+            --orion-secondary: {{ site_css.secondary }};
+            --bs-primary: {{ site_css.primary }} !important;
+            --bs-primary-rgb: {{ site_css.rgb }} !important;
+        }
+        {% if site_css.font_family %}
+        :root {
+            --bs-font-sans-serif: {{ site_css.font_family }};
+            --bs-body-font-family: {{ site_css.font_family }};
+        }
+        body { font-family: {{ site_css.font_family }} !important; }
+        {% endif %}
+    </style>
+    {% if site_css.font_url %}<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="{{ site_css.font_url }}" rel="stylesheet">{% endif %}
     <style>
         img { -webkit-user-drag: none; user-drag: none; -webkit-user-select: none; user-select: none; }
     </style>

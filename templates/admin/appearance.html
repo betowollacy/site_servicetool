@@ -1,0 +1,51 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12"><h4 class="mb-0">Aparência do Site</h4></div>
+</div>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+<form method="post">
+    {% csrf_token %}
+    <div class="card mb-3">
+        <div class="card-header"><h5 class="mb-0">Cor do site</h5></div>
+        <div class="card-body">
+            <p class="text-muted">Escolha a paleta de cores principal. Toda a aparência do site (banners, botões, menu, destaques e efeitos) muda junto.</p>
+            <div class="row g-3">
+                {% for p in color_presets %}
+                <div class="col-6 col-md-4 col-xl-3">
+                    <label class="d-block border rounded p-2 cursor-pointer appearance-option {% if theme_color == p.key %}appearance-selected{% endif %}"
+                           style="cursor:pointer;">
+                        <input type="radio" name="themeColor" value="{{ p.key }}" class="form-check-input me-1"
+                               {% if theme_color == p.key %}checked{% endif %} onchange="this.closest('.appearance-option').closest('.row').querySelectorAll('.appearance-selected').forEach(function(el){el.classList.remove('appearance-selected')}); this.closest('.appearance-option').classList.add('appearance-selected')">
+                        <span class="d-inline-block rounded-circle me-2" style="width:18px;height:18px;vertical-align:middle;background:{{ p.primary }};"></span>
+                        <span class="d-inline-block rounded-circle me-1" style="width:14px;height:14px;vertical-align:middle;background:{{ p.secondary }};"></span>
+                        {{ p.name }}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="card mb-3">
+        <div class="card-header"><h5 class="mb-0">Fonte do site</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Família de fonte</label>
+                    <select class="form-control" name="themeFont">
+                        {% for f in font_options %}
+                        <option value="{{ f.key }}" {% if theme_font == f.key %}selected{% endif %}>{{ f.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">A fonte é carregada do Google Fonts e aplicada ao site inteiro.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy me-1"></i> Salvar aparência</button>
+</form>
+{% endblock %}
