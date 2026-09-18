@@ -123,8 +123,12 @@
                             {% for item in order.order_inputs.all %}
                             <div><b>{{ item.field_name }}:</b> {{ item.field_value }}</div>
                             {% endfor %}
-                            {% if order.replied_in|default:order.service_comments %}
-                            <div class="gsm-reply-text">{{ order.replied_in|default:order.service_comments|richtext }}</div>
+                            {% if order.service_status == 'Success' and order.replied_in %}
+                            <div class="gsm-reply-text">{{ order.replied_in|richtext }}</div>
+                            {% elif order.service_comments %}
+                            <div class="gsm-reply-text">{{ order.service_comments|richtext }}</div>
+                            {% elif order.replied_in %}
+                            <div class="gsm-reply-text">{{ order.replied_in|richtext }}</div>
                             {% elif not order.service_qnt and not order.order_inputs.all and order.service_input1 %}
                             <span class="text-muted">Entrada: {{ order.service_input1 }}</span>
                             {% elif not order.service_qnt and not order.order_inputs.all %}

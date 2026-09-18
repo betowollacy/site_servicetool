@@ -1,0 +1,181 @@
+<style>
+    .terms-modal .modal-content{border:0;border-radius:18px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.45)}
+    .terms-modal .terms-head{position:relative;padding:22px 24px;color:#fff;background:linear-gradient(135deg,rgba(var(--bs-primary-rgb,37,99,235),1),rgba(var(--bs-primary-rgb,37,99,235),.72));border-bottom:0}
+    .terms-modal .terms-head::after{content:"";position:absolute;inset:0;background:radial-gradient(140px 140px at 92% -20%,rgba(255,255,255,.30),transparent 70%);pointer-events:none}
+    .terms-modal .terms-logo{max-height:36px;max-width:180px;object-fit:contain;margin-bottom:10px;filter:brightness(0) invert(1)}
+    .terms-modal .terms-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.38);padding:4px 12px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase}
+    .terms-modal .terms-head h4{margin:10px 0 2px;font-weight:800}
+    .terms-modal .terms-head p{margin:0;opacity:.9;font-size:13px}
+    .terms-modal .modal-body{background:var(--bs-body-bg);color:var(--bs-body-color);padding:22px 24px}
+    .terms-modal .terms-section{margin-bottom:22px}
+    .terms-modal .terms-section h6{font-weight:800;display:flex;gap:8px;align-items:center;margin-bottom:10px}
+    .terms-modal .terms-section p{font-size:14px;line-height:1.65;opacity:.92;margin-bottom:10px}
+    .terms-modal .terms-list{list-style:none;padding:0;margin:0 0 6px}
+    .terms-modal .terms-list li{position:relative;padding:9px 11px 9px 32px;font-size:13.5px;line-height:1.55;border-radius:10px;margin-bottom:6px;background:var(--bs-secondary-bg);border:1px solid var(--bs-border-color)}
+    .terms-modal .terms-list li::before{content:"\2714";position:absolute;left:11px;top:9px;color:rgba(var(--bs-primary-rgb,37,99,235),1);font-weight:800}
+    .terms-modal .terms-list.danger li{background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.28)}
+    .terms-modal .terms-list.danger li::before{content:"\2715";color:#dc2626}
+    .terms-modal .terms-list.plain li::before{content:"\2022";color:var(--bs-secondary-color)}
+    .terms-modal .terms-warn{border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.6;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.38);display:flex;gap:10px}
+    .terms-modal .terms-foot{background:var(--bs-body-bg);border-top:1px solid var(--bs-border-color);padding:14px 24px 18px;display:block}
+    .terms-modal .terms-foot .form-check-label{font-size:13px;line-height:1.5}
+    .terms-modal .btn-accept{background:linear-gradient(135deg,rgba(var(--bs-primary-rgb,37,99,235),1),rgba(var(--bs-primary-rgb,37,99,235),.75));border:0;font-weight:800;letter-spacing:.4px;border-radius:12px;padding:12px;color:#fff;width:100%}
+    .terms-modal .btn-accept:disabled{opacity:.5;cursor:not-allowed}
+</style>
+
+<div class="modal fade terms-modal" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header terms-head">
+                <div>
+                    {% if siteLogo %}<img src="{{ siteLogo }}" alt="{{ siteTitle }}" class="terms-logo">{% endif %}
+                    <div class="terms-badge">⚠️ Termos de Uso Obrigatório</div>
+                    <h4 class="mb-0" id="termsModalLabel">Termos de Uso</h4>
+                    <p>Leia com atenção antes de continuar</p>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <div class="terms-section">
+                    <h6>✋ Atenção — Uso Exclusivo Profissional</h6>
+                    <p>Este site é destinado <strong>EXCLUSIVAMENTE</strong> a técnicos, assistências técnicas e profissionais da área de manutenção, reparo e suporte de celulares. Ao acessar, navegar, comprar ou utilizar qualquer serviço da ᔕEᖇᐯIᑕE TOOᒪ, o usuário declara que compreendeu estes termos e que utilizará as ferramentas apenas de forma lícita, ética e autorizada.</p>
+                    <p>A ᔕEᖇᐯIᑕE TOOᒪ atua como intermediadora entre o profissional técnico e o acesso às ferramentas, créditos, boxes, ativações, consultas e serviços digitais disponibilizados no site.</p>
+                </div>
+
+                <div class="terms-section">
+                    <h6>✍️ Ao acessar este site, o usuário declara</h6>
+                    <ul class="terms-list">
+                        <li>Ter 18 anos ou mais.</li>
+                        <li>Ser profissional de assistência técnica especializada, autorizada, revendedor, técnico independente ou atuar sob supervisão profissional.</li>
+                        <li>Possuir capacidade técnica, operacional e mental para utilizar ferramentas de manutenção, diagnóstico, reparo, desbloqueio, consulta ou suporte remoto de forma responsável.</li>
+                        <li>Utilizar os serviços somente em equipamentos próprios ou em aparelhos de terceiros com autorização expressa do proprietário legítimo.</li>
+                        <li>Estar ciente de que poderá ser solicitado comprovante de propriedade, autorização do cliente, nota fiscal, ordem de serviço ou outro documento que comprove legitimidade do atendimento.</li>
+                        <li>Jamais utilizar as ferramentas disponibilizadas neste site para fins ilícitos, fraudulentos, invasivos, abusivos ou sem autorização.</li>
+                        <li>Assumir total responsabilidade por qualquer procedimento realizado após a compra, incluindo configurações, drivers, compatibilidade, conexão, internet, sistema operacional, versão do aparelho e execução técnica.</li>
+                    </ul>
+                </div>
+
+                <div class="terms-section">
+                    <h6>✋ Aviso Legal — Atividades Proibidas</h6>
+                    <p>A ᔕEᖇᐯIᑕE TOOᒪ não apoia, não incentiva, não executa e não autoriza qualquer uso ilegal das ferramentas ou serviços comercializados.</p>
+                    <ul class="terms-list danger">
+                        <li>Acessar, copiar, extrair, apagar, alterar ou visualizar dados pessoais de terceiros sem autorização.</li>
+                        <li>Invadir dispositivo informático, conta, nuvem, sistema, aplicativo, rede, chip, aparelho ou painel de terceiros.</li>
+                        <li>Alterar, clonar, adulterar, manipular, mascarar ou substituir IMEI, número de série, identificadores únicos ou informações de rede.</li>
+                        <li>Realizar FRP, iCloud, FMI, MDM, bypass, unlock, reset, remoção de conta, consulta ou qualquer procedimento sem comprovação de propriedade ou autorização legítima.</li>
+                        <li>Utilizar serviços para receptação, fraude, estelionato, ocultação de origem, desbloqueio de aparelho roubado/furtado/perdido ou qualquer finalidade contrária à lei.</li>
+                        <li>Praticar qualquer atividade que viole leis brasileiras, leis internacionais, direitos de terceiros, termos de fabricantes, operadoras, plataformas ou provedores.</li>
+                    </ul>
+                </div>
+
+                <div class="terms-section">
+                    <h6>⚖️ Tipicidade Penal e Responsabilidade Legal</h6>
+                    <p>O uso indevido de ferramentas técnicas pode caracterizar infrações civis, administrativas e criminais, incluindo, mas não se limitando a:</p>
+                    <ul class="terms-list plain">
+                        <li><strong>Art. 154-A do Código Penal:</strong> invasão de dispositivo informático de uso alheio, com pena prevista em lei.</li>
+                        <li><strong>Lei nº 12.737/2012:</strong> conhecida como Lei Carolina Dieckmann, relacionada a crimes informáticos.</li>
+                        <li><strong>Lei nº 13.709/2018 — LGPD:</strong> proteção de dados pessoais, inclusive em meios digitais.</li>
+                        <li>Demais normas civis, penais, consumeristas, contratuais, de privacidade, propriedade intelectual e segurança da informação aplicáveis.</li>
+                    </ul>
+                    <p>O usuário reconhece que qualquer uso inadequado, ilegal ou não autorizado será de sua exclusiva responsabilidade, podendo responder civil e criminalmente por seus atos.</p>
+                </div>
+
+                <div class="terms-section">
+                    <h6>🚨 Responsabilidade Total do Usuário</h6>
+                    <ul class="terms-list">
+                        <li>A ᔕEᖇᐯIᑕE TOOᒪ não se responsabiliza por aparelhos bloqueados, brickados, danificados, sem sinal, sem rede, com falha de software, falha de hardware ou perda de dados.</li>
+                        <li>A ᔕEᖇᐯIᑕE TOOᒪ não se responsabiliza por uso das ferramentas em aparelhos sem autorização do proprietário.</li>
+                        <li>A ᔕEᖇᐯIᑕE TOOᒪ não se responsabiliza por incompatibilidade de computador, drivers, cabos, internet, antivírus, firewall, sistema operacional ou versão de firmware.</li>
+                        <li>O usuário declara entender que ferramentas técnicas podem exigir conhecimento avançado e que erros de execução são de responsabilidade de quem realiza o procedimento.</li>
+                    </ul>
+                </div>
+
+                <div class="terms-section">
+                    <h6>⚠️ Política de Reembolso, Estorno e Créditos</h6>
+                    <p>Os serviços comercializados pela ᔕEᖇᐯIᑕE TOOᒪ são digitais, técnicos, automáticos ou vinculados a ferramentas, servidores e fornecedores terceiros. Após entrega, liberação, ativação, abertura de box, envio de login, registro de dispositivo, consumo de crédito ou início do processamento, o serviço será considerado iniciado ou entregue e, como regra, não haverá cancelamento ou reembolso.</p>
+                    <p>Quando houver falha comprovada na entrega, não causada pelo usuário e confirmada pelos registros do sistema, fornecedor ou suporte da ᔕEᖇᐯIᑕE TOOᒪ, o pedido poderá ser analisado para compensação.</p>
+                </div>
+
+                <div class="terms-section">
+                    <h6>💳 Importante — Forma da Compensação</h6>
+                    <div class="terms-warn mb-3">
+                        <span>💳</span>
+                        <div>Quando aprovada uma compensação operacional, o valor correspondente será disponibilizado exclusivamente como <strong>créditos/saldo interno</strong> na conta do cliente no servidor ᔕEᖇᐯIᑕE TOOᒪ, para utilização em outros serviços disponíveis na plataforma.</div>
+                    </div>
+                    <ul class="terms-list plain">
+                        <li>Créditos internos não representam dinheiro disponível para saque, não são sacáveis e não podem ser convertidos em PIX, transferência bancária ou retirada financeira. Portanto, o pagamento realizado via PIX não implica devolução automática pelo mesmo meio.</li>
+                        <li>Não há reembolso ou compensação por erro de execução, falta de conhecimento técnico ou procedimento incorreto do usuário.</li>
+                        <li>Não há reembolso por incompatibilidade do PC, drivers, cabo, internet, antivírus, firewall ou sistema operacional.</li>
+                        <li>Não há reembolso por escolha incorreta de serviço, modelo, versão, quantidade, prazo ou ferramenta.</li>
+                        <li>Não há reembolso por mudança de versão do Android/iOS, patch de segurança, firmware ou atualização do fabricante.</li>
+                        <li>Não há reembolso por tentativa de uso em aparelho, versão ou condição não compatível com o serviço contratado.</li>
+                        <li>Não há reembolso por resultado esperado diferente quando as características ou limitações do serviço estiverem informadas, incluindo bypass sem sinal, ausência de rede ou limitações da ferramenta.</li>
+                        <li>Não há reembolso por bloqueios, alterações, indisponibilidade ou limitações impostas por fabricantes, operadoras, servidores, ferramentas ou fornecedores terceiros.</li>
+                        <li>Serviços já processados, utilizados, ativados, registrados ou consumidos não geram restituição por simples desistência após o início da execução.</li>
+                        <li>A análise de qualquer solicitação poderá considerar logs do sistema, status do fornecedor, histórico do pedido, evidências técnicas e informações apresentadas pelo cliente. Esta política não afasta direitos que sejam obrigatoriamente assegurados pela legislação aplicável e que não possam ser objeto de renúncia contratual.</li>
+                    </ul>
+                </div>
+
+                <div class="terms-section">
+                    <h6>🔐 Privacidade, IMEI, Dados e Segurança</h6>
+                    <p>Dados informados pelo usuário, como e-mail, IMEI, número de série, comprovantes, dados de pedido e mensagens de suporte, poderão ser armazenados para fins de histórico, antifraude, execução do serviço, atendimento, auditoria e cumprimento de obrigações legais.</p>
+                    <p>O usuário declara que possui autorização para informar quaisquer dados relacionados ao aparelho ou ao cliente final. Solicitações de exclusão ou revisão de dados poderão ser feitas pelos canais oficiais, respeitadas hipóteses de guarda obrigatória.</p>
+                </div>
+
+                <div class="terms-section">
+                    <h6>🕒 Entrega, Prazos e Suporte</h6>
+                    <p>Após a confirmação do pagamento, o sistema poderá liberar automaticamente o pedido. Alguns serviços podem depender de filas, disponibilidade de servidor, ferramenta de terceiro, horário de atendimento, validação manual ou instabilidade externa.</p>
+                    <p>Em caso de falha de entrega ou dúvida técnica, o usuário deverá abrir atendimento pelo canal oficial, informando número do pedido, comprovante e detalhes do procedimento. Caso seja aprovada compensação operacional após análise, ela seguirá a Política de Reembolso, Estorno e Créditos, com disponibilização em saldo interno da ᔕEᖇᐯIᑕE TOOᒪ, e não como devolução automática via PIX.</p>
+                </div>
+
+                <div class="terms-section mb-0">
+                    <h6>✅ Declaração Final</h6>
+                    <p class="mb-0">Ao marcar a caixa abaixo e prosseguir, declaro que li, compreendi e estou de acordo com todos os termos, inclusive com a Política de Reembolso, Estorno e Créditos. Declaro também que sou responsável pelo uso das ferramentas e que não utilizarei nenhum serviço para finalidade ilegal, abusiva, fraudulenta ou sem autorização.</p>
+                </div>
+            </div>
+
+            <div class="modal-footer terms-foot">
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="termsAgreeCheck">
+                    <label class="form-check-label" for="termsAgreeCheck">Declaro que li, compreendi e <strong>ESTOU DE ACORDO</strong> com os Termos de Uso Obrigatório, incluindo a Política de Reembolso, Estorno e Créditos.</label>
+                </div>
+                <button type="button" class="btn btn-accept" id="termsAcceptBtn" disabled>DECLARO QUE LI E ESTOU DE ACORDO</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        'use strict';
+        var KEY = 'servicetoolTermsAccepted';
+        var modalEl = document.getElementById('termsModal');
+        if (!modalEl) return;
+
+        var accepted = false;
+        try { accepted = localStorage.getItem(KEY) === '1'; } catch (e) {}
+        if (accepted) return;
+
+        var check = document.getElementById('termsAgreeCheck');
+        var btn = document.getElementById('termsAcceptBtn');
+        if (check && btn) {
+            check.addEventListener('change', function () { btn.disabled = !check.checked; });
+            btn.addEventListener('click', function () {
+                try { localStorage.setItem(KEY, '1'); } catch (e) {}
+                if (window.bootstrap && bootstrap.Modal) {
+                    var inst = bootstrap.Modal.getInstance(modalEl);
+                    if (inst) inst.hide();
+                }
+            });
+        }
+
+        function show() {
+            if (window.bootstrap && bootstrap.Modal) {
+                bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: 'static', keyboard: false }).show();
+            }
+        }
+        function schedule() { setTimeout(show, 1300); }
+        if (document.readyState === 'complete') { schedule(); }
+        else { window.addEventListener('load', schedule); }
+    })();
+</script>
