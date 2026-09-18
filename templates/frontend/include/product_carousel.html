@@ -4,8 +4,8 @@
         <h5 class="text-primary text-uppercase fs-5 border-start border-primary border-5 ps-2">{{ carousel_title }}</h5>
     </div>
     <div class="card-body pt-3">
-        {% if carousel_id == 'promoCarousel' %}
-        <div id="promoCarousel" class="orion-promo-scroll">
+        {% if carousel_id == 'promoCarousel' or carousel_id == 'unlockCarousel' %}
+        <div id="{{ carousel_id }}" class="orion-promo-scroll">
             <div class="orion-promo-track">
                 {% for dup in '12' %}{% for group in groups %}{% for s in group %}
                 <a href="{% url 'service_view' s.slug %}" class="orion-promo-card">
@@ -20,7 +20,7 @@
         </div>
         <script>
             (function () {
-                var t = document.getElementById('promoCarousel');
+                var t = document.getElementById('{{ carousel_id }}');
                 var track = t && t.querySelector('.orion-promo-track');
                 if (!track || !track.children.length) return;
                 var w = track.scrollWidth / 2;
