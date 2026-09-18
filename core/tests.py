@@ -1474,6 +1474,43 @@ class InventoryDeliveryTests(TestCase):
         self.assertIsNone(ok)
         self.assertEqual(order.service_status, 'In Process')
 
+    def test_reusable_credential_sold_multiple_times(self):
+        self.service = ServiceList.objects.create(
+            service_type='Server Service', service_group=self.group, title='AMT Reutilizavel',
+            original_price=Decimal('20.00'), status='Active', slug='amt-reuso', api_enabled=False,
+        )
+        inv = Inventory.objects.create(name='AMT Reuso')
+        self.service.inventory = inv
+        self.service.save(update_fields=['inventory'])
+        item = InventoryData.objects.create(
+            inventory=inv, code='Usuario: reuse | Senha: reuse123',
+            status='Available', max_uses=3,
+        )
+
+        for expected in (1, 2, 3):
+            order = self._order(status='In Process')
+            ok, code = provider_api.submit_local_order(order)
+            self.assertTrue(ok)
+            self.assertIn('reuse123', code)
+            order.refresh_from_db()
+            self.assertEqual(order.service_status, 'Success')
+            item.refresh_from_db()
+            self.assertEqual(item.uses_count, expected)
+            if expected < 3:
+                self.assertEqual(item.status, 'Available')
+            else:
+                self.assertEqual(item.status, 'Sold out')
+
+        inv.refresh_from_db()
+        self.assertEqual(inv.availableCount, 0)
+        self.assertEqual(inv.soldOutCount, 1)
+
+        order = self._order(status='In Process')
+        ok, _ = provider_api.submit_local_order(order)
+        self.assertIsNone(ok)
+        order.refresh_from_db()
+        self.assertEqual(order.service_status, 'In Process')
+
     def test_cron_delivers_from_inventory_when_stock_added_later(self):
         self.service = ServiceList.objects.create(
             service_type='Server Service', service_group=self.group, title='AMT Aluguel 6h',

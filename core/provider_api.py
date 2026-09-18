@@ -705,12 +705,17 @@ def deliver_from_inventory(order):
     inventory = service.inventory
     if not inventory:
         return False, 'Serviço sem estoque vinculado.'
-    item = InventoryData.objects.filter(inventory=inventory, status='Available').order_by('id').first()
+    item = (InventoryData.objects.filter(inventory=inventory)
+            .available().order_by('id').first())
     if not item:
         return False, 'Nenhuma credencial disponível no estoque.'
-    item.status = 'Sold out'
+    # Credenciais com mais de um uso podem ser vendidas varias vezes: so vira
+    # 'Sold out' quando atinge o limite de usos (max_uses).
+    item.uses_count = (item.uses_count or 0) + 1
     item.order = order
-    item.save(update_fields=['status', 'order'])
+    if item.max_uses and item.uses_count >= item.max_uses:
+        item.status = 'Sold out'
+    item.save(update_fields=['uses_count', 'order', 'status'])
     code = (item.code or '')[:500]
     order.replied_in = code
     order.service_comments = code

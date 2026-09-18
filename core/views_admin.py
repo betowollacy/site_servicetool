@@ -528,7 +528,7 @@ def admin_orders(request, status):
         CustomerOrder.objects.filter(id__in=seen_ids, seen='false').update(seen='true')
     inv_ids = {o.service.inventory_id for o in orders if o.service and o.service.inventory_id}
     avail = dict(
-        InventoryData.objects.filter(inventory_id__in=inv_ids, status='Available')
+        InventoryData.objects.filter(inventory_id__in=inv_ids).available()
         .values('inventory_id').annotate(c=Count('id')).values_list('inventory_id', 'c')
     )
     for order in orders:
@@ -1669,9 +1669,18 @@ def _parse_credentials(text):
     return creds
 
 
+def _parse_max_uses(value, default=1):
+    """Quantas vezes cada login do estoque pode ser vendido (minimo 1)."""
+    try:
+        max_uses = int(str(value or '').strip() or default)
+    except (TypeError, ValueError):
+        max_uses = default
+    return max(max_uses, 1)
+
+
 def _refresh_inventory_counts(inventory):
-    available = InventoryData.objects.filter(inventory=inventory, status='Available').count()
-    sold = InventoryData.objects.filter(inventory=inventory, status='Sold out').count()
+    available = InventoryData.objects.filter(inventory=inventory).available().count()
+    sold = InventoryData.objects.filter(inventory=inventory).count() - available
     inventory.available_code = available
     inventory.availableCount = available
     inventory.soldOutCount = sold
@@ -1696,6 +1705,7 @@ def admin_inventory_quick_add(request):
             service.inventory = inv
             service.save(update_fields=['inventory'])
         creds = _parse_credentials(request.POST.get('codes', ''))
+        max_uses = _parse_max_uses(request.POST.get('max_uses'))
         existing = {c.lower() for c in InventoryData.objects.filter(inventory=inv).values_list('code', flat=True)}
         added = 0
         skipped = 0
@@ -1703,11 +1713,13 @@ def admin_inventory_quick_add(request):
             if cred.lower() in existing:
                 skipped += 1
                 continue
-            InventoryData.objects.create(inventory=inv, code=cred, status='Available')
+            InventoryData.objects.create(inventory=inv, code=cred, status='Available', max_uses=max_uses)
             existing.add(cred.lower())
             added += 1
         _refresh_inventory_counts(inv)
         msg = '{} credencial(is) adicionada(s) ao estoque de "{}".'.format(added, service.title)
+        if max_uses > 1:
+            msg += ' Cada login pode ser vendido ate {} vez(es).'.format(max_uses)
         if skipped:
             msg += ' {} já existia(m) e foi(ram) ignorada(s).'.format(skipped)
         if added:
@@ -1725,7 +1737,7 @@ def admin_inventory_list(request):
         _inventories.append({
             'inventory': inv,
             'service': ServiceList.objects.filter(inventory=inv).first(),
-            'available': InventoryData.objects.filter(inventory=inv, status='Available').count(),
+            'available': InventoryData.objects.filter(inventory=inv).available().count(),
             'total': InventoryData.objects.filter(inventory=inv).count(),
         })
     services = ServiceList.objects.filter(status='Active').order_by('service_type', 'title')
@@ -1770,8 +1782,9 @@ def admin_inventory_detail(request, inventory_id):
         'linked_service': ServiceList.objects.filter(inventory=inv).first(),
         'services': ServiceList.objects.filter(status='Active').order_by('service_type', 'title'),
         'data_items': data_items,
-        'available': InventoryData.objects.filter(inventory=inv, status='Available').count(),
-        'in_use': InventoryData.objects.filter(inventory=inv, status='Sold out').count(),
+        'available': InventoryData.objects.filter(inventory=inv).available().count(),
+        'in_use': (InventoryData.objects.filter(inventory=inv).count()
+                   - InventoryData.objects.filter(inventory=inv).available().count()),
     })
 
 
@@ -1810,6 +1823,7 @@ def admin_inventory_add(request, inventory_id):
     inv = Inventory.objects.filter(id=inventory_id).first()
     if inv and request.method == 'POST':
         creds = _parse_credentials(request.POST.get('codes', ''))
+        max_uses = _parse_max_uses(request.POST.get('max_uses'))
         existing = {c.lower() for c in InventoryData.objects.filter(inventory=inv).values_list('code', flat=True)}
         added = 0
         skipped = 0
@@ -1817,13 +1831,15 @@ def admin_inventory_add(request, inventory_id):
             if cred.lower() in existing:
                 skipped += 1
                 continue
-            InventoryData.objects.create(inventory=inv, code=cred, status='Available')
+            InventoryData.objects.create(inventory=inv, code=cred, status='Available', max_uses=max_uses)
             existing.add(cred.lower())
             added += 1
         _refresh_inventory_counts(inv)
         linked = ServiceList.objects.filter(inventory=inv).first()
         service_name = linked.title if linked else 'nenhum serviço vinculado'
         msg = '{} credencial(is) adicionada(s) ao estoque "{}" (serviço vinculado: {}).'.format(added, inv.name, service_name)
+        if max_uses > 1:
+            msg += ' Cada login pode ser vendido ate {} vez(es).'.format(max_uses)
         if skipped:
             msg += ' {} já existia(m) e foi(ram) ignorada(s).'.format(skipped)
         if added:
@@ -1838,9 +1854,15 @@ def admin_inventory_edit(request, data_id):
     item = InventoryData.objects.filter(id=data_id).first()
     if item and request.method == 'POST':
         new_code = (request.POST.get('code') or '').strip()
+        fields = []
         if new_code:
             item.code = new_code
-            item.save(update_fields=['code'])
+            fields.append('code')
+        if 'max_uses' in request.POST:
+            item.max_uses = _parse_max_uses(request.POST.get('max_uses'))
+            fields.append('max_uses')
+        if fields:
+            item.save(update_fields=fields)
         messages.success(request, 'Credencial salva. Caso tenha trocado a senha na ferramenta, disponibilize-a novamente.')
     if item:
         return redirect('admin_inventory_detail', item.inventory_id)
@@ -1856,6 +1878,7 @@ def admin_inventory_toggle(request, data_id):
             messages.success(request, 'Credencial marcada como em uso (indisponível).')
         else:
             item.status = 'Available'
+            item.uses_count = 0
             item.order = None
             messages.success(request, 'Credencial disponibilizada novamente para o próximo pedido.')
         item.save()

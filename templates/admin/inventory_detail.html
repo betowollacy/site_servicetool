@@ -60,6 +60,11 @@
                         <label class="form-label">Uma credencial por linha: <code>usuario;senha</code> <code>usuario|senha</code> <code>usuario:senha</code> ou <code>login</code> numa linha e <code>senha</code> na linha de baixo</label>
                         <textarea name="codes" class="form-control" rows="6" placeholder="tool@amg.com;senha123&#10;tool2@amg.com|outrasenha&#10;usuario3:senha3"></textarea>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Vezes que cada login pode ser vendido</label>
+                        <input type="number" name="max_uses" class="form-control" value="1" min="1" style="max-width: 160px;">
+                        <small class="text-muted">Use <strong>1</strong> para login único. Para o <strong>mesmo</strong> login/senha ser entregue a vários clientes (ex.: 100), informe <strong>100</strong>.</small>
+                    </div>
                     <button type="submit" class="btn btn-success btn-sm"><i class="ti ti-plus me-1"></i> Adicionar ao estoque</button>
                 </form>
             </div>
@@ -82,6 +87,7 @@
                     <th>ID</th>
                     <th>Credencial</th>
                     <th>Status</th>
+                    <th>Vendas</th>
                     <th>Em uso por</th>
                     <th>Ações</th>
                 </tr>
@@ -92,18 +98,25 @@
                     <td>#{{ item.id }}</td>
                     <td>
                         <code>{{ item.code }}</code>
-                        <form method="post" action="{% url 'admin_inventory_edit' item.id %}" class="mt-2 d-flex gap-2">
+                        <form method="post" action="{% url 'admin_inventory_edit' item.id %}" class="mt-2 d-flex gap-2 flex-wrap align-items-center">
                             {% csrf_token %}
                             <input type="text" name="code" class="form-control form-control-sm" style="max-width: 320px" value="{{ item.code }}" placeholder="usuario;senha (nova senha)">
+                            <div class="input-group input-group-sm" style="max-width: 150px;" title="Vezes que este login pode ser vendido">
+                                <span class="input-group-text">Vezes</span>
+                                <input type="number" name="max_uses" class="form-control" min="1" value="{{ item.max_uses }}">
+                            </div>
                             <button type="submit" class="btn btn-sm btn-light-primary"><i class="ti ti-edit"></i> Salvar</button>
                         </form>
                     </td>
                     <td>
-                        {% if item.status == 'Available' %}
-                        <span class="badge bg-light-success">Disponível</span>
+                        {% if item.is_available %}
+                        <span class="badge bg-light-success">Disponível{% if item.is_reusable %} ({{ item.uses_left }} restante{{ item.uses_left|pluralize }}){% endif %}</span>
                         {% else %}
                         <span class="badge bg-light-warning">Em uso</span>
                         {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-light-primary">{{ item.uses_count }}/{{ item.max_uses }}</span>
                     </td>
                     <td>
                         {% if item.order %}
@@ -114,7 +127,7 @@
                     </td>
                     <td>
                         <div class="d-flex flex-wrap gap-2">
-                            {% if item.status == 'Available' %}
+                            {% if item.is_available %}
                             <form method="post" action="{% url 'admin_inventory_toggle' item.id %}">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-sm btn-light-warning" title="Marcar como em uso (indisponível)"><i class="ti ti-lock"></i></button>
@@ -133,7 +146,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="5" class="text-center">Estoque vazio. Adicione logins/senhas no formulário acima.</td></tr>
+                <tr><td colspan="6" class="text-center">Estoque vazio. Adicione logins/senhas no formulário acima.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

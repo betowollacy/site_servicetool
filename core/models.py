@@ -709,6 +709,12 @@ class Inventory(models.Model):
         return self.name
 
 
+class InventoryDataQuerySet(models.QuerySet):
+    def available(self):
+        """Credenciais que ainda podem ser vendidas (status Available e com usos restantes)."""
+        return self.filter(status='Available', uses_count__lt=models.F('max_uses'))
+
+
 class InventoryData(models.Model):
     STATUS = [
         ('Available', 'Available'),
@@ -718,12 +724,24 @@ class InventoryData(models.Model):
     code = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS, default='Available')
     order = models.ForeignKey('CustomerOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='inventory_uses')
+    max_uses = models.PositiveIntegerField(default=1)
+    uses_count = models.PositiveIntegerField(default=0)
+
+    objects = InventoryDataQuerySet.as_manager()
 
     class Meta:
         db_table = 'inventory_data'
 
     def __str__(self):
         return self.code
+
+    @property
+    def uses_left(self):
+        return max((self.max_uses or 1) - (self.uses_count or 0), 0)
+
+    @property
+    def is_reusable(self):
+        return (self.max_uses or 1) > 1
 
 
 class Media(models.Model):
