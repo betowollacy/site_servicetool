@@ -43,7 +43,6 @@
         {% if site_css.text_color %}
         html[data-bs-theme="light"] { --bs-body-color: {{ site_css.text_color }} !important; }
         html[data-bs-theme="dark"] { --bs-body-color: {{ site_css.text_color }} !important; }
-        :root { --bs-body-color: {{ site_css.text_color }} !important; --ink: {{ site_css.text_color }} !important; }
         body { color: var(--bs-body-color) !important; }
         {% endif %}
     </style>
