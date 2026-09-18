@@ -80,6 +80,7 @@ COLOR_PRESETS = (
     {'key': 'rosa', 'name': 'Rosa Neon', 'primary': '#e91e8c', 'secondary': '#c0166f'},
     {'key': 'laranja', 'name': 'Laranja', 'primary': '#f57c00', 'secondary': '#c25e00'},
     {'key': 'dourado', 'name': 'Dourado', 'primary': '#b08d13', 'secondary': '#8a6d0a'},
+    {'key': 'blackgold', 'name': 'Preto & Dourado', 'primary': '#d4af37', 'secondary': '#a67c00'},
     {'key': 'grafite', 'name': 'Grafite', 'primary': '#3b4252', 'secondary': '#262b36'},
 )
 
