@@ -64,7 +64,7 @@
                         <a href="{% url 'service_view' s.slug %}" class="d-flex gap-4">
                             <img src="{{ s.thumbnail }}" alt="{{ s.title }}" width="105" height="70" class="rounded border">
                             <div>
-                                <p class="text-muted mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
+                                <p class="text-body mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
                                 <div>
                                     {% if customer %}<span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span><span class="badge bg-light-warning text-uppercase" style="font-size:11px">{{ s.delivery_time }}</span>{% endif %}
                                 </div>
@@ -104,7 +104,7 @@
                                 <a href="{% url 'service_view' s.slug %}" class="d-flex gap-3 p-2 border rounded product-filter-item h-100">
                                     <img src="{{ s.thumbnail }}" alt="{{ s.title }}" width="105" height="70" class="rounded border">
                                     <div class="overflow-hidden">
-                                        <p class="text-muted mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
+                                        <p class="text-body mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
                                         <div>
                                             {% if customer %}<span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span>{% else %}<span class="badge bg-light-secondary text-uppercase" style="font-size:11px">Consultar valor</span>{% endif %}
                                             <span class="badge bg-light-warning text-uppercase" style="font-size:11px">{{ s.delivery_time }}</span>
@@ -122,7 +122,7 @@
                                 <a href="{% url 'service_view' s.slug %}" class="d-flex gap-3 p-2 border rounded product-filter-item h-100">
                                     <img src="{{ s.thumbnail }}" alt="{{ s.title }}" width="105" height="70" class="rounded border">
                                     <div class="overflow-hidden">
-                                        <p class="text-muted mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
+                                        <p class="text-body mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
                                         <div>
                                             {% if customer %}<span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span>{% else %}<span class="badge bg-light-secondary text-uppercase" style="font-size:11px">Consultar valor</span>{% endif %}
                                             <span class="badge bg-light-warning text-uppercase" style="font-size:11px">{{ s.delivery_time }}</span>
@@ -140,7 +140,7 @@
                                 <a href="{% url 'service_view' s.slug %}" class="d-flex gap-3 p-2 border rounded product-filter-item h-100">
                                     <img src="{{ s.thumbnail }}" alt="{{ s.title }}" width="105" height="70" class="rounded border">
                                     <div class="overflow-hidden">
-                                        <p class="text-muted mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
+                                        <p class="text-body mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
                                         <div>
                                             {% if customer %}<span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span>{% else %}<span class="badge bg-light-secondary text-uppercase" style="font-size:11px">Consultar valor</span>{% endif %}
                                             <span class="badge bg-light-warning text-uppercase" style="font-size:11px">{{ s.delivery_time }}</span>

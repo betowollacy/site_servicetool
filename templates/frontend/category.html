@@ -36,7 +36,7 @@
                         <div class="card-body d-flex py-2 px-3">
                             <div class="d-flex gap-3 align-items-center">
                                 <img src="{{ s.thumbnail }}" alt="{{ s.title }}" width="105" height="70" class="rounded border">
-                                <div class="flex-grow-1 fw-medium text-muted text-wrap text-break">
+                                <div class="flex-grow-1 fw-medium text-body text-wrap text-break">
                                     <p class="mb-2">{{ s.title }}</p>
                                     <div>
                                         {% if customer %}<span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span><span class="badge bg-light-warning text-uppercase" style="font-size:11px">{{ s.delivery_time }}</span>{% endif %}
