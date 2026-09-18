@@ -647,21 +647,6 @@ def customer_add_balance(request, customer):
     return render(request, 'customer/add_balance.html', ctx)
 
 
-def _usdt_brl_rate():
-    cur = Currency.objects.filter(code='USDT').first()
-    try:
-        return Decimal(cur.rate) if cur and cur.rate else Decimal('0')
-    except (TypeError, ValueError, InvalidOperation):
-        return Decimal('0')
-
-
-def _brl_to_usdt(value):
-    rate = _usdt_brl_rate()
-    if rate <= 0:
-        return value
-    return (value / rate).quantize(Decimal('0.000001'))
-
-
 @_require_customer
 def customer_deposit(request, customer):
     if request.method == 'POST':
@@ -683,10 +668,6 @@ def customer_deposit(request, customer):
                 messages.error(request, 'O Asaas exige valor minimo de R$ 5,00 por cobranca PIX. Deposite um valor maior.')
                 return redirect('customer_add_balance')
         invoice_amount = amount
-        if gateway_name.lower() == 'binance':
-            rate = _usdt_brl_rate()
-            if rate > 0:
-                invoice_amount = (amount * rate).quantize(Decimal('0.01'))
         currency = Currency.objects.filter(code=customer.currency).first() or Currency.objects.first()
         invoice = Invoice.objects.create(
             customer=customer,
@@ -931,9 +912,8 @@ def _pay_with_binance(request, customer, invoice):
     if not gateway or not (gateway.binance_api_key or '').strip() or not (gateway.binance_secret_key or '').strip():
         messages.error(request, 'Gateway Binance nao configurado. Adicione a API Key e a API Secret no painel.')
         return redirect('checkout', invoice_id=invoice.id)
-    usdt_amount = _brl_to_usdt(invoice.invoice_amount)
     try:
-        data = binance.create_order(invoice, gateway, amount=usdt_amount)
+        data = binance.create_order(invoice, gateway)
     except Exception as exc:
         GatewayLog.objects.create(
             payment_gateway='Binance', payment_for=f'Invoice #{invoice.id}',
@@ -945,7 +925,7 @@ def _pay_with_binance(request, customer, invoice):
         return redirect('checkout', invoice_id=invoice.id)
     PaymentDeposit.objects.create(
         name='Binance - USDT',
-        gateway_amount=usdt_amount,
+        gateway_amount=invoice.invoice_amount,
         gateway_payment_id=data.get('merchantTradeNo') or '',
         checkout_url=data.get('checkoutUrl') or '',
         gateway_note=data.get('prepayId') or '',

@@ -58,13 +58,12 @@ def _request(gateway, path, body, timeout=40):
         raise BinanceError(json.dumps(detail)) from exc
 
 
-def create_order(invoice, gateway, amount=None):
+def create_order(invoice, gateway):
     merchant_trade_no = f'INV{invoice.id}T{int(time.time() * 1000)}'
-    order_amount = float(amount) if amount is not None else float(invoice.invoice_amount)
     body = {
         'env': {'terminalType': 'WEB'},
         'merchantTradeNo': merchant_trade_no,
-        'orderAmount': order_amount,
+        'orderAmount': float(invoice.invoice_amount),
         'currency': 'USDT',
         'goods': {
             'goodsType': '02',
