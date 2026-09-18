@@ -524,6 +524,11 @@ def _require_customer(view):
 
 @_require_customer
 def customer_dashboard(request, customer):
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        if action == 'mark_completed_seen':
+            CustomerOrder.objects.filter(customer=customer, service_status='Success').update(seen='true')
+            return redirect('customer_dashboard')
     orders = CustomerOrder.objects.filter(customer=customer)
     waiting_action = orders.filter(service_status='Waiting Action').count()
     in_process = orders.filter(service_status='In Process').count()
@@ -537,11 +542,17 @@ def customer_dashboard(request, customer):
         'Rejected': 'red',
     }
     status_labels = ('Success', 'In Process', 'Waiting Action', 'Rejected')
+    status_display = {
+        'Success': 'Concluído',
+        'In Process': 'Em processo',
+        'Waiting Action': 'Aguardando ação',
+        'Rejected': 'Cancelado',
+    }
     status_counts = [orders.filter(service_status=status).count() for status in status_labels]
     status_max = max(status_counts or [0]) or 1
     for status, count in zip(status_labels, status_counts):
         status_chart.append({
-            'label': status,
+            'label': status_display[status],
             'count': count,
             'percent': round(count * 100 / status_max),
             'color': status_colors[status],
@@ -556,6 +567,7 @@ def customer_dashboard(request, customer):
         'balance': customer.balance,
         'latest_orders': orders[:5],
         'status_chart': status_chart,
+        'completed_notices': orders.filter(service_status='Success', seen__in=['false', 'False'])[:4],
     }
     ctx.update(_base_ctx(request))
     return render(request, 'customer/dashboard.html', ctx)

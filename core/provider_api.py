@@ -723,6 +723,7 @@ def deliver_from_inventory(order):
     order.save(update_fields=['replied_in', 'service_status', 'service_comments'])
     from . import notify
     notify.send_order_email(order)
+    CustomerOrder.objects.filter(id=order.id).update(seen='false')
     try:
         from .views_admin import _refresh_inventory_counts
         _refresh_inventory_counts(inventory)

@@ -595,6 +595,8 @@ def admin_order_update(request, order_id):
         order.replied_in = request.POST.get('replied_in', '') or order.replied_in
         order.save()
         if order.service_status == 'Success' and not was_success:
+            order.seen = 'false'
+            order.save(update_fields=['seen'])
             from . import notify
             notify.send_order_email(order)
         messages.success(request, 'Pedido atualizado com sucesso.')

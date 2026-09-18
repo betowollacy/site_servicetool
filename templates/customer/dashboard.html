@@ -1,5 +1,5 @@
 {% extends 'frontend/base.html' %}
-{% load static %}
+{% load static core_extras %}
 {% block seo %}
 <title>Meu Painel - {{ siteTitle }}</title>
 {% endblock %}
@@ -16,6 +16,23 @@
     {% for message in messages %}
     <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
     {% endfor %}
+    {% endif %}
+
+    {% if completed_notices %}
+    <div class="alert alert-success d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+            <strong><i class="bi bi-check-circle-fill"></i> Pedido concluído!</strong>
+            {% for o in completed_notices %}
+            <div class="mt-1"><small>#{{ o.id }}</small> &mdash; {{ o|order_service_label }}{% if o.service_qnt %} <span class="badge bg-success-subtle text-success-emphasis">Qtd: {{ o.service_qnt }}</span>{% endif %}</div>
+            {% endfor %}
+            <a href="{% url 'customer_order_history' %}" class="mt-2 d-inline-flex align-items-center gap-1">Ver detalhes no histórico <i class="bi bi-arrow-up-right"></i></a>
+        </div>
+        <form method="post" class="m-0">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="mark_completed_seen">
+            <button type="submit" class="btn btn-sm btn-outline-success rounded-2">OK, entendi</button>
+        </form>
+    </div>
     {% endif %}
 
     <section class="customer-dashboard-welcome">

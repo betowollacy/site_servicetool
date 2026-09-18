@@ -180,7 +180,7 @@
                             {% endif %}
                         </td>
                         <td data-label="Preço">R$ {{ order.service_price|floatformat:2 }}</td>
-                        <td data-label="Status"><span class="badge {% if order.service_status == 'Success' %}bg-light-success{% elif order.service_status == 'Rejected' %}bg-light-danger{% else %}bg-light-warning{% endif %}">{{ order.service_status }}</span></td>
+                        <td data-label="Status"><span class="badge {% if order.service_status == 'Success' %}bg-light-success{% elif order.service_status == 'Rejected' %}bg-light-danger{% else %}bg-light-warning{% endif %}">{% if order.service_status == 'Success' %}Concluído{% else %}{{ order.service_status }}{% endif %}</span></td>
                         <td><i class="ti ti-chevron-right"></i></td>
                     </tr>
                     {% empty %}
@@ -210,7 +210,7 @@
                         <div class="gsm-amount">R$ {{ order.service_price|floatformat:2 }}</div>
                     </div>
                     <span class="gsm-badge {% if order.service_status == 'Success' %}success{% elif order.service_status == 'Rejected' %}rejected{% elif order.service_status == 'In Process' %}processing{% else %}waiting{% endif %}">
-                        {% if order.service_status == 'Success' %}&check; {% endif %}{{ order.service_status }}
+                        {% if order.service_status == 'Success' %}&check; Concluído{% else %}{{ order.service_status }}{% endif %}
                     </span>
                 </div>
 
