@@ -16,13 +16,10 @@
     <link rel="stylesheet" href="{% static 'frontend/css/stylesheet.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/servicetoolstyle.css' %}?v=6" />
     <link rel="stylesheet" href="{% static 'frontend/css/modernstyle.css' %}?v=6" />
-    <link rel="stylesheet" href="{% static 'frontend/css/jquery.dataTables.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/custom-animation.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/nprogress.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/bootstrap-icons.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/theme-dark.css' %}" />
-    <link rel="stylesheet" href="{% static 'frontend/css/owl.carousel.min.css' %}" />
-    <link rel="stylesheet" href="{% static 'frontend/css/owl.theme.default.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/notyf.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/select2.min.css' %}" />
     <link rel="stylesheet" href="{% static 'frontend/css/select2-bootstrap-5-theme.min.css' %}" />
@@ -688,24 +685,15 @@
 
     <script src="{% static 'frontend/js/jquery.min.js' %}"></script>
     <script src="{% static 'frontend/js/select2.min.js' %}"></script>
-    <script src="{% static 'frontend/js/html2pdf.bundle.min.js' %}"></script>
     <script src="{% static 'frontend/js/popper.min.js' %}"></script>
     <script src="{% static 'frontend/js/bootstrap.min.js' %}"></script>
-    <script src="{% static 'frontend/js/jquery.dataTables.min.js' %}"></script>
     <script src="{% static 'frontend/js/nprogress.min.js' %}"></script>
-    <script src="{% static 'frontend/js/lottie-player.js' %}"></script>
-    <script src="{% static 'frontend/js/owl.carousel.min.js' %}"></script>
     <script src="{% static 'frontend/js/notyf.min.js' %}"></script>
     <script src="{% static 'frontend/js/auth.js' %}"></script>
     <script src="{% static 'frontend/js/servicetooltheme.js' %}"></script>
     {% block footer_script %}{% endblock %}
     <script>
         $(document).ready(function(){
-            $(".owl-carousel").owlCarousel({
-                loop:true, margin:20, dots:false, slideBy:1, autoplay:true,
-                autoplayTimeout:3000,
-                responsive:{ 0:{items:2}, 600:{items:4}, 1000:{items:6} },
-            });
             $("[data-switch-auth]").on("click", function(){
                 var target = $(this).data("switch-auth");
                 $("#servicetoolAuthModal .auth-view").removeClass("show").addClass("d-none");

@@ -1,0 +1,83 @@
+name: Backup
+
+on:
+  schedule:
+    - cron: '15 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Criar backup no servidor
+        uses: appleboy/ssh-action@v1.0.2
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            APP=/opt/site_servicetool
+            BK=$APP/backups
+            mkdir -p "$BK"
+            cd "$APP"
+            source venv/bin/activate
+            python - <<'PY'
+            import sqlite3, time
+            ts = time.strftime('%Y%m%d-%H%M%S')
+            src = '/opt/site_servicetool/db.sqlite3'
+            dst = '/opt/site_servicetool/backups/db-' + ts + '.sqlite3'
+            s = sqlite3.connect(src)
+            d = sqlite3.connect(dst)
+            with d:
+                s.backup(d)
+            d.close(); s.close()
+            print('backup do banco ok ->', dst)
+            PY
+            TS=$(date +%Y%m%d-%H%M%S)
+            tar czf "$BK/media-$TS.tar.gz" \
+              --exclude='media/cache' --exclude='media/CACHE' \
+              --exclude='backups' media
+            cp -f .env "$BK/env-$TS.txt" 2>/dev/null || true
+            cp -f requirements.txt "$BK/requirements-$TS.txt" 2>/dev/null || true
+            find "$BK" -name 'db-*.sqlite3' -mtime +14 -delete
+            find "$BK" -name 'media-*.tar.gz' -mtime +14 -delete
+            find "$BK" -name 'env-*.txt' -mtime +14 -delete
+            find "$BK" -name 'requirements-*.txt' -mtime +14 -delete
+            echo "Backups atuais:"
+            ls -1t "$BK" | head -20
+      - name: Baixar último backup para o artefato
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -e
+          umask 077
+          key=/tmp/deploy_key
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$key" || echo "$DEPLOY_SSH_KEY" > "$key"
+          chmod 600 "$key"
+          opts="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i $key"
+          host="${DEPLOY_USER}@${DEPLOY_HOST}"
+          db=$(ssh $opts "$host" 'ls -1t /opt/site_servicetool/backups/db-*.sqlite3 2>/dev/null | head -1')
+          med=$(ssh $opts "$host" 'ls -1t /opt/site_servicetool/backups/media-*.tar.gz 2>/dev/null | head -1')
+          if [ -z "$db" ] && [ -z "$med" ]; then
+            echo "Nenhum backup encontrado para baixar."
+            exit 1
+          fi
+          if [ -n "$db" ]; then
+            scp $opts "${host}:${db}" ./latest-db.sqlite3
+          fi
+          if [ -n "$med" ]; then
+            scp $opts "${host}:${med}" ./latest-media.tar.gz
+          fi
+          ls -lh ./latest-db.sqlite3 ./latest-media.tar.gz 2>/dev/null || true
+      - name: Publicar artefatos de backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-backup
+          path: |
+            latest-db.sqlite3
+            latest-media.tar.gz
+          if-no-files-found: error
+          retention-days: 30
