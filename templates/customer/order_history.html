@@ -49,6 +49,7 @@
     html[data-bs-theme="dark"] #orderDetailModal .gsm-lbl,
     html[data-bs-theme="dark"] #orderDetailModal .gsm-timeline-lbl,
     html[data-bs-theme="dark"] #orderDetailModal .gsm-reply-text.muted { color: rgba(255,255,255,.62) !important; }
+    html[data-bs-theme="dark"] #orderDetailModal .gsm-reply-text.green { color: #22c55e !important; }
     #orderDetailModal { position: fixed !important; animation: none !important; }
     #orderDetailModal .modal-dialog,
     #orderDetailModal .modal-content,
@@ -93,6 +94,7 @@
         word-break: break-all; white-space: pre-wrap; padding-top: 2px;
     }
     .gsm-reply-text.muted { color: var(--bs-secondary-color); font-family: inherit; }
+    .gsm-reply-text.green { color: #22c55e !important; font-weight: 600; }
     @media (max-width: 576px) {
         .gsm-modal-header { padding: 10px 12px; font-size: 13px; }
         .modal-body.p-4 { padding: 10px !important; }
@@ -243,13 +245,13 @@
 
                 <div class="gsm-card gray">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <div class="gsm-lbl mb-0">Reply</div>
+                        <div class="gsm-lbl mb-0">Bom trabalho!</div>
                         {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
                         <button type="button" class="btn-copy copy-response" data-target="reply-{{ order.id }}"><i class="ti ti-copy"></i> Copy</button>
                         {% endif %}
                     </div>
                     {% if order.service_status == 'Success' and order.replied_in|default:order.service_comments %}
-                    <div class="gsm-reply-text" id="reply-{{ order.id }}">{{ order.replied_in|default:order.service_comments|richtext }}</div>
+                    <div class="gsm-reply-text green" id="reply-{{ order.id }}">{{ order.replied_in|default:order.service_comments|richtext }}</div>
                     {% elif order.service_status == 'In Process' %}
                     <div class="gsm-reply-text muted">Seu pedido está em processamento. A resposta aparecerá aqui em instantes.</div>
                     {% elif order.service_status == 'Rejected' %}
