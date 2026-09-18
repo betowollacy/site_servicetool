@@ -381,4 +381,11 @@ body:has(.orion-sidebar) #waSupportWidget { display: none !important; }
 .orion-promo-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(var(--orion-primary-rgb),.18)}
 .orion-promo-card img{width:112px;height:76px;min-width:112px;object-fit:cover;border-radius:10px;border:1px solid #eee}
 @media (max-width:575px){.orion-promo-card{width:300px;min-width:300px}.orion-promo-card img{width:96px;height:66px;min-width:96px}}
+
+/* Nada flutuante por cima de modais (FAQ, FABs, voltar ao topo, WhatsApp) */
+body.modal-open #orionFaqBtn,
+body.modal-open #orionFaqBox,
+body.modal-open .orion-sidebar,
+body.modal-open #orionBackTop,
+body.modal-open .wa-support-widget { display: none !important; }
 @keyframes orionpromo{from{transform:translateX(0)}to{transform:translateX(-50%)}}
