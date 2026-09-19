@@ -160,7 +160,7 @@
 </div>
 
 <div class="row mb-3">
-    <div class="col-xl-7">
+    <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5>Depósitos — entradas, taxa e lucro</h5>
@@ -230,49 +230,17 @@
             </div>
         </div>
     </div>
-    <div class="col-xl-5">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5>Caixa Asaas</h5>
-                <a href="{% url 'admin_gateway_list' %}" class="btn btn-sm btn-light-primary">Gateways</a>
-            </div>
-            <div class="card-body">
-                {% if asaas_balance_error %}
-                <div class="alert alert-danger mb-0">{{ asaas_balance_error }}</div>
-                {% elif asaas_balance %}
-                <div class="row g-3">
-                    <div class="col-sm-6">
-                        <div class="border rounded p-2 text-center">
-                            <div class="text-muted small">Saldo total na Asaas</div>
-                            <div class="fw-semibold text-primary">R$ {{ asaas_balance.total|floatformat:2 }}</div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <div class="border rounded p-2 text-center">
-                            <div class="text-muted small">Saldo disponível</div>
-                            <div class="fw-semibold">R$ {{ asaas_balance.available|floatformat:2 }}</div>
-                        </div>
-                    </div>
-                </div>
-                {% else %}
-                <div class="text-center text-muted py-4">Gateway Asaas não configurado ou inativo.<br>Configure a chave de API para consultar o saldo.</div>
-                {% endif %}
-            </div>
+        <div class="text-end mb-2">
+            <small class="text-muted">Depósitos antigos, sem registro de taxa Asaas, mostram valor líquido = valor creditado. Custo com APIs é estimado (CREDIT do catálogo × quantidade × câmbio da API).</small>
         </div>
-        <div class="row">
-            <div class="col-12 mb-3 text-end">
-                <small class="text-muted">Depósitos antigos, sem registro de taxa Asaas, mostram valor líquido = valor creditado.</small>
-            </div>
-        </div>
-    </div>
 </div>
 
 <div class="row">
-    <div class="col-xl-6">
+    <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5>Saldo nas APIs</h5>
-                <small class="text-muted">Consultado ao vivo no provedor</small>
+                <h5>APIs — saldo e resumo</h5>
+                <small class="text-muted">Saldo consultado ao vivo · custo/vendas do período</small>
             </div>
             <div class="card-body table-responsive">
                 <table class="table table-hover">
@@ -280,44 +248,14 @@
                         <tr>
                             <th>API</th>
                             <th>Status</th>
-                            <th>Saldo</th>
-                            <th>Moeda</th>
-                            <th>Conta</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for b in api_balances %}
-                        <tr>
-                            <td>{{ b.api.api_name }}</td>
-                            <td><span class="badge bg-light-{% if b.api.status == 'Active' %}success{% else %}danger{% endif %}">{{ b.api.status }}</span></td>
-                            <td class="fw-semibold">{{ b.balance|floatformat:2 }}</td>
-                            <td>{{ b.currency|default:'-' }}</td>
-                            <td class="text-muted small">{{ b.info.mail|default:'' }}{% if b.error %}<span class="text-danger"> {{ b.error }}</span>{% endif %}</td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="5" class="text-center">Nenhuma API ativa cadastrada.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-6">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5>Resumo por API</h5>
-                <small class="text-muted">Período selecionado</small>
-            </div>
-            <div class="card-body table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>API</th>
                             <th class="text-center">Pedidos</th>
                             <th class="text-end">Créditos</th>
                             <th class="text-end">Custo (R$)</th>
                             <th class="text-end">Vendas (R$)</th>
                             <th class="text-end">Lucro (R$)</th>
+                            <th class="text-end">Saldo</th>
+                            <th>Moeda</th>
+                            <th>Conta</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -327,25 +265,28 @@
                                 {{ r.api.api_name }}
                                 {% if r.balance_error %}<span class="text-danger small" data-bs-toggle="tooltip" title="{{ r.balance_error }}"><i class="ti ti-alert-triangle"></i></span>{% endif %}
                             </td>
+                            <td><span class="badge bg-light-{% if r.api.status == 'Active' %}success{% else %}danger{% endif %}">{{ r.api.status }}</span></td>
                             <td class="text-center">{{ r.orders }}</td>
                             <td class="text-end">{{ r.credits|floatformat:2 }}</td>
                             <td class="text-end">R$ {{ r.cost|floatformat:2 }}</td>
                             <td class="text-end">R$ {{ r.revenue|floatformat:2 }}</td>
                             <td class="text-end {% if r.profit < 0 %}text-danger{% else %}text-success{% endif %}">R$ {{ r.profit|floatformat:2 }}</td>
+                            <td class="fw-semibold">{{ r.balance|floatformat:2 }}</td>
+                            <td>{{ r.currency|default:'-' }}</td>
+                            <td class="text-muted small">{{ r.mail|default:'' }}</td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="6" class="text-center">Nenhum envio à API no período.</td></tr>
+                        <tr><td colspan="10" class="text-center">Nenhuma API cadastrada ou envio no período.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
-                <small class="text-muted">Custo estimado: CREDIT do catálogo × quantidade × câmbio (price_rate) da API.</small>
             </div>
         </div>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-xl-7">
+    <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h5>Ferramentas mais alugadas</h5>
@@ -385,42 +326,6 @@
             </div>
         </div>
     </div>
-    <div class="col-xl-5">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5>Fluxo recente de valores</h5>
-                <a href="{% url 'admin_orders' 'waiting' %}" class="btn btn-sm btn-light-primary">Pedidos</a>
-            </div>
-            <div class="card-body table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Pedido</th>
-                            <th>Origem</th>
-                            <th class="text-end">Custo</th>
-                            <th class="text-end">Venda</th>
-                            <th class="text-end">Lucro</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for f in flow %}
-                        <tr>
-                            <td>#{{ f.order.id }} <span class="text-muted small">{{ f.order.customer.name }}</span></td>
-                            <td><span class="badge bg-light-{% if f.direct %}primary{% else %}info{% endif %}">{% if f.direct %}Direto API{% else %}Site{% endif %}</span></td>
-                            <td class="text-end">R$ {{ f.cost|floatformat:2 }}</td>
-                            <td class="text-end">R$ {{ f.sale|floatformat:2 }}</td>
-                            <td class="text-end {% if f.profit < 0 %}text-danger{% else %}text-success{% endif %}">R$ {{ f.profit|floatformat:2 }}</td>
-                            <td><span class="badge bg-light-primary">{{ f.order.service_status }}</span></td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="6" class="text-center">Nenhum pedido no período.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 </div>
 
 <div class="row">
@@ -451,16 +356,38 @@
                         <span class="text-muted small">{{ admin_count_filtered }} compra{{ admin_count_filtered|pluralize:'s' }} filtrada{{ admin_count_filtered|pluralize:'s' }} · total <strong>R$ {{ admin_spent_filtered|floatformat:2 }}</strong></span>
                     </div>
                 </form>
+                {% if admin_people %}
+                <div class="mb-3">
+                    <div class="text-muted small mb-1">Total gasto por responsável:</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for p in admin_people %}
+                        <span class="badge bg-light-primary"><span class="text-truncate d-inline-block align-bottom" style="max-width:180px">{{ p.who }}</span> — R$ {{ p.spent|floatformat:2 }} <span class="text-muted">({{ p.count }})</span></span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if admin_service_totals %}
+                <div class="mb-3">
+                    <div class="text-muted small mb-1">Total gasto por ferramenta / serviço:</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for s in admin_service_totals %}
+                        <span class="badge bg-light-secondary"><span class="text-truncate d-inline-block align-bottom" style="max-width:220px">{{ s.title }}</span> — R$ {{ s.spent|floatformat:2 }} <span class="text-muted">({{ s.count }})</span></span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
                 <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
                         <tr>
                             <th>Pedido</th>
                             <th>Comprou (serviço)</th>
+                            <th>API</th>
                             <th>Hora do pedido</th>
                             <th>Quem</th>
                             <th class="text-end">Valor gasto</th>
                             <th>Status</th>
+                            <th>Ref. na API</th>
                             <th>O que recebeu</th>
                         </tr>
                     </thead>
@@ -469,20 +396,22 @@
                         <tr>
                             <td>#{{ a.order.id }}</td>
                             <td>
-                                <span class="text-truncate d-inline-block" style="max-width:260px">{{ a.order.service_title|default:'-' }}</span>
+                                <span class="text-truncate d-inline-block" style="max-width:220px">{{ a.order.service_title|default:'-' }}</span>
                                 <div class="text-muted small">{{ a.order.service_qnt|default:'1' }} un · {{ a.order.service_type }}</div>
                             </td>
+                            <td class="small">{% if a.order.service and a.order.service.api %}{{ a.order.service.api.api_name }}{% else %}-{% endif %}</td>
                             <td class="small text-nowrap">{{ a.order.created_at|date:'d/m/Y H:i' }}</td>
                             <td class="small">{{ a.who|default:'-' }}</td>
                             <td class="text-end fw-semibold">R$ {{ a.spent|floatformat:2 }}</td>
                             <td><span class="badge bg-light-primary">{{ a.order.service_status }}</span></td>
-                            <td class="small" style="max-width:340px">
+                            <td class="small text-muted">{{ a.order.trx_id|default:'-' }}</td>
+                            <td class="small" style="max-width:320px">
                                 {% if a.order.service_comments %}<span class="text-success"><i class="ti ti-circle-check"></i> {{ a.order.service_comments }}</span>
                                 {% else %}{{ a.result }}{% endif %}
                             </td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="7" class="text-center">Nenhuma compra do administrador{% if admin_svc_filter %} para este serviço{% endif %} no período.</td></tr>
+                        <tr><td colspan="9" class="text-center">Nenhuma compra do administrador{% if admin_svc_filter %} para este serviço{% endif %} no período.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>

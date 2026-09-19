@@ -333,13 +333,13 @@ def admin_dashboard(request):
                 row['orders'] += 1
                 row['cost'] += cost
                 row['credits'] += _order_credits(order)
-                if not is_direct and order.service_status != 'Rejected':
+                if not is_direct and order.service_status in ('Success', 'In Process'):
                     row['revenue'] += order.service_price or Decimal('0.00')
         if not is_direct:
-            if order.service_status != 'Rejected':
-                revenue += order.service_price or Decimal('0.00')
-            else:
+            if order.service_status == 'Rejected':
                 refunded += order.service_price or Decimal('0.00')
+            elif order.service_status in ('Success', 'In Process'):
+                revenue += order.service_price or Decimal('0.00')
         if order.service_status == 'Success' and order.service_id:
             tool = tools.setdefault(order.service_id, {
                 'service': order.service,
@@ -392,21 +392,6 @@ def admin_dashboard(request):
             'profit': (net - credited).quantize(Decimal('0.00')),
         })
     deposit_profit = (deposit_net - deposit_credited).quantize(Decimal('0.00'))
-
-    asaas_balance = None
-    asaas_balance_error = None
-    asaas_gw = PaymentGateway.objects.filter(name__iexact='Asaas', status='Active').first()
-    if asaas_gw and (asaas_gw.asaas_api_key or '').strip():
-        try:
-            raw = asaas.get_balance(asaas_gw)
-            if isinstance(raw, dict):
-                fallback = raw.get('balance')
-                asaas_balance = {
-                    'total': _asaas_decimal(raw.get('balance')),
-                    'available': _asaas_decimal(raw.get('availableBalance', fallback)),
-                }
-        except Exception as exc:  # noqa: BLE001 - saldo é opcional no painel
-            asaas_balance_error = str(exc)
 
     profit = revenue - api_cost - refunded
 
@@ -476,18 +461,27 @@ def admin_dashboard(request):
     admin_spent_filtered = sum((a['spent'] for a in admin_flow), Decimal('0.00'))
     admin_count_filtered = len(admin_flow)
 
-    flow = []
-    for order in orders[:15]:
-        is_direct = _is_admin_direct(order)
-        cost = _order_cost(order, is_direct) if _is_charged(order) else Decimal('0.00')
-        sale = order.service_price if (order.service_status != 'Rejected' and not is_direct) else Decimal('0.00')
-        flow.append({
-            'order': order,
-            'direct': is_direct,
-            'cost': cost,
-            'sale': sale,
-            'profit': sale - cost,
-        })
+    # Total gasto por cada responsável e por cada serviço (respeita o filtro).
+    _people = {}
+    for a in admin_flow:
+        who = a['who'] or 'Admin'
+        p = _people.setdefault(who, {'spent': Decimal('0.00'), 'count': 0})
+        p['spent'] += a['spent']
+        p['count'] += 1
+    admin_people = sorted(
+        ({'who': w, 'spent': v['spent'], 'count': v['count']} for w, v in _people.items()),
+        key=lambda x: x['spent'], reverse=True)
+
+    _svc = {}
+    for a in admin_flow:
+        sid = a['order'].service_id
+        title = a['order'].service_title or 'Serviço removido'
+        s = _svc.setdefault((sid, title), {'spent': Decimal('0.00'), 'count': 0})
+        s['spent'] += a['spent']
+        s['count'] += 1
+    admin_service_totals = sorted(
+        ({'title': t, 'spent': v['spent'], 'count': v['count']} for (_, t), v in _svc.items()),
+        key=lambda x: x['spent'], reverse=True)
 
     ctx = {
         'period': period,
@@ -512,8 +506,6 @@ def admin_dashboard(request):
         'deposit_fee': deposit_fee.quantize(Decimal('0.00')),
         'deposit_profit': deposit_profit,
         'deposit_flow': deposit_flow[:15],
-        'asaas_balance': asaas_balance,
-        'asaas_balance_error': asaas_balance_error,
         'profit': profit,
         'direct_count': direct_count,
         'admin_flow': admin_flow,
@@ -523,10 +515,10 @@ def admin_dashboard(request):
         'admin_spent_filtered': admin_spent_filtered.quantize(Decimal('0.00')),
         'admin_count_filtered': admin_count_filtered,
         'admin_count_total': len(admin_flow_all),
+        'admin_people': admin_people,
+        'admin_service_totals': admin_service_totals,
         'api_summary': [api_summary[a] for a in api_summary],
-        'api_balances': api_balances,
         'top_tools': top_tools,
-        'flow': flow,
     }
     return render(request, 'admin/dashboard.html', ctx)
 
@@ -2153,11 +2145,27 @@ def admin_gateway_list(request):
     blocked = _guard_settings_section(request)
     if blocked:
         return blocked
+    asaas_balance = None
+    asaas_balance_error = None
+    asaas_gw = PaymentGateway.objects.filter(name__iexact='Asaas', status='Active').first()
+    if asaas_gw and (asaas_gw.asaas_api_key or '').strip():
+        try:
+            raw = asaas.get_balance(asaas_gw)
+            if isinstance(raw, dict):
+                fallback = raw.get('balance')
+                asaas_balance = {
+                    'total': _asaas_decimal(raw.get('balance')),
+                    'available': _asaas_decimal(raw.get('availableBalance', fallback)),
+                }
+        except Exception as exc:  # noqa: BLE001 - saldo é opcional na configuração
+            asaas_balance_error = str(exc)
     return render(request, 'admin/gateway_list.html', {
         'gateways': PaymentGateway.objects.filter(name__in=['Asaas', 'Binance', 'bKash']),
         'currencies': Currency.objects.filter(status='Active'),
         'webhook_asaas': request.build_absolute_uri(reverse('asaas_webhook')),
         'webhook_binance': request.build_absolute_uri(reverse('binance_webhook')),
+        'asaas_balance': asaas_balance,
+        'asaas_balance_error': asaas_balance_error,
     })
 
 
