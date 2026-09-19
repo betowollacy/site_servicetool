@@ -49,10 +49,19 @@ if _site_url.lower().startswith('https://'):
     _CSRF_ORIGINS.add('http://' + _netloc)
 else:
     _CSRF_ORIGINS.add('https://' + _netloc)
+# Libera também todos os ALLOWED_HOSTS (www, subdomínios etc.) em https e http
+# para evitar 403 de CSRF quando o celular abre o site com/sem www ou troca o esquema.
+for _host in ALLOWED_HOSTS:
+    _host = _host.strip()
+    if not _host or _host == '*':
+        continue
+    if '://' not in _host:
+        _CSRF_ORIGINS.add('https://' + _host)
+        _CSRF_ORIGINS.add('http://' + _host)
 # Localhost/IP de dev sempre ok.
 _CSRF_ORIGINS.update({'http://localhost', 'http://127.0.0.1'})
 CSRF_TRUSTED_ORIGINS = sorted(_CSRF_ORIGINS)
-del _o, _site_url, _netloc, _parsed, _CSRF_ORIGINS
+del _o, _site_url, _netloc, _parsed, _host, _CSRF_ORIGINS
 
 INSTALLED_APPS = [
     'django.contrib.admin',
