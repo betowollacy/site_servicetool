@@ -1,4 +1,5 @@
 {% extends 'admin/base.html' %}
+{% load core_extras %}
 {% block content %}
 <div class="row mb-3">
     <div class="col-12"><h4 class="mb-0">Pedidos - {{ status_label }}</h4>
@@ -71,6 +72,9 @@
                     <td><span class="badge bg-light-primary">{{ order.service_status }}</span></td>
                     <td>
                         <div class="d-flex flex-wrap gap-2 align-items-start">
+                            {% if order.service_status == 'Success' %}
+                            <button type="button" class="btn btn-sm btn-light" title="Ver como o cliente vê (modal do histórico)" data-ad-preview="{{ order.id }}"><i class="ti ti-eye"></i></button>
+                            {% endif %}
                             <button class="btn btn-sm btn-light-primary" title="Atualizar status/resposta" data-bs-toggle="collapse" data-bs-target="#order-{{ order.id }}"><i class="ti ti-edit"></i></button>
                             {% if order.inventory_id_for_delivery and order.service_status != 'Success' and order.service_status != 'Rejected' %}
                             <form method="post" action="{% url 'admin_order_deliver_credential' order.id %}" onsubmit="return confirm('Entregar o próximo login/senha disponível do estoque e marcar como entregue (Sucesso)?')">
@@ -114,4 +118,167 @@
         </table>
     </div>
 </div>
+
+<style>
+/* Prévia: mesma aparência do modal do cliente (Histórico de Pedidos) */
+#adOrderDetailModal .modal-dialog, #adOrderDetailModal .modal-content { transition: none !important; transform: none !important; }
+#adOrderDetailModal .modal-content { border: 1px solid var(--bs-border-color); border-radius: 10px; overflow: hidden; background: var(--bs-body-bg); }
+#adOrderDetailModal .modal-body { scrollbar-gutter: stable both-edges; scrollbar-width: thin; }
+#adOrderDetailModal .modal-body::-webkit-scrollbar { width: 8px; height: 8px; }
+#adOrderDetailModal .modal-body::-webkit-scrollbar-track { background: transparent; }
+#adOrderDetailModal .modal-body::-webkit-scrollbar-thumb { background: rgba(var(--bs-secondary-rgb), 0.45); border-radius: 4px; }
+.ad-gsm-header { background: linear-gradient(135deg, rgba(var(--bs-primary-rgb,37,99,235),1), rgba(var(--bs-primary-rgb,37,99,235),.8)); color: #fff; padding: 11px 14px; font-weight: 700; font-size: 14px; letter-spacing: .3px; }
+.ad-gsm-header .btn-close { filter: invert(1); opacity: .9; }
+.ad-gsm-back-btn { background: rgba(255,255,255,.16); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: .3px; padding: 4px 14px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.ad-gsm-back-btn:hover { background: rgba(255,255,255,.3); }
+.ad-gsm-service-title { font-size: 13.5px; font-weight: 600; color: var(--bs-body-color); margin: 2px 0 9px; }
+.ad-gsm-card { border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 10px 12px; margin-bottom: 9px; background: var(--bs-body-bg); }
+.ad-gsm-card.gray { background: var(--bs-tertiary-bg); }
+.ad-gsm-lbl { font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: var(--bs-secondary-color); margin-bottom: 4px; }
+.ad-gsm-amount { font-size: 20px; font-weight: 800; color: var(--bs-body-color); }
+.ad-gsm-amount small { font-size: 12px; font-weight: 600; color: var(--bs-secondary-color); }
+.ad-gsm-badge { font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 8px; color: #fff; }
+.ad-gsm-badge.success { background: #16a34a; }
+.ad-gsm-timeline-item { padding: 5px 0; border-bottom: 1px solid var(--bs-border-color); }
+.ad-gsm-timeline-item:last-child { border-bottom: none; padding-bottom: 0; }
+.ad-gsm-timeline-lbl { font-size: 10.5px; color: var(--bs-secondary-color); margin-bottom: 1px; }
+.ad-gsm-timeline-val { font-size: 12.5px; font-weight: 700; color: var(--bs-body-color); }
+.ad-gsm-timeline-val.green { color: #22c55e; }
+.ad-btn-copy { border: 1.5px solid #5b7bd5; color: var(--bs-body-color); background: transparent; border-radius: 999px; font-size: 12px; font-weight: 600; padding: 3px 14px; display: inline-flex; align-items: center; gap: 6px; }
+.ad-btn-copy:hover { background: var(--orion-primary); border-color: var(--orion-primary); color: #fff; }
+.ad-gsm-reply-text { font-family: monospace; font-size: 12px; color: var(--bs-body-color); word-break: break-all; white-space: pre-wrap; padding-top: 2px; }
+.ad-gsm-reply-text.muted { color: var(--bs-secondary-color); font-family: inherit; }
+.ad-gsm-reply-text.green { color: #22c55e !important; font-weight: 600; }
+</style>
+
+<div class="modal fade" id="adOrderDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="ad-gsm-header d-flex justify-content-between align-items-center gap-2">
+                <button type="button" class="ad-gsm-back-btn" data-bs-dismiss="modal" aria-label="Voltar"><i class="bi bi-arrow-left"></i> Voltar</button>
+                <span id="ad-odm-order-id">ORDER ID</span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body p-3 p-md-4" id="ad-odm-body"></div>
+        </div>
+    </div>
+</div>
+{% for order in orders %}
+{% if order.service_status == 'Success' %}
+<template id="ad-ordertpl-{{ order.id }}">
+    <p class="ad-gsm-service-title">{{ order|order_service_label }}</p>
+
+    <div class="ad-gsm-card gray d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <div class="ad-gsm-lbl">Valor</div>
+            <div class="ad-gsm-amount">R$ {{ order.service_price|floatformat:2 }}</div>
+        </div>
+        <span class="ad-gsm-badge success">&check; Concluído</span>
+    </div>
+
+    <div class="ad-gsm-card gray">
+        <div class="ad-gsm-lbl">Timeline</div>
+        <div class="ad-gsm-timeline-item">
+            <div class="ad-gsm-timeline-lbl">Hora do pedido</div>
+            <div class="ad-gsm-timeline-val">{{ order.created_at|date:"d-m-Y H:i" }}</div>
+        </div>
+        <div class="ad-gsm-timeline-item">
+            <div class="ad-gsm-timeline-lbl">Hora da entrega</div>
+            <div class="ad-gsm-timeline-val">{{ order.updated_at|date:"d-m-Y H:i" }}</div>
+        </div>
+        <div class="ad-gsm-timeline-item">
+            <div class="ad-gsm-timeline-lbl">Terminado</div>
+            <div class="ad-gsm-timeline-val green" data-processing data-submitted="{{ order.created_at|date:'Y-m-d H:i:s' }}" data-replied="{{ order.updated_at|date:'Y-m-d H:i:s' }}">...</div>
+        </div>
+    </div>
+
+    <div class="ad-gsm-card gray">
+        <div class="ad-gsm-lbl">{% if order.service_title %}{{ order.service_title }}{% else %}{{ order|order_service_label }}{% endif %}</div>
+        {% if order.service_qnt %}
+        <div class="ad-gsm-reply-text"><b>Quantidade:</b> {{ order.service_qnt }}</div>
+        {% endif %}
+        {% for item in order.order_inputs.all %}
+        <div class="ad-gsm-reply-text"><b>{{ item.field_name }}:</b> {{ item.field_value }}</div>
+        {% endfor %}
+        {% if not order.service_qnt and not order.order_inputs.all and order.service_input1 %}
+        <div class="ad-gsm-reply-text"><b>Entrada:</b> {{ order.service_input1 }}</div>
+        {% endif %}
+    </div>
+
+    <div class="ad-gsm-card gray">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="ad-gsm-lbl mb-0">Bom trabalho!</div>
+            {% if order.replied_in|default:order.service_comments %}
+            <button type="button" class="ad-btn-copy" data-target="ad-reply-{{ order.id }}"><i class="ti ti-copy"></i> Copy</button>
+            {% endif %}
+        </div>
+        <div class="ad-gsm-reply-text green" id="ad-reply-{{ order.id }}">{{ order.replied_in|default:order.service_comments|richtext }}</div>
+    </div>
+
+    {% if order.service_input1 %}
+    <div class="ad-gsm-card gray">
+        <div class="ad-gsm-lbl">Entrada</div>
+        <div class="ad-gsm-reply-text muted">{{ order.service_input1 }}</div>
+    </div>
+    {% endif %}
+</template>
+{% endif %}
+{% endfor %}
+{% endblock %}
+{% block footer_script %}
+<script>
+    (function () {
+        var modalEl = document.getElementById('adOrderDetailModal');
+        if (!modalEl) return;
+        document.body.appendChild(modalEl);
+        function fmtDuration(sec) {
+            if (sec < 60) return sec + ' Sec';
+            if (sec < 3600) return Math.floor(sec / 60) + ' Min ' + (sec % 60) + ' Sec';
+            if (sec < 86400) return Math.floor(sec / 3600) + ' Hrs ' + Math.floor((sec % 3600) / 60) + ' Min';
+            return Math.floor(sec / 86400) + ' Days ' + Math.floor((sec % 86400) / 3600) + ' Hrs';
+        }
+        document.querySelectorAll('[data-ad-preview]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = btn.getAttribute('data-ad-preview');
+                var tpl = document.getElementById('ad-ordertpl-' + id);
+                if (!tpl) return;
+                document.getElementById('ad-odm-order-id').textContent = 'ORDER ID: #' + id;
+                var body = document.getElementById('ad-odm-body');
+                body.innerHTML = '';
+                body.appendChild(tpl.content.cloneNode(true));
+                body.querySelectorAll('[data-processing]').forEach(function (el) {
+                    var s = new Date(el.dataset.submitted.replace(' ', 'T'));
+                    var r = new Date(el.dataset.replied.replace(' ', 'T'));
+                    el.textContent = fmtDuration(Math.max(0, Math.floor((r - s) / 1000)));
+                });
+                if (window.bootstrap && bootstrap.Modal) {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                } else if (window.jQuery) {
+                    $(modalEl).modal('show');
+                }
+            });
+        });
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest && e.target.closest('.ad-btn-copy');
+            if (!btn) return;
+            var text = document.getElementById(btn.dataset.target).textContent.trim();
+            function done() {
+                var original = btn.innerHTML;
+                btn.innerHTML = '<i class="ti ti-check"></i> Copied';
+                setTimeout(function () { btn.innerHTML = original; }, 2000);
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(done);
+            } else {
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                done();
+            }
+        });
+    })();
+</script>
 {% endblock %}
