@@ -1,0 +1,42 @@
+name: Faturas - excluir nao pagas
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        description: 'Acao no servidor (apenas faturas de PEDIDO nao pagas, mais de 24h)'
+        required: true
+        default: 'dry-run'
+        options:
+          - dry-run
+          - excluir
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rodar comando no servidor (mesmas chaves do deploy)
+        uses: appleboy/ssh-action@v1.0.2
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            git config --global --add safe.directory /opt/site_servicetool
+            cd /opt/site_servicetool
+            source venv/bin/activate
+            if [ "${{ github.event.inputs.mode }}" = "excluir" ]; then
+              python manage.py delete_unpaid_invoices
+            else
+              python manage.py delete_unpaid_invoices --dry-run
+            fi
+      - name: Notificar falha no Telegram
+        if: failure()
+        run: |
+          curl -s -o /dev/null -w '%{http_code}' \
+            "https://api.telegram.org/bot${{ secrets.DEPLOY_TG_BOT_TOKEN }}/sendMessage" \
+            --data-urlencode "chat_id=${{ secrets.DEPLOY_TG_CHAT_ID }}" \
+            --data-urlencode "text=FALHA na limpeza de faturas nao pagas de site_servicetool (@${{ github.ref_name }})"
+        continue-on-error: true
