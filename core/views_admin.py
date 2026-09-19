@@ -21,6 +21,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
+from django.views.decorators.cache import never_cache
 
 from .models import (
     Api, ACTIVATION_SERVICE_EXTRA_FIELDS, CREDIT_SERVICE_EXTRA_FIELDS,
@@ -66,7 +67,9 @@ TYPE_MAP = {
 
 
 def _staff(fn):
-    return staff_member_required(fn, login_url='/django-admin/login/')
+    # Sem cache nas paginas do painel (navegador/CDN podem servir HTML antigo
+    # e o admin acaba nao vendo os updates por um tempo).
+    return never_cache(staff_member_required(fn, login_url='/django-admin/login/'))
 
 
 STOCK_ACCESS_ADMIN_EMAIL = 'enterserver@hotmail.com'
