@@ -44,6 +44,11 @@
         html[data-bs-theme="light"] { --bs-body-color: {{ site_css.text_color }} !important; }
         body { color: var(--bs-body-color) !important; }
         {% endif %}
+        .servicetool-theme-header .nav-links li.nav-store-item a { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, var(--orion-primary), #7048e8); color: #fff !important; padding: 5px 14px; border-radius: 999px; font-weight: 700; white-space: nowrap; animation: storeGlow 1.6s ease-in-out infinite; }
+        .servicetool-theme-header .nav-links li.nav-store-item a:hover { transform: translateY(-1px); }
+        .nav-store-item .store-nav-badge { background: #25d366; color: #fff; font-size: 9px; font-weight: 800; border-radius: 999px; padding: 1px 6px; text-transform: uppercase; letter-spacing: .4px; animation: storeBlink 1s steps(2, start) infinite; }
+        @keyframes storeGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, .45); } 50% { box-shadow: 0 0 0 8px rgba(37, 211, 102, 0); } }
+        @keyframes storeBlink { to { visibility: hidden; } }
     </style>
     {% if site_css.font_url %}<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="{{ site_css.font_url }}" rel="stylesheet">{% endif %}
     <style>
@@ -90,6 +95,9 @@
                                 <a href="#">📋 Lista de Serviço
                                     <svg class="chevron" fill="none" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 </a>
+                            </li>
+                            <li class="nav-store-item">
+                                <a href="{% url 'store' %}">🛍️ Loja <span class="store-nav-badge">NOVO</span></a>
                             </li>
                         </ul>
                     </div>
@@ -244,6 +252,7 @@
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'activation-service' %}">⚡ Ativação <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'server-service' %}">💰 Aluguel <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'category' 'method-service' %}">💡 Métodos <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
+            <a class="text-reset border-bottom mb-2 pb-2 d-block store-offcanvas-link" href="{% url 'store' %}">🛍️ Loja <span class="store-nav-badge">NOVO</span><span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             {% if customer %}
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_dashboard' %}" style="margin-top: 12px;"><i class="bi bi-tachometer"></i> Meu Painel <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>
             <a class="text-reset border-bottom mb-2 pb-2 d-block" href="{% url 'customer_order_history' %}"><i class="bi bi-bag"></i> Histórico de ordem <span class="float-end text-muted"><i class="bi bi-chevron-right"></i></span></a>

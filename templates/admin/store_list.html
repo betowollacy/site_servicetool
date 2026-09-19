@@ -1,0 +1,63 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <h4 class="mb-0">Produtos da Loja</h4>
+    </div>
+    <div class="col-md-6 text-md-end">
+        <a href="{% url 'admin_product_new' %}" class="btn btn-primary"><i class="ti ti-plus me-2"></i> Adicionar Produto</a>
+    </div>
+</div>
+{% if messages %}
+<div class="row mb-3">
+    <div class="col-12">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+<div class="card">
+    <div class="card-body table-responsive">
+        <table class="table table-hover dataTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Imagem</th>
+                    <th>Produto</th>
+                    <th>Preço</th>
+                    <th>Estoque</th>
+                    <th>Vendidos</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td>#{{ p.id }}</td>
+                    <td>
+                        {% if p.thumbnail %}
+                        <a href="{% url 'admin_product_edit' p.id %}" title="Editar produto"><img src="{{ p.thumbnail }}" alt="" style="max-height: 45px; max-width: 60px; object-fit: contain;"></a>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td><a href="{% url 'admin_product_edit' p.id %}">{{ p.title }}</a></td>
+                    <td>R$ {{ p.price|floatformat:2 }}</td>
+                    <td><span class="badge {% if p.stock > 0 %}bg-light-success{% else %}bg-light-danger{% endif %}">{{ p.stock }}</span></td>
+                    <td>{{ p.sell_count }}</td>
+                    <td><span class="badge {% if p.status == 'Active' %}bg-light-success{% else %}bg-light-danger{% endif %}">{% if p.status == 'Active' %}Ativo{% else %}Inativo{% endif %}</span></td>
+                    <td>
+                        <a href="{% url 'admin_product_edit' p.id %}" class="btn btn-sm btn-light-primary"><i class="ti ti-pencil"></i></a>
+                        <a href="{% url 'admin_product_delete' p.id %}" class="btn btn-sm btn-light-danger" onclick="return confirm('Remover este produto?')"><i class="ti ti-trash"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center py-4">Nenhum produto cadastrado. Clique em "Adicionar Produto" para começar.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

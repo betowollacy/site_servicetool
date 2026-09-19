@@ -1,0 +1,119 @@
+{% extends 'admin/base.html' %}
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <h4 class="mb-0">{% if product %}Editar Produto #{{ product.id }}{% else %}Novo Produto{% endif %}</h4>
+    </div>
+</div>
+{% if messages %}
+<div class="row mb-3">
+    <div class="col-12">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">{{ message }}</div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+<div class="card">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nome do Produto</label>
+                    <input type="text" name="title" class="form-control" required value="{{ product.title|default:'' }}" placeholder="Ex.: Carregador USB-C 20W">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Preço (R$)</label>
+                    <input type="number" step="0.01" min="0" name="price" class="form-control" required value="{{ product.price|default:'0.00' }}">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Estoque</label>
+                    <input type="number" step="1" min="0" name="stock" class="form-control" value="{{ product.stock|default:'0' }}">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Imagem do Produto</label>
+                    <div class="input-group">
+                        <input type="text" name="thumbnail" id="storeImgInput" class="form-control" value="{{ product.thumbnail|default:'' }}" placeholder="https://... ou /media/...">
+                        <button type="button" class="btn btn-primary" id="uploadStoreBtn">Enviar imagem</button>
+                    </div>
+                    <input type="file" id="uploadStoreFile" accept="image/*" class="d-none">
+                    <input type="file" name="thumbnail_image" accept="image/*" class="d-none">
+                    <div class="form-text">Cole um link direto, ou clique em "Enviar imagem" para subir um arquivo do seu computador.</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-control">
+                        <option value="Active" {% if product.status == 'Active' or not product %}selected{% endif %}>Ativo</option>
+                        <option value="Inactive" {% if product.status == 'Inactive' %}selected{% endif %}>Inativo</option>
+                    </select>
+                </div>
+                <div class="col-12 mb-3">
+                    <label class="form-label">Descrição</label>
+                    <textarea name="description" class="form-control" rows="5" placeholder="Descreva o produto...">{{ product.description|default:'' }}</textarea>
+                </div>
+            </div>
+            <a href="{% url 'admin_product_list' %}" class="btn btn-light">Voltar</a>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </form>
+        <div class="mt-4">
+            <label class="form-label fw-semibold">Pré-visualização</label>
+            <div>
+                {% if product.thumbnail %}
+                <img src="{{ product.thumbnail }}" id="storePreview" alt="" style="max-width: 220px; border-radius: 8px;">
+                {% else %}
+                <img src="" id="storePreview" alt="" style="max-width: 220px; border-radius: 8px; display: none;">
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer_script %}
+<script>
+    $(function () {
+        function updatePreview() {
+            var src = $("#storeImgInput").val().trim();
+            if (src) {
+                $("#storePreview").attr("src", src).show();
+            } else {
+                $("#storePreview").hide();
+            }
+        }
+        $("#storeImgInput").on("input", updatePreview).on("change", updatePreview);
+        updatePreview();
+
+        $("#uploadStoreBtn").on("click", function () {
+            $("#uploadStoreFile").trigger("click");
+        });
+
+        $("#uploadStoreFile").on("change", function () {
+            var file = this.files[0];
+            if (!file) return;
+            var fd = new FormData();
+            fd.append("image", file);
+            fd.append("csrfmiddlewaretoken", $("input[name=csrfmiddlewaretoken]").val());
+            $("#uploadStoreBtn").prop("disabled", true).text("Enviando...");
+            $.ajax({
+                url: "{% url 'admin_product_upload_image' %}",
+                method: "POST",
+                data: fd,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    $("#storeImgInput").val(res.url);
+                    updatePreview();
+                    $("#uploadStoreBtn").prop("disabled", false).text("Enviar imagem");
+                },
+                error: function (xhr) {
+                    var msg = "Falha no envio.";
+                    try { msg = JSON.parse(xhr.responseText).error || msg; } catch (e) {}
+                    alert(msg);
+                    $("#uploadStoreBtn").prop("disabled", false).text("Enviar imagem");
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

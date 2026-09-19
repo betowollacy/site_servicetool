@@ -84,6 +84,12 @@ path('admin-panel/apis/<int:api_id>/import/', views_admin.admin_api_import,
     path('admin-panel/effects/', views_admin.admin_effects, name='admin_effects'),
     path('admin-panel/appearance/', views_admin.admin_appearance, name='admin_appearance'),
 
+    path('admin-panel/loja/', views_admin.admin_product_list, name='admin_product_list'),
+    path('admin-panel/loja/upload-image/', views_admin.admin_product_upload_image, name='admin_product_upload_image'),
+    path('admin-panel/loja/new/', views_admin.admin_product_new, name='admin_product_new'),
+    path('admin-panel/loja/<int:product_id>/edit/', views_admin.admin_product_edit, name='admin_product_edit'),
+    path('admin-panel/loja/<int:product_id>/delete/', views_admin.admin_product_delete, name='admin_product_delete'),
+
     path('', views.homepage, name='homepage'),
     path('public/api/index.php', public_api.public_api, name='public_api'),
     path('public/api/', public_api.public_api, name='public_api_index'),
@@ -113,4 +119,5 @@ path('admin-panel/apis/<int:api_id>/import/', views_admin.admin_api_import,
     path('customer/submit-order/', views.submit_order, name='submit_order'),
 
     path('page/<slug:slug>/', views.page_view, name='page_view'),
+    path('loja/', views.store, name='store'),
 ]

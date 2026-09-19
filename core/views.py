@@ -24,7 +24,7 @@ from .models import (
     Api, ApiLog, Currency, Customer, CustomerOrder, GatewayLog, Invoice,
     METHOD_SERVICE_EXTRA_FIELDS, OrderInput, Page, PaymentDeposit, PaymentGateway,
     PasswordReset, SERVICE_COLLECT_DATA_CHOICES, ServiceGroup, ServiceInput,
-    ServiceList, Slider, Statement, SystemSetting, TempRegister,
+    ServiceList, Slider, Statement, SystemSetting, StoreProduct, TempRegister,
     collect_data_codes, collect_field_code_by_name,
 )
 
@@ -295,6 +295,15 @@ def page_view(request, slug):
     ctx = {'page': page}
     ctx.update(_base_ctx(request))
     return render(request, 'frontend/page.html', ctx)
+
+
+def store(request):
+    products = StoreProduct.objects.filter(status='Active').order_by('-created_at')
+    ctx = {
+        'store_products': products,
+    }
+    ctx.update(_base_ctx(request))
+    return render(request, 'frontend/store.html', ctx)
 
 
 # --------------------------------------------------------------------------- #

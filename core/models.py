@@ -780,6 +780,24 @@ class Media(models.Model):
         return self.name
 
 
+class StoreProduct(models.Model):
+    title = models.CharField(max_length=255)
+    price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    description = models.TextField(blank=True, null=True)
+    thumbnail = models.CharField(max_length=500, blank=True, null=True)
+    stock = models.IntegerField(default=0)
+    status = models.CharField(max_length=20, default='Active')
+    sell_count = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'store_products'
+
+    def __str__(self):
+        return self.title
+
+
 class Page(models.Model):
     page_title = models.CharField(max_length=255)
     page_article = models.TextField(blank=True, null=True)

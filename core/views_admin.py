@@ -17,7 +17,7 @@ from django.contrib.auth import logout
 from django.db import transaction
 from django.db.models import Count, Max, Q, Sum
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
@@ -27,7 +27,7 @@ from .models import (
     METHOD_SERVICE_EXTRA_FIELDS, SERVICE_COLLECT_DATA_CHOICES,
     Currency, Customer, CustomerOrder, Inventory,
     InventoryData, Invoice, OrderInput, Page, PaymentDeposit, PaymentGateway, RemoteServiceInput, RemoteServiceList,
-    ServiceGroup, ServiceInput, ServiceList, Slider, Statement, SystemSetting, User,
+    ServiceGroup, ServiceInput, ServiceList, Slider, Statement, StoreProduct, SystemSetting, User,
     collect_data_codes, collect_field_code_by_name,
 )
 from . import asaas, catalog_images, notify, provider_api, public_api
@@ -2881,6 +2881,105 @@ def admin_slider_upload_image(request):
         for chunk in f.chunks():
             out.write(chunk)
     return JsonResponse({'url': f"{settings.MEDIA_URL}sliders/{fname}"})
+
+
+# --------------------------------------------------------------------------- #
+# Loja (produtos físicos)
+# --------------------------------------------------------------------------- #
+
+def _save_store_thumbnail(product, files, request=None):
+    img = files.get('thumbnail_image')
+    if not img:
+        return
+    ext = os.path.splitext(img.name)[1].lower() or '.jpg'
+    if ext not in ('.jpg', '.jpeg', '.png', '.webp', '.gif'):
+        if request:
+            messages.warning(request, 'Formato de imagem não suportado (use JPG, PNG, WEBP ou GIF).')
+        return
+    folder = Path(settings.MEDIA_ROOT) / 'store'
+    folder.mkdir(parents=True, exist_ok=True)
+    name = f"product_{uuid.uuid4().hex[:8]}{ext}"
+    with open(folder / name, 'wb+') as dest:
+        for chunk in img.chunks():
+            dest.write(chunk)
+    product.thumbnail = f"{settings.MEDIA_URL}store/{name}"
+    product.save(update_fields=['thumbnail'])
+
+
+@_staff
+def admin_product_list(request):
+    products = StoreProduct.objects.all().order_by('-created_at')
+    return render(request, 'admin/store_list.html', {'products': products, 'storeProductCount': products.count()})
+
+
+@_staff
+def admin_product_upload_image(request):
+    if request.method != 'POST' or not request.FILES.get('image'):
+        return JsonResponse({'error': 'Envie um arquivo de imagem.'}, status=400)
+    f = request.FILES['image']
+    name = (f.name or '').lower()
+    ext = name.rsplit('.', 1)[-1] if '.' in name else ''
+    if ext not in ('png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'):
+        return JsonResponse({'error': 'Formato não permitido (use PNG, JPG, WEBP, GIF ou BMP).'}, status=400)
+    subdir = settings.MEDIA_ROOT / 'store'
+    subdir.mkdir(parents=True, exist_ok=True)
+    fname = f"product_{uuid.uuid4().hex[:10]}.{ext}"
+    dest = subdir / fname
+    with open(dest, 'wb+') as out:
+        for chunk in f.chunks():
+            out.write(chunk)
+    return JsonResponse({'url': f"{settings.MEDIA_URL}store/{fname}"})
+
+
+@_staff
+def admin_product_new(request):
+    if request.method == 'POST':
+        try:
+            price = Decimal(request.POST.get('price') or '0').quantize(Decimal('0.01'))
+        except InvalidOperation:
+            price = Decimal('0.00')
+        product = StoreProduct.objects.create(
+            title=(request.POST.get('title') or '').strip() or 'Produto sem nome',
+            price=price,
+            description=request.POST.get('description') or '',
+            thumbnail=(request.POST.get('thumbnail') or '').strip(),
+            stock=int(request.POST.get('stock') or 0),
+            status=request.POST.get('status', 'Active'),
+        )
+        _save_store_thumbnail(product, request.FILES, request)
+        messages.success(request, 'Produto criado com sucesso.')
+        return redirect('admin_product_list')
+    return render(request, 'admin/store_form.html', {})
+
+
+@_staff
+def admin_product_edit(request, product_id):
+    product = get_object_or_404(StoreProduct, id=product_id)
+    if request.method == 'POST':
+        try:
+            price = Decimal(request.POST.get('price') or '0').quantize(Decimal('0.01'))
+        except InvalidOperation:
+            price = product.price
+        product.title = (request.POST.get('title') or '').strip() or product.title
+        product.price = price
+        product.description = request.POST.get('description') or ''
+        product.stock = int(request.POST.get('stock') or 0)
+        product.status = request.POST.get('status', 'Active')
+        thumbnail = (request.POST.get('thumbnail') or '').strip()
+        if thumbnail:
+            product.thumbnail = thumbnail
+        product.save()
+        _save_store_thumbnail(product, request.FILES, request)
+        messages.success(request, 'Produto atualizado.')
+        return redirect('admin_product_list')
+    return render(request, 'admin/store_form.html', {'product': product})
+
+
+@_staff
+def admin_product_delete(request, product_id):
+    StoreProduct.objects.filter(id=product_id).delete()
+    messages.success(request, 'Produto removido.')
+    return redirect('admin_product_list')
 
 
 # --------------------------------------------------------------------------- #

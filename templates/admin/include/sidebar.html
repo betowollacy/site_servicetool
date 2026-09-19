@@ -18,7 +18,7 @@
                 <li class="pc-item pc-hasmenu">
                     <div class="pc-link" style="cursor: pointer">
                         <span class="pc-micon"><i class="ti ti-list-check"></i></span>
-                        <span class="pc-mtext">Lista de Serviços</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
+                        <span class="pc-mtext">Lista de Serviços</span><span class="pc-arrow"><i class="ti ti-chevron-right"></i></span>
                     </div>
                     <ul class="pc-submenu">
                         <li class="pc-item"><a class="pc-link" href="{% url 'admin_service_list' 'server' %}">Aluguel <span class="pc-submenu-count">{{ serverServiceCount }}</span></a></li>
@@ -33,7 +33,7 @@
                 <li class="pc-item pc-hasmenu">
                     <div class="pc-link" style="cursor: pointer">
                         <span class="pc-micon"><i class="ti ti-bag"></i></span>
-                        <span class="pc-mtext">Histórico de Pedidos</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
+                        <span class="pc-mtext">Histórico de Pedidos</span><span class="pc-arrow"><i class="ti ti-chevron-right"></i></span>
                     </div>
                     <ul class="pc-submenu">
                         <li class="pc-item"><a class="pc-link" href="{% url 'admin_orders' 'waiting' %}">Aguardando Ação <span class="pc-submenu-count">{{ waitingActionCount }}</span></a></li>
@@ -46,7 +46,7 @@
                 <li class="pc-item pc-hasmenu">
                     <div class="pc-link" style="cursor: pointer">
                         <span class="pc-micon"><i class="ti ti-user-cog"></i></span>
-                        <span class="pc-mtext">Administrador</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
+                        <span class="pc-mtext">Administrador</span><span class="pc-arrow"><i class="ti ti-chevron-right"></i></span>
                     </div>
                     <ul class="pc-submenu">
                         <li class="pc-item"><a class="pc-link" href="{% url 'admin_direct_order' %}">Pedido Direto na API</a></li>
@@ -72,15 +72,22 @@
 
                 <li class="pc-item pc-hasmenu">
                     <a href="{% url 'admin_customer_online' %}" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-wifi"></i></span>
+                        <span class="pc-micon"><i class="ti ti-user-check"></i></span>
                         <span class="pc-mtext">Clientes online</span>
+                    </a>
+                </li>
+
+                <li class="pc-item pc-hasmenu">
+                    <a href="{% url 'admin_product_list' %}" class="pc-link">
+                        <span class="pc-micon"><i class="ti ti-shopping-bag"></i></span>
+                        <span class="pc-mtext">Loja <span class="float-end">{{ storeProductCount }}</span></span>
                     </a>
                 </li>
 
                 <li class="pc-item pc-hasmenu">
                     <div class="pc-link" style="cursor: pointer">
                         <span class="pc-micon"><i class="ti ti-pages"></i></span>
-                        <span class="pc-mtext">Conteúdo</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
+                        <span class="pc-mtext">Conteúdo</span><span class="pc-arrow"><i class="ti ti-chevron-right"></i></span>
                     </div>
                     <ul class="pc-submenu">
                         <li class="pc-item"><a class="pc-link" href="{% url 'admin_slider_list' %}">Sliders</a></li>
@@ -94,7 +101,7 @@
                 <li class="pc-item pc-hasmenu">
                     <div class="pc-link" style="cursor: pointer">
                         <span class="pc-micon"><i class="ti ti-plug-connected"></i></span>
-                        <span class="pc-mtext">APIs do Provedor</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
+                        <span class="pc-mtext">APIs do Provedor</span><span class="pc-arrow"><i class="ti ti-chevron-right"></i></span>
                     </div>
                     <ul class="pc-submenu">
                         {% for api in apis %}
@@ -108,7 +115,7 @@
                 <li class="pc-item pc-hasmenu">
                     <div class="pc-link" style="cursor: pointer">
                         <span class="pc-micon"><i class="ti ti-settings"></i></span>
-                        <span class="pc-mtext">Configurações</span><span class="pc-arrow"><i data-feather="chevron-right"></i></span>
+                        <span class="pc-mtext">Configurações</span><span class="pc-arrow"><i class="ti ti-chevron-right"></i></span>
                     </div>
                     <ul class="pc-submenu">
                         <li class="pc-item"><a class="pc-link" href="{% url 'admin_setting' %}">Configurações do Site</a></li>
