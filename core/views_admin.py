@@ -14,7 +14,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import logout
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Max, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -1555,6 +1555,15 @@ def _save_uploaded_screenshot(service, files, request=None):
     service.save(update_fields=['screenshot'])
 
 
+def _unique_service_slug(base):
+    candidate = base or 'servico'
+    slug, n = candidate, 2
+    while ServiceList.objects.filter(slug=candidate).exists():
+        candidate = '{}-{}'.format(slug, n)
+        n += 1
+    return candidate
+
+
 def admin_service_new(request, svtype):
     db_type, label = _service_type_from(svtype)
     if request.method == 'POST':
@@ -1565,7 +1574,7 @@ def admin_service_new(request, svtype):
         service = ServiceList.objects.create(
             service_type=db_type,
             title=title,
-            slug=slugify(request.POST.get('slug') or title),
+            slug=_unique_service_slug(slugify(request.POST.get('slug') or title)),
             service_group=_group_for(svtype, label),
             status='Active',
             process_type='Manual',
@@ -1601,7 +1610,11 @@ def admin_service_edit(request, svtype, service_id):
         messages.error(request, 'Serviço não encontrado.')
         return redirect('admin_service_list', svtype)
     if request.method == 'POST':
-        _apply_service_post(service, request.POST)
+        try:
+            _apply_service_post(service, request.POST)
+        except IntegrityError:
+            messages.error(request, 'Já existe outro serviço usando esse slug/URL. Troque o "Slug" ou renomeie o título.')
+            return redirect('admin_service_edit', svtype, service_id)
         _save_fields(service, request.POST.get('fields', ''))
         _save_uploaded_thumbnail(service, request.FILES, request)
         _save_uploaded_screenshot(service, request.FILES, request)
