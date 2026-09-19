@@ -131,6 +131,7 @@ SERVICE_COLLECT_DATA_CHOICES = [
     ('image_link', 'Link da Imagem'),
     ('upload_photo', 'Enviar foto'),
     ('upload_logo', 'Enviar logo'),
+    ('block_code', 'Código de bloqueio'),
 ]
 
 COLLECT_FIELD_TYPES = {
@@ -146,6 +147,7 @@ COLLECT_FIELD_TYPES = {
     'lock_photo': 'file',
     'upload_photo': 'file',
     'upload_logo': 'file',
+    'block_code': 'text',
 }
 
 COLLECT_FIELD_NAMES = {
@@ -161,6 +163,7 @@ COLLECT_FIELD_NAMES = {
     'lock_photo': 'Foto da tela de bloqueio',
     'upload_photo': 'Foto',
     'upload_logo': 'Logo',
+    'block_code': 'Código de bloqueio',
 }
 
 # Alias de nomes de campo equivalentes a cada código de 'Dados a solicitar'.
@@ -177,6 +180,7 @@ COLLECT_FIELD_ALIASES = {
     'image_link': ('Link da Imagem', 'Link da imagem', 'Link da Foto', 'Image Link'),
     'anydesk': ('Acesso do AnyDesk', 'AnyDesk', 'ID e senha do AnyDesk'),
     'whatsapp': ('WhatsApp', 'Whatsapp', 'Número de WhatsApp'),
+    'block_code': ('Código de bloqueio', 'Codigo de bloqueio', 'Código de Bloqueio', 'Codigo de Bloqueio', 'Block Code'),
 }
 
 # Compatibilidade: opções do antigo campo `collect_extras` (não usado mais).

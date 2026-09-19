@@ -149,7 +149,7 @@
                                 {% else %}
                                 <div class="mb-3">
                                     <label class="form-label" for="fields.{{ forloop.counter0 }}">Informe <b>{{ serviceInput.name }}</b></label>
-                                    <input type="{% if serviceInput.name == 'Senha' %}password{% elif 'Quantidade' in serviceInput.name %}number{% elif 'E-mail' in serviceInput.name or 'Email' in serviceInput.name %}email{% else %}text{% endif %}" class="form-control" name="{{ serviceInput.name }}" id="fields.{{ forloop.counter0 }}" placeholder="{{ serviceInput.name }}" {% if 'Quantidade' in serviceInput.name %}min="1" step="1"{% endif %} required>
+                                    <input type="{% if serviceInput.name == 'Senha' or 'Código de bloqueio' in serviceInput.name %}password{% elif 'Quantidade' in serviceInput.name %}number{% elif 'E-mail' in serviceInput.name or 'Email' in serviceInput.name %}email{% else %}text{% endif %}" class="form-control" name="{{ serviceInput.name }}" id="fields.{{ forloop.counter0 }}" placeholder="{{ serviceInput.name }}" {% if 'Quantidade' in serviceInput.name %}min="1" step="1"{% endif %} required>
                                     {% if 'Quantidade' in serviceInput.name %}
                                     <small class="text-muted">Quantidade de créditos a adicionar na conta da ferramenta.</small>
                                     {% endif %}

@@ -1822,6 +1822,69 @@ class ServiceFieldPanelRulesTests(TestCase):
         self.assertNotIn('Senha', names)
 
 
+class BlockCodeCollectTests(TestCase):
+    """'Código de bloqueio' marcado no painel deve ser solicitado na compra,
+    validado como obrigatório e gravado como entrada do pedido."""
+
+    def setUp(self):
+        Currency.objects.create(code='BRL', name='Brazilian Real', icon='R$', rate=Decimal('1.0000'), status='Active')
+        self.customer = Customer.objects.create(
+            name='Cliente Codigo', email='codigo@teste.com', mobile='11999999999',
+            password=Customer.make_password('senha123'), currency='BRL',
+            balance=Decimal('100.00'),
+        )
+        self.group = ServiceGroup.objects.create(name='Ferramentas', slug='server', status='Active')
+        self.service = ServiceList.objects.create(
+            service_type='Credit Service', service_group=self.group,
+            title='Tool Bloqueio', original_price=Decimal('10.00'),
+            status='Active', slug='tool-bloqueio', collect_data='user,block_code',
+        )
+
+    def _login(self):
+        session = self.client.session
+        session['customer_id'] = self.customer.id
+        session.save()
+
+    def test_service_view_shows_block_code_as_password_field(self):
+        self._login()
+        resp = self.client.get(reverse('service_view', args=[self.service.slug]))
+        html = resp.content.decode()
+        self.assertIn('name="Código de bloqueio"', html)
+        self.assertIn('type="password"', html)
+
+    def test_block_code_hidden_when_not_checked(self):
+        self.service.collect_data = 'user'
+        self.service.save(update_fields=['collect_data'])
+        self._login()
+        resp = self.client.get(reverse('service_view', args=[self.service.slug]))
+        html = resp.content.decode()
+        self.assertNotIn('name="Código de bloqueio"', html)
+
+    def test_submit_order_requires_and_stores_block_code(self):
+        self._login()
+        # Sem o código: deve voltar para a página do serviço (falha de validação).
+        resp = self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+            'Quantidade de Créditos': '1',
+            'Usuário': 'ferramenta.login',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertRedirects(resp, reverse('service_view', args=[self.service.slug]))
+        self.assertFalse(CustomerOrder.objects.exists())
+
+        # Com o código: pedido criado e entrada gravada.
+        resp = self.client.post(reverse('submit_order'), {
+            'serviceID': self.service.id,
+            'Quantidade de Créditos': '1',
+            'Usuário': 'ferramenta.login',
+            'Código de bloqueio': 'BLOQ-12345',
+        })
+        self.assertEqual(resp.status_code, 302)
+        order = CustomerOrder.objects.latest('id')
+        inputs = {i.field_name: i.field_value for i in order.order_inputs.all()}
+        self.assertEqual(inputs.get('Código de bloqueio'), 'BLOQ-12345')
+
+
 class ActivationServiceTests(TestCase):
     def setUp(self):
         Currency.objects.create(code='BRL', name='Brazilian Real', icon='R$', rate=Decimal('1.0000'), status='Active')
