@@ -15,10 +15,6 @@
     .svc-tabs .nav-link:focus { color: #fff; }
     .svc-tabs .nav-link.active,
     .svc-tabs .nav-link.active:hover { color: var(--bs-primary-contrast, #fff); background: var(--bs-primary); border-color: var(--bs-primary); }
-    .recent-product-link { gap: 1.5rem; border-radius: .5rem; padding: .5rem; transition: transform .18s ease, background-color .18s ease, box-shadow .18s ease; }
-    .recent-product-link img { transition: transform .18s ease; }
-    .recent-product-link:hover { transform: translateY(-2px); background-color: var(--off, rgba(0,0,0,.04)); box-shadow: 0 8px 18px rgba(0,0,0,.10); }
-    .recent-product-link:hover img { transform: scale(1.04); }
 </style>
 <div class="my-4">
     <div class="container">
@@ -65,9 +61,9 @@
                 <div class="row">
                     {% for s in recent_top %}
                     <div class="col-lg-4 p-3">
-                        <a href="{% url 'service_view' s.slug %}" class="d-flex gap-4 recent-product-link">
+                        <a href="{% url 'service_view' s.slug %}" class="d-flex gap-3 p-2 border rounded product-filter-item h-100">
                             <img src="{{ s.thumbnail }}" alt="{{ s.title }}" width="105" height="70" class="rounded border">
-                            <div>
+                            <div class="overflow-hidden">
                                 <p class="text-body mb-1 fw-medium text-truncate-2">{{ s.title }}</p>
                                 <div>
                                     {% if customer %}<span class="badge bg-light-primary text-uppercase" style="font-size:11px">R$ {{ s.price|floatformat:2 }}</span><span class="badge bg-light-warning text-uppercase" style="font-size:11px">{{ s.delivery_time }}</span>{% endif %}
