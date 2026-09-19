@@ -2906,6 +2906,16 @@ def _save_store_thumbnail(product, files, request=None):
     product.save(update_fields=['thumbnail'])
 
 
+def _parse_store_stock(post, default=0):
+    raw = (post.get('stock') or '').strip().replace(',', '.')
+    if not raw:
+        return default
+    try:
+        return max(int(float(raw)), 0)
+    except (TypeError, ValueError):
+        return default
+
+
 @_staff
 def admin_product_list(request):
     products = StoreProduct.objects.all().order_by('-created_at')
@@ -2943,7 +2953,7 @@ def admin_product_new(request):
             price=price,
             description=request.POST.get('description') or '',
             thumbnail=(request.POST.get('thumbnail') or '').strip(),
-            stock=int(request.POST.get('stock') or 0),
+            stock=_parse_store_stock(request.POST),
             status=request.POST.get('status', 'Active'),
         )
         _save_store_thumbnail(product, request.FILES, request)
@@ -2963,7 +2973,7 @@ def admin_product_edit(request, product_id):
         product.title = (request.POST.get('title') or '').strip() or product.title
         product.price = price
         product.description = request.POST.get('description') or ''
-        product.stock = int(request.POST.get('stock') or 0)
+        product.stock = _parse_store_stock(request.POST, product.stock)
         product.status = request.POST.get('status', 'Active')
         thumbnail = (request.POST.get('thumbnail') or '').strip()
         if thumbnail:
