@@ -2911,6 +2911,24 @@ def admin_slider_upload_image(request):
 # Loja (produtos físicos)
 # --------------------------------------------------------------------------- #
 
+def _save_store_gallery(product, post, request=None):
+    """Reconstroi a galeria do produto (até 3 imagens, sem duplicadas).
+
+    A primeira imagem é a principal (thumbnail do card). Retorna True quando
+    a galeria é alterada."""
+    imgs = [product.thumbnail]
+    for key in ('gallery_2', 'gallery_3'):
+        url = (post.get(key) or '').strip()
+        if url:
+            imgs.append(url)
+    imgs = [u for u in dict.fromkeys(imgs) if u][:3]
+    if imgs != (product.gallery or []):
+        product.gallery = imgs
+        product.save(update_fields=['gallery'])
+        return True
+    return False
+
+
 def _save_store_thumbnail(product, files, request=None):
     img = files.get('thumbnail_image')
     if not img:
@@ -2981,6 +2999,7 @@ def admin_product_new(request):
             status=request.POST.get('status', 'Active'),
         )
         _save_store_thumbnail(product, request.FILES, request)
+        _save_store_gallery(product, request.POST, request)
         messages.success(request, 'Produto criado com sucesso.')
         return redirect('admin_product_list')
     return render(request, 'admin/store_form.html', {})
@@ -3004,6 +3023,7 @@ def admin_product_edit(request, product_id):
             product.thumbnail = thumbnail
         product.save()
         _save_store_thumbnail(product, request.FILES, request)
+        _save_store_gallery(product, request.POST) or None
         messages.success(request, 'Produto atualizado.')
         return redirect('admin_product_list')
     return render(request, 'admin/store_form.html', {'product': product})

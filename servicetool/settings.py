@@ -28,6 +28,32 @@ DEBUG = _env('DJANGO_DEBUG', 'True').strip().lower() not in ('0', 'false', 'no',
 
 ALLOWED_HOSTS = [h.strip() for h in _env('DJANGO_ALLOWED_HOSTS', '*').split(',') if h.strip()]
 
+# CSRF por HTTPS/domínio: o Django 4+ rejeita o POST (403) quando a origem não
+# consta explicitamente aqui. Se o site é aberto por "https://meudominio",
+# essa origem precisa estar na lista OU o login dá erro de CSRF de imediato.
+_CSRF_ORIGINS = set()
+for _o in _env('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(','):
+    _o = _o.strip()
+    if _o:
+        _CSRF_ORIGINS.add(_o)
+_site_url = _env('DJANGO_SITE_URL', 'http://127.0.0.1:8000').strip()
+if not _site_url:
+    _site_url = 'http://127.0.0.1:8000'
+# Se SITE_URL for https, libera também a variação http (caso ainda navegue
+# sem TLS no mesmo host) e vice-versa — evita 403 ao alternar o esquema.
+from urllib.parse import urlsplit
+_parsed = urlsplit(_site_url)
+_netloc = _parsed.netloc or _site_url
+_CSRF_ORIGINS.update({_site_url})
+if _site_url.lower().startswith('https://'):
+    _CSRF_ORIGINS.add('http://' + _netloc)
+else:
+    _CSRF_ORIGINS.add('https://' + _netloc)
+# Localhost/IP de dev sempre ok.
+_CSRF_ORIGINS.update({'http://localhost', 'http://127.0.0.1'})
+CSRF_TRUSTED_ORIGINS = sorted(_CSRF_ORIGINS)
+del _o, _site_url, _netloc, _parsed, _CSRF_ORIGINS
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

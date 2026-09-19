@@ -785,6 +785,7 @@ class StoreProduct(models.Model):
     price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     description = models.TextField(blank=True, null=True)
     thumbnail = models.CharField(max_length=500, blank=True, null=True)
+    gallery = models.JSONField(default=list, blank=True, null=True)
     stock = models.IntegerField(default=0)
     status = models.CharField(max_length=20, default='Active')
     sell_count = models.IntegerField(default=0)

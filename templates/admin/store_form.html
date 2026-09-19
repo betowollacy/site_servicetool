@@ -31,16 +31,35 @@
                     <label class="form-label">Estoque</label>
                     <input type="number" step="1" min="0" name="stock" class="form-control" value="{{ product.stock|default:'0' }}">
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Imagem do Produto</label>
-                    <div class="input-group">
-                        <input type="text" name="thumbnail" id="storeImgInput" class="form-control" value="{{ product.thumbnail|default:'' }}" placeholder="https://... ou /media/...">
-                        <button type="button" class="btn btn-primary" id="uploadStoreBtn">Enviar imagem</button>
-                    </div>
-                    <input type="file" id="uploadStoreFile" accept="image/*" class="d-none">
-                    <input type="file" name="thumbnail_image" accept="image/*" class="d-none">
-                    <div class="form-text">Cole um link direto, ou clique em "Enviar imagem" para subir um arquivo do seu computador.</div>
+                <div class="col-12 mb-2">
+                    <label class="form-label fw-semibold">Imagens ilustrativas (até 3)</label>
                 </div>
+                <div class="col-md-4 mb-3" data-store-slot="1">
+                    <label class="form-label">Imagem principal</label>
+                    <div class="input-group">
+                        <input type="text" name="thumbnail" id="storeImgInput" class="form-control store-slot-url" value="{{ product.gallery.0|default:product.thumbnail|default:'' }}" placeholder="https://... ou /media/...">
+                        <button type="button" class="btn btn-primary store-slot-upload">Enviar</button>
+                    </div>
+                    <input type="file" class="d-none store-slot-file" accept="image/*">
+                    <input type="file" name="thumbnail_image" accept="image/*" class="d-none">
+                </div>
+                <div class="col-md-4 mb-3" data-store-slot="2">
+                    <label class="form-label">Imagem 2</label>
+                    <div class="input-group">
+                        <input type="text" name="gallery_2" class="form-control store-slot-url" value="{{ product.gallery.1|default:'' }}" placeholder="https://... ou /media/...">
+                        <button type="button" class="btn btn-primary store-slot-upload">Enviar</button>
+                    </div>
+                    <input type="file" class="d-none store-slot-file" accept="image/*">
+                </div>
+                <div class="col-md-4 mb-3" data-store-slot="3">
+                    <label class="form-label">Imagem 3</label>
+                    <div class="input-group">
+                        <input type="text" name="gallery_3" class="form-control store-slot-url" value="{{ product.gallery.2|default:'' }}" placeholder="https://... ou /media/...">
+                        <button type="button" class="btn btn-primary store-slot-upload">Enviar</button>
+                    </div>
+                    <input type="file" class="d-none store-slot-file" accept="image/*">
+                </div>
+                <div class="col-12 mb-3"><div class="form-text">Em cada campo: cole um link direto ou clique em "Enviar" para subir um arquivo do seu computador. A primeira imagem aparece no card da loja.</div></div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Status</label>
                     <select name="status" class="form-control">
