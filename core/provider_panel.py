@@ -44,9 +44,24 @@ _HEADERS = {
 }
 
 _USER_LABEL_RE = re.compile(
-    r'(?:usuario|username|user|login|email|mail)\s*[:\-=]\s*(.+)$', re.I)
+    r'\b(?:usu[áa]rio|username|user|login|email|mail)\s*[:\-=\t ]?\s*(.*)$', re.I)
 _PASS_LABEL_RE = re.compile(
-    r'(?:senha|password|pass|passwd|pwd)\s*[:\-=]\s*(.+)$', re.I)
+    r'\b(?:senha|password|passwd|pwd|pass\b)\s*[:\-=\t ]?\s*(.*)$', re.I)
+
+_USER_WORDS = ('usuario', 'username', 'user', 'login', 'email', 'mail')
+_PASS_WORDS = ('senha', 'password', 'passwd', 'pwd')
+
+# Inteiros que não são credencial (menu, links) — ignorados na varredura da página.
+_NON_CRED_VALUE_RE = re.compile(
+    r'^(?:sign\s*out|logout|log\s*in|sair|entrar|forgot|reset|alterar|trocar|'
+    r'change|new|confirm|esqueci|redo)$', re.I)
+
+# Fim de bloco/celula vira quebra de linha: rotulo e valor separados por tags
+# (ex.: <td>Password:</td><td>xxx</td>) voltam a ser uma linha por campo.
+_STRUCTURAL_CLOSE_RE = re.compile(
+    r'</(?:div|tr|td|th|p|li|dd|dt|h[1-6]|span|label|option|a)[^>]*>', re.I)
+
+_MAX_CRED_LEN = 200
 
 # Blocos onde os paineis costumam guardar a resposta do pedido.
 _REPLY_CONTAINER_RES = (
@@ -209,49 +224,129 @@ def _login(api):
     return cookies
 
 
-def _extract_reply(page_html):
-    """Extrai a resposta do pedido no painel.
-
-    Procura os blocos mais comuns (``#orderReplyContent``, ``#adminNoteText``,
-    classes com "reply") e, como ultimo recurso, varre a pagina inteira atras
-    de rotulos de usuario/senha. Devolve ``Username: ...<br>Password: ...``
-    (ou so o usuario, se a senha ainda nao saiu). Retorna '' se nada achar."""
-    block = ''
-    for pattern in _REPLY_CONTAINER_RES:
-        match = pattern.search(page_html)
-        if match:
-            block = match.group(1)
-            break
-    if not block and re.search(r'(?:password|senha)\s*[:\-=]', page_html, re.I):
-        block = page_html
-    if not block:
-        return ''
-    return _labels_to_reply(block)
-
-
-def _labels_to_reply(raw_html):
-    text = _html.unescape(raw_html)
-    text = re.sub(r'<br\s*/?>', '\n', text, flags=re.I)
-    text = re.sub(r'<[^>]+>', ' ', text)
+def _pick_user_pass(reply_text):
+    """Devolve (usuario, senha) extraidos de um texto no formato
+    ``Username: ...<br>Password: ...`` (ou qualquer mistura das linhas)."""
     user = passw = None
-    for line in text.replace('\r', '').split('\n'):
-        line = ' '.join(line.split())
-        if not line:
-            continue
-        if user is None:
-            m = _USER_LABEL_RE.search(line)
-            if m and m.group(1).strip():
-                user = m.group(1).strip()
-        if passw is None:
-            m = _PASS_LABEL_RE.search(line)
-            if m and m.group(1).strip():
-                passw = m.group(1).strip()
+    for part in re.split(r'<br\s*/?>', reply_text or '', flags=re.I):
+        m = _USER_LABEL_RE.search(part)
+        if m and m.group(1).strip():
+            user = m.group(1).strip()
+        m = _PASS_LABEL_RE.search(part)
+        if m and m.group(1).strip():
+            passw = m.group(1).strip()
+    return user, passw
+
+
+def _build_reply(user, passw):
     parts = []
     if user:
         parts.append('Username: {}'.format(user))
     if passw:
         parts.append('Password: {}'.format(passw))
     return '<br>'.join(parts)
+
+
+def _find_value_in_page(page_html, label_re, label_words):
+    """Acha o valor de um rotulo varrendo fragmentos pequenos da pagina.
+
+    Cada ocorrencia do rotulo abre uma janela de 1200 chars a partir dela;
+    falsos positivos de menu (Sign out, Change password...) sao pulados.
+    Devolve o primeiro valor plausivel ou None."""
+    pattern = r'\b(?:{})\b'.format('|'.join(re.escape(w) for w in label_words))
+    for match in re.finditer(pattern, page_html, re.I):
+        frag = page_html[max(0, match.start() - 80): match.start() + 1200]
+        for part in re.split(r'<br\s*/?>', _labels_to_reply(frag), flags=re.I):
+            m = label_re.search(part)
+            if not m:
+                continue
+            candidate = m.group(1).strip()
+            if not candidate or _NON_CRED_VALUE_RE.search(candidate):
+                continue
+            if len(candidate) >= _MAX_CRED_LEN:
+                continue
+            if re.search(r'://|www\.|^mailto:', candidate, re.I):
+                continue
+            return candidate
+    return None
+
+
+def _extract_reply(page_html):
+    """Extrai a resposta do pedido no painel.
+
+    Procura os blocos mais comuns (``#orderReplyContent``, ``#adminNoteText``,
+    classes com "reply") e, como ultimo recurso, varre fragmentos da pagina
+    inteira atras de rotulos de usuario/senha. Devolve
+    ``Username: ...<br>Password: ...`` (ou so o usuario, se a senha ainda nao
+    saiu). Retorna '' se nada achar."""
+    container = ''
+    for pattern in _REPLY_CONTAINER_RES:
+        match = pattern.search(page_html)
+        if match:
+            container = match.group(1)
+            break
+
+    if container:
+        reply = _labels_to_reply(container)
+        user, passw = _pick_user_pass(reply)
+        # O bloco costuma fechar no primeiro </div>, antes da senha, que pode
+        # morar em outro elemento da pagina. Se veio so o usuario, varre a
+        # pagina e junta a senha ao resultado.
+        if (not passw
+                and re.search(r'(?:password|senha|passwd|pwd)\s*[:\-=\t(]',
+                              page_html, re.I)):
+            found = _find_value_in_page(page_html, _PASS_LABEL_RE, _PASS_WORDS)
+            if found:
+                reply = _build_reply(user, found)
+        return reply
+
+    # Sem bloco conhecido: varre fragmentos ao redor dos rotulos (evita pegar
+    # lixo de menu/navbar da pagina inteira).
+    if not re.search(r'(?:password|senha|passwd|pwd)\s*[:\-=\t(]',
+                     page_html, re.I):
+        return ''
+    user = _find_value_in_page(page_html, _USER_LABEL_RE, _USER_WORDS)
+    passw = _find_value_in_page(page_html, _PASS_LABEL_RE, _PASS_WORDS)
+    if not user and not passw:
+        return ''
+    return _build_reply(user, passw)
+
+
+def _labels_to_reply(raw_html):
+    text = _html.unescape(raw_html)
+    text = re.sub(r'<br\s*/?>', '\n', text, flags=re.I)
+    text = _STRUCTURAL_CLOSE_RE.sub('\n', text)
+    text = re.sub(r'<[^>]+>', ' ', text)
+    lines = [' '.join(line.split()) for line in text.replace('\r', '').split('\n')]
+    user = passw = None
+    for i, line in enumerate(lines):
+        if not line:
+            continue
+        if user is None:
+            m = _USER_LABEL_RE.search(line)
+            if m:
+                value = m.group(1).strip()
+                if not value:
+                    for nxt in lines[i + 1:]:
+                        if nxt and not _USER_LABEL_RE.search(nxt) \
+                                and not _PASS_LABEL_RE.search(nxt):
+                            value = nxt
+                            break
+                if value and len(value) < _MAX_CRED_LEN:
+                    user = value
+        if passw is None:
+            m = _PASS_LABEL_RE.search(line)
+            if m:
+                value = m.group(1).strip()
+                if not value:
+                    for nxt in lines[i + 1:]:
+                        if nxt and not _USER_LABEL_RE.search(nxt) \
+                                and not _PASS_LABEL_RE.search(nxt):
+                            value = nxt
+                            break
+                if value and len(value) < _MAX_CRED_LEN:
+                    passw = value
+    return _build_reply(user, passw)
 
 
 def _fetch_page(api, trx_id, cookies):
